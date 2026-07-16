@@ -1,0 +1,106 @@
+{
+    "flow": [
+        {
+            "addressing": "physical",
+            "id": 1,
+            "name": "进入扩展诊断会话",
+            "service": "0X10",
+            "subService": "0X03"
+        },
+        {
+            "addressing": "physical",
+            "id": 2,
+            "name": "关闭DTC",
+            "service": "0X85",
+            "subService": "0X02"
+        },
+        {
+            "addressing": "physical",
+            "extend": "0x03",
+            "id": 3,
+            "name": "关闭收发",
+            "service": "0X28",
+            "subService": "0X03"
+        },
+        {
+            "addressing": "physical",
+            "id": 4,
+            "name": "进入编程会话",
+            "service": "0X10",
+            "subService": "0X02"
+        },
+        {
+            "addressing": "physical",
+            "id": 5,
+            "name": "请求Seed(Level1)",
+            "service": "0X27",
+            "subService": "0X01"
+        },
+        {
+            "addressing": "physical",
+            "algorithmParams": [
+                "5"
+            ],
+            "id": 6,
+            "name": "发送Key(Level1)",
+            "securityAlgorithm": "AES128_OneFunc",
+            "service": "0X27",
+            "subService": "0X02"
+        },
+        {
+            "addressing": "physical",
+            "crcAlgorithm": "CRC16_DNP",
+            "id": 7,
+            "name": "驱动下载",
+            "stepType": "DownloadDriver"
+        },
+        {
+            "addressing": "physical",
+            "crcAlgorithm": "CRC16_DNP",
+            "id": 8,
+            "name": "应用下载",
+            "stepType": "DownloadApplication"
+        },
+        {
+            "addressing": "physical",
+            "extend": "0x01",
+            "id": 9,
+            "name": "启动例程",
+            "service": "0X31",
+            "subService": "0XFF"
+        },
+        {
+            "addressing": "physical",
+            "id": 10,
+            "name": "硬复位",
+            "service": "0X11",
+            "subService": "0X01"
+        },
+        {
+            "addressing": "physical",
+            "id": 11,
+            "name": "进入扩展诊断会话",
+            "service": "0X10",
+            "subService": "0X03"
+        },
+        {
+            "addressing": "physical",
+            "extend": "0x03",
+            "id": 12,
+            "name": "开启收发",
+            "service": "0X28",
+            "subService": "0X00"
+        },
+        {
+            "addressing": "physical",
+            "id": 13,
+            "name": "开启DTC",
+            "service": "0X85",
+            "subService": "0X01"
+        }
+    ],
+    "name": "CNHTC",
+    "schemaVersion": 1,
+    "scripts": [
+    ]
+}

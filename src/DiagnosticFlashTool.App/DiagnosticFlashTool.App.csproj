@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\DiagnosticFlashTool.Core\DiagnosticFlashTool.Core.csproj" />
+    <ProjectReference Include="..\DiagnosticFlashTool.Infrastructure\DiagnosticFlashTool.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>DiagnosticFlashTool</AssemblyName>
+    <RootNamespace>DiagnosticFlashTool.App</RootNamespace>
+    <ApplicationIcon>resources\download.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="resources\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

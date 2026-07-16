@@ -1,0 +1,12 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/src/">
+    <Project Path="src/DiagnosticFlashTool.App/DiagnosticFlashTool.App.csproj" />
+    <Project Path="src/DiagnosticFlashTool.Core/DiagnosticFlashTool.Core.csproj" />
+    <Project Path="src/DiagnosticFlashTool.Infrastructure/DiagnosticFlashTool.Infrastructure.csproj" />
+  </Folder>
+</Solution>
