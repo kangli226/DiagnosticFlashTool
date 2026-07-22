@@ -95,10 +95,10 @@
                                                FontFamily="Segoe MDL2 Assets"
                                                FontSize="15"
                                                Margin="0,0,8,0"
-                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}, FallbackValue=#FFFFFF, TargetNullValue=#FFFFFF}"
                                                VerticalAlignment="Center" />
                                     <TextBlock Text="{Binding ConnectionActionText}"
-                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}, FallbackValue=#FFFFFF, TargetNullValue=#FFFFFF}" />
                                 </StackPanel>
                             </Button>
                         </Grid>

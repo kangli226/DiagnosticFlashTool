@@ -260,6 +260,7 @@ public sealed class MainViewModel : ObservableObject
             if (SetProperty(ref _statusText, value))
             {
                 StatusKind = ClassifyStatusText(value);
+                RaiseDeviceStatusProperties();
             }
         }
     }
@@ -267,7 +268,15 @@ public sealed class MainViewModel : ObservableObject
     public DiagnosticStatusKind StatusKind
     {
         get => _statusKind;
-        private set => SetProperty(ref _statusKind, value);
+        private set
+        {
+            if (SetProperty(ref _statusKind, value))
+            {
+                OnPropertyChanged(nameof(DeviceStatusText));
+                OnPropertyChanged(nameof(DeviceStatusKind));
+                OnPropertyChanged(nameof(DeviceStatusIcon));
+            }
+        }
     }
 
     public DiagnosticStatusKind DownloadStatusKind
@@ -291,9 +300,18 @@ public sealed class MainViewModel : ObservableObject
 
     public string ConnectionText => IsConnected ? $"Connected: {SelectedDeviceType} / {SelectedBaudRate}" : "Disconnected";
     public string ConnectionActionText => IsConnected ? "断开设备" : "连接设备";
-    public string DeviceStatusText => IsConnected ? "已连接" : "连接失败";
-    public DiagnosticStatusKind DeviceStatusKind => IsConnected ? DiagnosticStatusKind.Success : DiagnosticStatusKind.Error;
-    public string DeviceStatusIcon => IsConnected ? "\u2713" : "\u00D7";
+    public string DeviceStatusText => IsConnected
+        ? "已连接"
+        : IsConnectionFailure ? "连接失败" : "未连接";
+    public DiagnosticStatusKind DeviceStatusKind => IsConnected
+        ? DiagnosticStatusKind.Success
+        : IsConnectionFailure ? DiagnosticStatusKind.Error : DiagnosticStatusKind.Neutral;
+    public string DeviceStatusIcon => DeviceStatusKind switch
+    {
+        DiagnosticStatusKind.Success => "\u2713",
+        DiagnosticStatusKind.Error => "\u00D7",
+        _ => "\u24D8"
+    };
     public string DownloadStatusIcon => DownloadStatusKind switch
     {
         DiagnosticStatusKind.Success => "\u2713",
@@ -331,6 +349,10 @@ public sealed class MainViewModel : ObservableObject
     };
 
     public string ConfigRootText => _paths.ConfigDirectory;
+
+    private bool IsConnectionFailure => !IsConnected
+        && StatusKind == DiagnosticStatusKind.Error
+        && ContainsAny(StatusText, "connect failed", "connection failed", "连接失败");
 
     private void Refresh()
     {
@@ -962,5 +984,12 @@ public sealed class MainViewModel : ObservableObject
         MoveFlowStepDownCommand.RaiseCanExecuteChanged();
         SendManualFrameCommand.RaiseCanExecuteChanged();
         StartFunctionCheckCommand.RaiseCanExecuteChanged();
+    }
+
+    private void RaiseDeviceStatusProperties()
+    {
+        OnPropertyChanged(nameof(DeviceStatusText));
+        OnPropertyChanged(nameof(DeviceStatusKind));
+        OnPropertyChanged(nameof(DeviceStatusIcon));
     }
 }

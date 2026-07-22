@@ -1,7 +1,11 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:vm="clr-namespace:DiagnosticFlashTool.App.ViewModels">
-    <Style x:Key="StatusValueTextStyle" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="../Brushes.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <Style x:Key="StatusValueTextStyle" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{StaticResource StatusNeutralBrush}" />
         <Style.Triggers>
             <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="{x:Static vm:DiagnosticStatusKind.Success}">
@@ -68,7 +72,7 @@
         </Style.Triggers>
     </Style>
 
-    <Style x:Key="StatusBadgeTextStyle" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+    <Style x:Key="StatusBadgeTextStyle" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{StaticResource StatusNeutralBrush}" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="FontWeight" Value="SemiBold" />
@@ -106,7 +110,7 @@
         </Style.Triggers>
     </Style>
 
-    <Style x:Key="StatusIconTextStyle" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+    <Style x:Key="StatusIconTextStyle" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{StaticResource StatusNeutralBrush}" />
         <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="FontSize" Value="16" />
