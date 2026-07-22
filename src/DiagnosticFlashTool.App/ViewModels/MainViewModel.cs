@@ -147,13 +147,28 @@ public sealed class MainViewModel : ObservableObject
     public string SelectedDeviceType
     {
         get => _selectedDeviceType;
-        set => SetProperty(ref _selectedDeviceType, value);
+        set
+        {
+            if (SetProperty(ref _selectedDeviceType, value))
+            {
+                OnPropertyChanged(nameof(ConnectionText));
+                OnPropertyChanged(nameof(ConnectionSummaryText));
+            }
+        }
     }
 
     public string SelectedBaudRate
     {
         get => _selectedBaudRate;
-        set => SetProperty(ref _selectedBaudRate, value);
+        set
+        {
+            if (SetProperty(ref _selectedBaudRate, value))
+            {
+                OnPropertyChanged(nameof(ConnectionText));
+                OnPropertyChanged(nameof(ConnectionSummaryText));
+                OnPropertyChanged(nameof(BaudRateStatusText));
+            }
+        }
     }
 
     public string DriverFilePath
@@ -222,6 +237,8 @@ public sealed class MainViewModel : ObservableObject
                 OnPropertyChanged(nameof(DeviceStatusText));
                 OnPropertyChanged(nameof(DeviceStatusKind));
                 OnPropertyChanged(nameof(DeviceStatusIcon));
+                OnPropertyChanged(nameof(ConnectionSummaryText));
+                OnPropertyChanged(nameof(BaudRateStatusText));
                 RaiseCommandStates();
             }
         }
@@ -248,6 +265,7 @@ public sealed class MainViewModel : ObservableObject
             {
                 OnPropertyChanged(nameof(ProgressText));
                 OnPropertyChanged(nameof(DownloadStatusText));
+                OnPropertyChanged(nameof(DownloadMonitorDetailText));
             }
         }
     }
@@ -275,6 +293,7 @@ public sealed class MainViewModel : ObservableObject
                 OnPropertyChanged(nameof(DeviceStatusText));
                 OnPropertyChanged(nameof(DeviceStatusKind));
                 OnPropertyChanged(nameof(DeviceStatusIcon));
+                OnPropertyChanged(nameof(ConnectionSummaryText));
             }
         }
     }
@@ -288,6 +307,7 @@ public sealed class MainViewModel : ObservableObject
             {
                 OnPropertyChanged(nameof(DownloadStatusText));
                 OnPropertyChanged(nameof(DownloadStatusIcon));
+                OnPropertyChanged(nameof(DownloadMonitorDetailText));
             }
         }
     }
@@ -299,9 +319,13 @@ public sealed class MainViewModel : ObservableObject
     }
 
     public string ConnectionText => IsConnected ? $"Connected: {SelectedDeviceType} / {SelectedBaudRate}" : "Disconnected";
+    public string BaudRateStatusText => IsConnected ? SelectedBaudRate : "待自动搜索";
+    public string ConnectionSummaryText => IsConnected
+        ? $"{SelectedDeviceType} / {SelectedBaudRate}"
+        : IsConnectionFailure ? "连接失败，请重试" : "等待设备连接";
     public string ConnectionActionText => IsConnected ? "断开设备" : "连接设备";
     public string DeviceStatusText => IsConnected
-        ? "已连接"
+        ? "设备在线"
         : IsConnectionFailure ? "连接失败" : "未连接";
     public DiagnosticStatusKind DeviceStatusKind => IsConnected
         ? DiagnosticStatusKind.Success
@@ -327,6 +351,15 @@ public sealed class MainViewModel : ObservableObject
         DiagnosticStatusKind.Warning => "已取消",
         DiagnosticStatusKind.Error => "刷写失败",
         _ => Progress >= 100 ? "已完成" : "未开始"
+    };
+
+    public string DownloadMonitorDetailText => DownloadStatusKind switch
+    {
+        DiagnosticStatusKind.Running => ProgressText,
+        DiagnosticStatusKind.Success => "100%",
+        DiagnosticStatusKind.Warning => "已取消",
+        DiagnosticStatusKind.Error => "请检查日志",
+        _ => "等待刷写任务"
     };
 
     public string ProgressText => $"{Progress}%";
@@ -991,5 +1024,6 @@ public sealed class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(DeviceStatusText));
         OnPropertyChanged(nameof(DeviceStatusKind));
         OnPropertyChanged(nameof(DeviceStatusIcon));
+        OnPropertyChanged(nameof(ConnectionSummaryText));
     }
 }

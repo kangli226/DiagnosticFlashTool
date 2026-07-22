@@ -1,6 +1,7 @@
 <UserControl x:Class="DiagnosticFlashTool.App.Views.FirmwareFlashView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
     <Grid Style="{StaticResource PageRootGridStyle}">
         <Grid.RowDefinitions>
             <RowDefinition Style="{StaticResource PageHeaderRowStyle}" />
@@ -12,34 +13,42 @@
 
         <Border Grid.Row="0"
                 Style="{StaticResource PageHeaderCardStyle}">
-            <DockPanel LastChildFill="True">
-                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
                     <TextBlock Text="固件刷写"
                                Style="{StaticResource PageTitleTextStyle}" />
                     <TextBlock Text="连接 CAN 设备并监控刷写状态与进度"
                                Style="{StaticResource PageSubtitleTextStyle}" />
                 </StackPanel>
 
-                <StackPanel DockPanel.Dock="Right"
+                <StackPanel Grid.Column="1"
                             Orientation="Horizontal"
                             VerticalAlignment="Center">
-                    <Button Height="36"
-                            Margin="0,0,12,0"
+                    <Button Width="112"
                             Style="{StaticResource Button.ToolBar}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE790;"
-                                       FontFamily="Segoe MDL2 Assets"
-                                       FontSize="15"
-                                       Foreground="{StaticResource TextBrush}"
-                                       VerticalAlignment="Center" />
-                            <TextBlock Text="主题"
-                                       FontWeight="SemiBold"
-                                       Foreground="{StaticResource TextBrush}"
-                                       Margin="8,0,0,0" />
-                            </StackPanel>
+                            <Border Width="22"
+                                    Height="22"
+                                    CornerRadius="4"
+                                    Background="{StaticResource TextBrush}">
+                                <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.HelpCircleOutline}"
+                                                         Width="16"
+                                                         Height="16"
+                                                         Foreground="{StaticResource InverseTextBrush}"
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center" />
+                            </Border>
+                            <TextBlock Text="&#x5E2E;&#x52A9;&#x6587;&#x6863;"
+                                       Style="{StaticResource Button.IconLabel}" />
+                        </StackPanel>
                     </Button>
                 </StackPanel>
-            </DockPanel>
+            </Grid>
         </Border>
 
         <Grid Grid.Row="2">
@@ -57,47 +66,113 @@
                     </Grid.RowDefinitions>
 
                     <Border Grid.Row="0" Style="{StaticResource PanelHeaderStyle}">
-                        <TextBlock Text="设备配置" Style="{StaticResource CardHeaderTextStyle}" />
+                        <TextBlock Text="设备配置"
+                                   Style="{StaticResource CardHeaderTextStyle}"
+                                   HorizontalAlignment="Left"
+                                   VerticalAlignment="Center" />
                     </Border>
 
-                    <StackPanel Grid.Row="1" Margin="12,8,12,0">
-                        <Grid Margin="{StaticResource PageContentBottomGap}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="96" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="波特率：" Style="{StaticResource FieldLabelStyle}" />
-                            <TextBox Grid.Column="1"
-                                     Text="待自动搜索"
-                                     IsReadOnly="True"
-                                     IsEnabled="False"
-                                     Style="{StaticResource SoftTextBoxStyle}" />
+                    <Grid Grid.Row="1" Margin="20,20,20,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="74" />
+                            <RowDefinition Height="14" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" VerticalAlignment="Center">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="32" />
+                                <RowDefinition Height="10" />
+                                <RowDefinition Height="32" />
+                            </Grid.RowDefinitions>
+
+                            <Grid Grid.Row="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="84" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="波特率：" Style="{StaticResource FieldLabelStyle}" />
+                                <Border Grid.Column="1" Style="{StaticResource InlineStatusValueBorderStyle}">
+                                    <TextBlock Text="{Binding BaudRateStatusText}"
+                                               Style="{StaticResource InlineStatusValueTextStyle}" />
+                                </Border>
+                            </Grid>
+
+                            <Grid Grid.Row="2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="84" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="设备连接：" Style="{StaticResource FieldLabelStyle}" />
+                                <Border Grid.Column="1" Style="{StaticResource InlineStatusValueBorderStyle}">
+                                    <TextBlock Text="{Binding ConnectionSummaryText}"
+                                               Style="{StaticResource InlineStatusValueTextStyle}" />
+                                </Border>
+                                <Button Grid.Column="2"
+                                        Command="{Binding ToggleConnectionCommand}"
+                                        Tag="{Binding IsConnected}"
+                                        Width="112"
+                                        Style="{StaticResource Button.ConnectionAction}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.PowerPlug}"
+                                                                 Width="16"
+                                                                 Height="16"
+                                                                 Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                                 VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding ConnectionActionText}"
+                                                   Margin="6,0,0,0"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                   VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
                         </Grid>
 
-                        <Grid>
+                        <Grid Grid.Row="2" Margin="84,0,0,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="8" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="96" />
-                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="设备连接：" Style="{StaticResource FieldLabelStyle}" />
-                            <Button Grid.Column="1"
-                                    Command="{Binding ToggleConnectionCommand}"
-                                    Width="128"
-                                    Style="{StaticResource Button.Primary}"
-                                    HorizontalAlignment="Left">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="&#xE839;"
-                                               FontFamily="Segoe MDL2 Assets"
-                                               FontSize="15"
-                                               Margin="0,0,8,0"
-                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}, FallbackValue=#FFFFFF, TargetNullValue=#FFFFFF}"
-                                               VerticalAlignment="Center" />
-                                    <TextBlock Text="{Binding ConnectionActionText}"
-                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}, FallbackValue=#FFFFFF, TargetNullValue=#FFFFFF}" />
-                                </StackPanel>
-                            </Button>
+
+                            <TextBlock Grid.Row="0"
+                                       Grid.ColumnSpan="2"
+                                       Text="当前配置"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextBrush}" />
+
+                            <StackPanel Grid.Row="2" Grid.Column="0">
+                                <TextBlock Text="设备类型"
+                                           FontSize="12"
+                                           Foreground="{StaticResource SubtleTextBrush}" />
+                                <TextBlock Text="{Binding SelectedDeviceType}"
+                                           Margin="0,3,0,0"
+                                           FontSize="13"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextBrush}"
+                                           TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="2" Grid.Column="1">
+                                <TextBlock Text="波特率"
+                                           FontSize="12"
+                                           Foreground="{StaticResource SubtleTextBrush}" />
+                                <TextBlock Text="{Binding SelectedBaudRate}"
+                                           Margin="0,3,0,0"
+                                           FontSize="13"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextBrush}" />
+                            </StackPanel>
                         </Grid>
-                    </StackPanel>
+                    </Grid>
                 </Grid>
             </Border>
 
@@ -109,31 +184,38 @@
                     </Grid.RowDefinitions>
 
                     <Border Grid.Row="0" Style="{StaticResource PanelHeaderStyle}">
-                        <TextBlock Text="BTMS 刷写监视器" Style="{StaticResource CardHeaderTextStyle}" />
+                        <TextBlock Text="BTMS 刷写监视器" 
+                                   Style="{StaticResource CardHeaderTextStyle}" 
+                                   HorizontalAlignment="Left"
+                                    VerticalAlignment="Center" />
                     </Border>
 
-                    <StackPanel Grid.Row="1"
-                                Orientation="Horizontal"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center">
-                        <StackPanel Width="160" Margin="0,0,12,0">
-                            <Border Height="90"
+                    <Grid Grid.Row="1" Margin="20,20,20,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="74" />
+                            <RowDefinition Height="14" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center">
+                            <Border Width="144"
+                                    Height="74"
+                                    Margin="0,0,12,0"
                                     BorderThickness="1"
                                     CornerRadius="8"
                                     Tag="{Binding DeviceStatusKind}"
                                     Style="{StaticResource StatusCardBorderStyle}">
                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <Border Width="22"
-                                            Height="22"
-                                            CornerRadius="11"
-                                            BorderThickness="2"
-                                            HorizontalAlignment="Center"
-                                            Tag="{Binding DeviceStatusKind}"
-                                            Style="{StaticResource StatusIconBorderStyle}">
-                                        <TextBlock Text="{Binding DeviceStatusIcon}"
-                                                   Style="{StaticResource StatusIconTextStyle}" />
-                                    </Border>
-                                    <Border Margin="{StaticResource PageContentTopGap}"
+                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.PowerPlug}"
+                                                             Width="24"
+                                                             Height="24"
+                                                             Tag="{Binding DeviceStatusKind}"
+                                                             Style="{StaticResource StatusCardPackIconStyle}" />
+                                    <Border Margin="0,6,0,0"
                                             Tag="{Binding DeviceStatusKind}"
                                             Style="{StaticResource StatusBadgeBorderStyle}">
                                         <TextBlock Text="{Binding DeviceStatusText}"
@@ -141,31 +223,20 @@
                                     </Border>
                                 </StackPanel>
                             </Border>
-                            <TextBlock Text="设备状态"
-                                       HorizontalAlignment="Center"
-                                       Margin="{StaticResource PageContentTopGap}"
-                                       FontSize="13"
-                                       Foreground="{StaticResource MutedTextBrush}" />
-                        </StackPanel>
 
-                        <StackPanel Width="160">
-                            <Border Height="90"
+                            <Border Width="144"
+                                    Height="74"
                                     BorderThickness="1"
                                     CornerRadius="8"
                                     Tag="{Binding DownloadStatusKind}"
                                     Style="{StaticResource StatusCardBorderStyle}">
                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <Border Width="22"
-                                            Height="22"
-                                            CornerRadius="11"
-                                            BorderThickness="2"
-                                            HorizontalAlignment="Center"
-                                            Tag="{Binding DownloadStatusKind}"
-                                            Style="{StaticResource StatusIconBorderStyle}">
-                                        <TextBlock Text="{Binding DownloadStatusIcon}"
-                                                   Style="{StaticResource StatusIconTextStyle}" />
-                                    </Border>
-                                    <Border Margin="{StaticResource PageContentTopGap}"
+                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Flash}"
+                                                             Width="24"
+                                                             Height="24"
+                                                             Tag="{Binding DownloadStatusKind}"
+                                                             Style="{StaticResource StatusCardPackIconStyle}" />
+                                    <Border Margin="0,6,0,0"
                                             Tag="{Binding DownloadStatusKind}"
                                             Style="{StaticResource StatusBadgeBorderStyle}">
                                         <TextBlock Text="{Binding DownloadStatusText}"
@@ -173,13 +244,44 @@
                                     </Border>
                                 </StackPanel>
                             </Border>
-                            <TextBlock Text="下载状态"
-                                       HorizontalAlignment="Center"
-                                       Margin="{StaticResource PageContentTopGap}"
-                                       FontSize="13"
-                                       Foreground="{StaticResource MutedTextBrush}" />
                         </StackPanel>
-                    </StackPanel>
+
+                        <Grid Grid.Row="2" HorizontalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="144" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="144" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="设备状态"
+                                           HorizontalAlignment="Center"
+                                           FontSize="12"
+                                           Foreground="{StaticResource SubtleTextBrush}" />
+                                <TextBlock Text="{Binding ConnectionSummaryText}"
+                                           Margin="0,3,0,0"
+                                           HorizontalAlignment="Center"
+                                           FontSize="13"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextBrush}"
+                                           TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="下载状态"
+                                           HorizontalAlignment="Center"
+                                           FontSize="12"
+                                           Foreground="{StaticResource SubtleTextBrush}" />
+                                <TextBlock Text="{Binding DownloadMonitorDetailText}"
+                                           Margin="0,3,0,0"
+                                           HorizontalAlignment="Center"
+                                           FontSize="13"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextBrush}"
+                                           TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>

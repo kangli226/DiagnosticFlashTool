@@ -1,6 +1,7 @@
 <UserControl x:Class="DiagnosticFlashTool.App.Views.FunctionCheckView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework">
     <Grid Style="{StaticResource PageRootGridStyle}">
         <Grid.RowDefinitions>
@@ -34,29 +35,33 @@
                             Margin="0,0,12,0"
                             Style="{StaticResource Button.ToolBar}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE790;"
-                                       FontFamily="Segoe MDL2 Assets"
-                                       FontSize="15"
-                                       Foreground="{StaticResource TextBrush}"
-                                       VerticalAlignment="Center" />
+                            <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.ThemeLightDark}"
+                                                     Style="{StaticResource Button.PackIcon}" />
                             <TextBlock Text="主题"
-                                       FontWeight="SemiBold"
-                                       Foreground="{StaticResource TextBrush}"
-                                       Margin="8,0,0,0" />
+                                       Style="{StaticResource Button.IconLabel}" />
                         </StackPanel>
                     </Button>
-                    <Button Content="&#xE921;"
-                            ToolTip="最小化"
+                    <Button ToolTip="最小化"
                             Style="{StaticResource ChromeButtonStyle}"
-                            Click="Minimize_Click" />
-                    <Button Content="&#xE922;"
-                            ToolTip="最大化"
+                            Click="Minimize_Click">
+                        <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.WindowMinimize}"
+                                                 Style="{StaticResource Button.PackIcon}"
+                                                 Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                    </Button>
+                    <Button ToolTip="最大化"
                             Style="{StaticResource ChromeButtonStyle}"
-                            Click="Maximize_Click" />
-                    <Button Content="&#xE8BB;"
-                            ToolTip="关闭"
+                            Click="Maximize_Click">
+                        <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.WindowMaximize}"
+                                                 Style="{StaticResource Button.PackIcon}"
+                                                 Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                    </Button>
+                    <Button ToolTip="关闭"
                             Style="{StaticResource CloseChromeButtonStyle}"
-                            Click="Close_Click" />
+                            Click="Close_Click">
+                        <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Close}"
+                                                 Style="{StaticResource Button.PackIcon}"
+                                                 Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                    </Button>
                 </StackPanel>
             </DockPanel>
         </Border>
@@ -133,16 +138,11 @@
                             Command="{Binding StartFunctionCheckCommand}"
                             Style="{StaticResource Button.Primary}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE768;"
-                                       FontFamily="Segoe MDL2 Assets"
-                                       FontSize="13"
-                                       Margin="0,0,8,0"
-                                       Foreground="White"
-                                       VerticalAlignment="Center" />
+                            <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.PlayCircleOutline}"
+                                                     Style="{StaticResource Button.PackIcon.Inverse}" />
                             <TextBlock Text="开始检测"
-                                       Foreground="White"
                                        FontSize="14"
-                                       FontWeight="SemiBold" />
+                                       Style="{StaticResource Button.IconLabel.Inverse}" />
                         </StackPanel>
                     </Button>
                 </Grid>

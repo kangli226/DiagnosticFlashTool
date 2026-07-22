@@ -1,55 +1,63 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <SolidColorBrush x:Key="AppBackgroundBrush" Color="#F4F7FA" />
-    <SolidColorBrush x:Key="PanelBrush" Color="#FFFFFF" />
-    <SolidColorBrush x:Key="SurfaceBrush" Color="#EEF3F7" />
-    <SolidColorBrush x:Key="CardBorderBrush" Color="#DDE5EC" />
-    <SolidColorBrush x:Key="DividerBrush" Color="#E3E9EF" />
-    <SolidColorBrush x:Key="InputBackgroundBrush" Color="#FFFFFF" />
-    <SolidColorBrush x:Key="InputBorderBrush" Color="#DEE5EC" />
-    <SolidColorBrush x:Key="PrimaryBrush" Color="#0B70C9" />
-    <SolidColorBrush x:Key="PrimaryActiveBrush" Color="#0967BA" />
-    <SolidColorBrush x:Key="PrimaryStrongBrush" Color="#0759A6" />
-    <SolidColorBrush x:Key="PrimarySoftBrush" Color="#E7EDF3" />
-    <SolidColorBrush x:Key="PrimaryPressedBrush" Color="#DCE5EE" />
-    <SolidColorBrush x:Key="BrandAccentBrush" Color="#0B70C9" />
-    <SolidColorBrush x:Key="TextBrush" Color="#17233B" />
-    <SolidColorBrush x:Key="MutedTextBrush" Color="#687586" />
-    <SolidColorBrush x:Key="SubtleTextBrush" Color="#9AA7B8" />
-    <SolidColorBrush x:Key="DisabledTextBrush" Color="#98A4B5" />
-    <SolidColorBrush x:Key="SidebarBrush" Color="#1E2C38" />
-    <SolidColorBrush x:Key="SidebarHoverBrush" Color="#273846" />
-    <SolidColorBrush x:Key="SidebarTextBrush" Color="#A9C7EA" />
-    <SolidColorBrush x:Key="SidebarMutedTextBrush" Color="#7F95AA" />
-    <SolidColorBrush x:Key="TableHeaderBrush" Color="#F1F4F7" />
-    <SolidColorBrush x:Key="TableAltRowBrush" Color="#FAFBFC" />
-    <SolidColorBrush x:Key="ProgressTrackBrush" Color="#E1E5EB" />
-    <SolidColorBrush x:Key="LogPanelBrush" Color="#111D2A" />
-    <SolidColorBrush x:Key="LogTextBrush" Color="#C7D7EB" />
-    <SolidColorBrush x:Key="LogMutedTextBrush" Color="#91A6BC" />
-    <SolidColorBrush x:Key="SuccessBrush" Color="#18A058" />
-    <SolidColorBrush x:Key="SuccessSoftBrush" Color="#EAF7F0" />
-    <SolidColorBrush x:Key="SuccessBorderBrush" Color="#8DDBB3" />
-    <SolidColorBrush x:Key="StatusSuccessBrush" Color="#16834A" />
-    <SolidColorBrush x:Key="StatusSuccessSoftBrush" Color="#EAF7F0" />
-    <SolidColorBrush x:Key="StatusSuccessBorderBrush" Color="#8DDBB3" />
-    <SolidColorBrush x:Key="StatusRunningBrush" Color="#0B70C9" />
-    <SolidColorBrush x:Key="StatusRunningSoftBrush" Color="#EAF3FC" />
-    <SolidColorBrush x:Key="StatusRunningBorderBrush" Color="#94BFE8" />
-    <SolidColorBrush x:Key="StatusWarningBrush" Color="#B85C00" />
-    <SolidColorBrush x:Key="StatusWarningSoftBrush" Color="#FFF3E5" />
-    <SolidColorBrush x:Key="StatusWarningBorderBrush" Color="#F2C18A" />
-    <SolidColorBrush x:Key="StatusErrorBrush" Color="#C9342E" />
-    <SolidColorBrush x:Key="StatusErrorSoftBrush" Color="#FDECEC" />
-    <SolidColorBrush x:Key="StatusErrorBorderBrush" Color="#EEA19D" />
-    <SolidColorBrush x:Key="StatusNeutralBrush" Color="#687586" />
-    <SolidColorBrush x:Key="StatusNeutralSoftBrush" Color="#F1F4F7" />
-    <SolidColorBrush x:Key="StatusNeutralBorderBrush" Color="#D6DEE7" />
-    <SolidColorBrush x:Key="DangerBrush" Color="#D86F00" />
-    <SolidColorBrush x:Key="DangerActiveBrush" Color="#B95F00" />
-    <SolidColorBrush x:Key="DangerPressedBrush" Color="#9F5100" />
-    <SolidColorBrush x:Key="DangerSoftBrush" Color="#FFF3E5" />
-    <SolidColorBrush x:Key="DangerBorderBrush" Color="#F2C18A" />
-    <SolidColorBrush x:Key="NeutralSoftBrush" Color="#F1F4F7" />
-    <SolidColorBrush x:Key="NeutralTextBrush" Color="#17233B" />
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Colors.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <SolidColorBrush x:Key="AppBackgroundBrush" Color="{StaticResource Color.App.Background}" />
+    <SolidColorBrush x:Key="PanelBrush" Color="{StaticResource Color.Card.Background}" />
+    <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource Color.Surface.Background}" />
+    <SolidColorBrush x:Key="CardBorderBrush" Color="{StaticResource Color.Border.Card}" />
+    <SolidColorBrush x:Key="DividerBrush" Color="{StaticResource Color.Border.Divider}" />
+    <SolidColorBrush x:Key="InputBackgroundBrush" Color="{StaticResource Color.Card.Background}" />
+    <SolidColorBrush x:Key="InputBorderBrush" Color="{StaticResource Color.Border.Input}" />
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Color.Primary}" />
+    <SolidColorBrush x:Key="PrimaryActiveBrush" Color="{StaticResource Color.Primary.Hover}" />
+    <SolidColorBrush x:Key="PrimaryStrongBrush" Color="{StaticResource Color.Primary.Pressed}" />
+    <SolidColorBrush x:Key="PrimarySoftBrush" Color="{StaticResource Color.Primary.Soft}" />
+    <SolidColorBrush x:Key="PrimaryPressedBrush" Color="{StaticResource Color.Primary.SoftPressed}" />
+    <SolidColorBrush x:Key="BrandAccentBrush" Color="{StaticResource Color.Primary.Accent}" />
+    <SolidColorBrush x:Key="TextBrush" Color="{StaticResource Color.Text.Primary}" />
+    <SolidColorBrush x:Key="MutedTextBrush" Color="{StaticResource Color.Text.Secondary}" />
+    <SolidColorBrush x:Key="SubtleTextBrush" Color="{StaticResource Color.Text.Muted}" />
+    <SolidColorBrush x:Key="DisabledTextBrush" Color="{StaticResource Color.Text.Disabled}" />
+    <SolidColorBrush x:Key="InverseTextBrush" Color="{StaticResource Color.Text.Inverse}" />
+    <SolidColorBrush x:Key="SidebarBrush" Color="{StaticResource Color.Sidebar.Background}" />
+    <SolidColorBrush x:Key="SidebarHoverBrush" Color="{StaticResource Color.Sidebar.Hover}" />
+    <SolidColorBrush x:Key="SidebarTextBrush" Color="{StaticResource Color.Sidebar.Text}" />
+    <SolidColorBrush x:Key="SidebarMutedTextBrush" Color="{StaticResource Color.Sidebar.TextMuted}" />
+    <SolidColorBrush x:Key="TableHeaderBrush" Color="{StaticResource Color.Table.Header}" />
+    <SolidColorBrush x:Key="TableAltRowBrush" Color="{StaticResource Color.Table.AlternateRow}" />
+    <SolidColorBrush x:Key="ProgressTrackBrush" Color="{StaticResource Color.Progress.Track}" />
+    <SolidColorBrush x:Key="LogPanelBrush" Color="{StaticResource Color.Log.Panel}" />
+    <SolidColorBrush x:Key="LogHoverBrush" Color="{StaticResource Color.Log.PanelHover}" />
+    <SolidColorBrush x:Key="LogSelectedBrush" Color="{StaticResource Color.Log.PanelSelected}" />
+    <SolidColorBrush x:Key="LogTextBrush" Color="{StaticResource Color.Log.Text}" />
+    <SolidColorBrush x:Key="LogMutedTextBrush" Color="{StaticResource Color.Log.TextMuted}" />
+    <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource Color.Success}" />
+    <SolidColorBrush x:Key="SuccessSoftBrush" Color="{StaticResource Color.Success.Soft}" />
+    <SolidColorBrush x:Key="SuccessBorderBrush" Color="{StaticResource Color.Success.Border}" />
+    <SolidColorBrush x:Key="StatusSuccessBrush" Color="{StaticResource Color.Success}" />
+    <SolidColorBrush x:Key="StatusSuccessSoftBrush" Color="{StaticResource Color.Success.Soft}" />
+    <SolidColorBrush x:Key="StatusSuccessBorderBrush" Color="{StaticResource Color.Success.Border}" />
+    <SolidColorBrush x:Key="StatusRunningBrush" Color="{StaticResource Color.Primary}" />
+    <SolidColorBrush x:Key="StatusRunningSoftBrush" Color="{StaticResource Color.Primary.Soft}" />
+    <SolidColorBrush x:Key="StatusRunningBorderBrush" Color="{StaticResource Color.Primary.Accent}" />
+    <SolidColorBrush x:Key="StatusWarningBrush" Color="{StaticResource Color.Warning.Hover}" />
+    <SolidColorBrush x:Key="StatusWarningSoftBrush" Color="{StaticResource Color.Warning.Soft}" />
+    <SolidColorBrush x:Key="StatusWarningBorderBrush" Color="{StaticResource Color.Warning.Border}" />
+    <SolidColorBrush x:Key="StatusErrorBrush" Color="{StaticResource Color.Error}" />
+    <SolidColorBrush x:Key="StatusErrorSoftBrush" Color="{StaticResource Color.Error.Soft}" />
+    <SolidColorBrush x:Key="StatusErrorBorderBrush" Color="{StaticResource Color.Error.Border}" />
+    <SolidColorBrush x:Key="StatusNeutralBrush" Color="{StaticResource Color.Text.Secondary}" />
+    <SolidColorBrush x:Key="StatusNeutralSoftBrush" Color="{StaticResource Color.Neutral.Soft}" />
+    <SolidColorBrush x:Key="StatusNeutralBorderBrush" Color="{StaticResource Color.Neutral.Border}" />
+    <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource Color.Warning}" />
+    <SolidColorBrush x:Key="DangerActiveBrush" Color="{StaticResource Color.Warning.Hover}" />
+    <SolidColorBrush x:Key="DangerPressedBrush" Color="{StaticResource Color.Warning.Pressed}" />
+    <SolidColorBrush x:Key="DangerSoftBrush" Color="{StaticResource Color.Warning.Soft}" />
+    <SolidColorBrush x:Key="DangerBorderBrush" Color="{StaticResource Color.Warning.Border}" />
+    <SolidColorBrush x:Key="DangerTextBrush" Color="{StaticResource Color.Warning.Text}" />
+    <SolidColorBrush x:Key="NeutralSoftBrush" Color="{StaticResource Color.Neutral.Soft}" />
+    <SolidColorBrush x:Key="NeutralTextBrush" Color="{StaticResource Color.Text.Primary}" />
 </ResourceDictionary>

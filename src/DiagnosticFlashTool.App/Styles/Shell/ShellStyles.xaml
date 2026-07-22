@@ -38,7 +38,6 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{StaticResource SidebarTextBrush}" />
         <Setter Property="FontSize" Value="13" />
-        <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="GroupName" Value="ShellNavigation" />
         <Setter Property="Template">
@@ -63,14 +62,14 @@
                                                      Kind="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"
                                                      Width="18"
                                                      Height="18"
-                                                     Foreground="{Binding Foreground, RelativeSource={RelativeSource TemplatedParent}, FallbackValue=#A9C7EA, TargetNullValue=#A9C7EA}"
+                                                     Foreground="{Binding Foreground, RelativeSource={RelativeSource TemplatedParent}}"
                                                      HorizontalAlignment="Center"
                                                      VerticalAlignment="Center" />
 
                             <TextBlock x:Name="NavText"
                                        Grid.Column="3"
                                        Text="{TemplateBinding Content}"
-                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource TemplatedParent}, FallbackValue=#A9C7EA, TargetNullValue=#A9C7EA}"
+                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource TemplatedParent}}"
                                        FontSize="{TemplateBinding FontSize}"
                                        FontWeight="{TemplateBinding FontWeight}"
                                        VerticalAlignment="Center"
@@ -80,14 +79,14 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="NavBorder" Property="Background" Value="{StaticResource SidebarHoverBrush}" />
-                            <Setter TargetName="NavIcon" Property="Foreground" Value="#FFFFFF" />
-                            <Setter TargetName="NavText" Property="Foreground" Value="#FFFFFF" />
+                            <Setter TargetName="NavIcon" Property="Foreground" Value="{StaticResource InverseTextBrush}" />
+                            <Setter TargetName="NavText" Property="Foreground" Value="{StaticResource InverseTextBrush}" />
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="NavBorder" Property="Background" Value="{StaticResource PrimaryBrush}" />
-                            <Setter TargetName="ActiveRail" Property="Background" Value="#FFFFFF" />
-                            <Setter TargetName="NavIcon" Property="Foreground" Value="#FFFFFF" />
-                            <Setter TargetName="NavText" Property="Foreground" Value="#FFFFFF" />
+                            <Setter TargetName="ActiveRail" Property="Background" Value="{StaticResource InverseTextBrush}" />
+                            <Setter TargetName="NavIcon" Property="Foreground" Value="{StaticResource InverseTextBrush}" />
+                            <Setter TargetName="NavText" Property="Foreground" Value="{StaticResource InverseTextBrush}" />
                         </Trigger>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
                             <Setter TargetName="ActiveRail" Property="Background" Value="{StaticResource PrimaryActiveBrush}" />
