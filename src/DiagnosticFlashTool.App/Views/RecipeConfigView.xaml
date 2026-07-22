@@ -6,17 +6,17 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <Border Grid.Row="0" Style="{StaticResource CardStyle}" Padding="18" Margin="0,0,0,16">
+        <Border Grid.Row="0" Style="{StaticResource Card.Standard}" Margin="0,0,0,16">
             <DockPanel>
                 <TextBlock Text="配方配置" FontSize="18" FontWeight="Bold" DockPanel.Dock="Left" />
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="Add" Command="{Binding AddProjectCommand}" Width="80" />
-                    <Button Content="Delete" Command="{Binding DeleteProjectCommand}" Width="80" />
-                    <Button Content="Save" Command="{Binding SaveProjectsCommand}" Width="90" Style="{StaticResource PrimaryFilledButtonStyle}" />
+                    <Button Content="Add" Command="{Binding AddProjectCommand}" Width="80" Style="{StaticResource Button.ToolBar}" />
+                    <Button Content="Delete" Command="{Binding DeleteProjectCommand}" Width="80" Style="{StaticResource Button.Danger}" />
+                    <Button Content="Save" Command="{Binding SaveProjectsCommand}" Width="90" Style="{StaticResource Button.Primary}" />
                 </StackPanel>
             </DockPanel>
         </Border>
-        <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="14">
+        <Border Grid.Row="1" Style="{StaticResource Card.Compact}">
             <DataGrid ItemsSource="{Binding Projects}" SelectedItem="{Binding SelectedProject}" AutoGenerateColumns="False"
                       CanUserAddRows="False" CanUserDeleteRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal">
                 <DataGrid.Columns>

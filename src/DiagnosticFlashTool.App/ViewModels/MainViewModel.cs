@@ -39,6 +39,8 @@ public sealed class MainViewModel : ObservableObject
     private int _selectedShellIndex;
     private int _progress;
     private string _statusText = "Ready";
+    private DiagnosticStatusKind _statusKind = DiagnosticStatusKind.Neutral;
+    private DiagnosticStatusKind _downloadStatusKind = DiagnosticStatusKind.Neutral;
     private string _flowValidationText = "No flow loaded.";
 
     public MainViewModel()
@@ -81,6 +83,7 @@ public sealed class MainViewModel : ObservableObject
     public ObservableCollection<CanFrameRow> Frames { get; } = [];
     public ObservableCollection<FlowStepEditorRow> FlowRows { get; } = [];
     public ObservableCollection<FunctionalCheckRow> FunctionalChecks { get; } = [];
+    public ObservableCollection<AlgorithmConfigRow> AlgorithmRows { get; } = [];
 
     public RelayCommand RefreshCommand { get; }
     public AsyncRelayCommand ConnectCommand { get; }
@@ -217,6 +220,8 @@ public sealed class MainViewModel : ObservableObject
                 OnPropertyChanged(nameof(ConnectionText));
                 OnPropertyChanged(nameof(ConnectionActionText));
                 OnPropertyChanged(nameof(DeviceStatusText));
+                OnPropertyChanged(nameof(DeviceStatusKind));
+                OnPropertyChanged(nameof(DeviceStatusIcon));
                 RaiseCommandStates();
             }
         }
@@ -229,7 +234,6 @@ public sealed class MainViewModel : ObservableObject
         {
             if (SetProperty(ref _isBusy, value))
             {
-                OnPropertyChanged(nameof(DownloadStatusText));
                 RaiseCommandStates();
             }
         }
@@ -255,7 +259,26 @@ public sealed class MainViewModel : ObservableObject
         {
             if (SetProperty(ref _statusText, value))
             {
+                StatusKind = ClassifyStatusText(value);
+            }
+        }
+    }
+
+    public DiagnosticStatusKind StatusKind
+    {
+        get => _statusKind;
+        private set => SetProperty(ref _statusKind, value);
+    }
+
+    public DiagnosticStatusKind DownloadStatusKind
+    {
+        get => _downloadStatusKind;
+        private set
+        {
+            if (SetProperty(ref _downloadStatusKind, value))
+            {
                 OnPropertyChanged(nameof(DownloadStatusText));
+                OnPropertyChanged(nameof(DownloadStatusIcon));
             }
         }
     }
@@ -269,35 +292,41 @@ public sealed class MainViewModel : ObservableObject
     public string ConnectionText => IsConnected ? $"Connected: {SelectedDeviceType} / {SelectedBaudRate}" : "Disconnected";
     public string ConnectionActionText => IsConnected ? "断开设备" : "连接设备";
     public string DeviceStatusText => IsConnected ? "已连接" : "连接失败";
-    public string DownloadStatusText
+    public DiagnosticStatusKind DeviceStatusKind => IsConnected ? DiagnosticStatusKind.Success : DiagnosticStatusKind.Error;
+    public string DeviceStatusIcon => IsConnected ? "\u2713" : "\u00D7";
+    public string DownloadStatusIcon => DownloadStatusKind switch
     {
-        get
-        {
-            if (StatusText.Contains("failed", StringComparison.OrdinalIgnoreCase) || StatusText.Contains("失败", StringComparison.OrdinalIgnoreCase))
-            {
-                return "刷写失败";
-            }
-
-            if (IsBusy)
-            {
-                return "下载中";
-            }
-
-            return Progress >= 100 ? "已完成" : "未开始";
-        }
-    }
+        DiagnosticStatusKind.Success => "\u2713",
+        DiagnosticStatusKind.Running => "\u25CF",
+        DiagnosticStatusKind.Warning => "\u26A0",
+        DiagnosticStatusKind.Error => "\u00D7",
+        _ => "\u24D8"
+    };
+    public string DownloadStatusText => DownloadStatusKind switch
+    {
+        DiagnosticStatusKind.Success => "已完成",
+        DiagnosticStatusKind.Running => "下载中",
+        DiagnosticStatusKind.Warning => "已取消",
+        DiagnosticStatusKind.Error => "刷写失败",
+        _ => Progress >= 100 ? "已完成" : "未开始"
+    };
 
     public string ProgressText => $"{Progress}%";
     public string DatabaseStatusText => "数据库已连接";
+    public string ScriptRootText => Path.Combine(_paths.ConfigDirectory, "Scripts");
+    public string AlgorithmCatalogText => AlgorithmRows.Count == 0 ? "未发现算法配置" : $"已发现 {AlgorithmRows.Count} 个算法配置";
     public string StatusBarContextText => SelectedShellIndex switch
     {
-        0 => DatabaseStatusText,
-        1 => "功能检测",
-        2 => "配方配置",
-        3 => "开发者选项",
-        4 => "流程配置",
-        5 => "项目配置",
-        6 => "系统设置",
+        0 => "刷写中心 / 固件刷写",
+        1 => "刷写中心 / 刷写监控",
+        2 => "刷写中心 / 历史记录",
+        3 => "诊断测试 / 功能检测",
+        4 => "配置管理 / 项目配置",
+        5 => "配置管理 / 流程配置",
+        6 => "配置管理 / 算法配置",
+        7 => "系统 / 系统设置",
+        8 => "系统 / 开发者选项",
+        9 => "系统 / 日志",
         _ => DatabaseStatusText
     };
 
@@ -318,11 +347,40 @@ public sealed class MainViewModel : ObservableObject
             BootConfigFiles.Add(config);
         }
 
+        LoadAlgorithmCatalog();
+
         SelectedProject = Projects.FirstOrDefault(project => string.Equals(project.ProjectName, selectedName, StringComparison.OrdinalIgnoreCase))
             ?? Projects.FirstOrDefault();
         SelectedBootConfig ??= SelectedProject?.BootConfigFile ?? BootConfigFiles.FirstOrDefault();
         LoadFlowFromSelected();
         AppendLog($"Configuration loaded: projects={Projects.Count}, boot={BootConfigFiles.Count}");
+    }
+
+    private void LoadAlgorithmCatalog()
+    {
+        AlgorithmRows.Clear();
+        AlgorithmRows.Add(new AlgorithmConfigRow("内置安全算法", "AES128_OneFunc", "DiagnosticFlashTool.Core", "可用"));
+
+        AddAlgorithmScripts("安全算法脚本", Path.Combine(ScriptRootText, "Security"));
+        AddAlgorithmScripts("CRC 算法脚本", Path.Combine(ScriptRootText, "CRC"));
+        OnPropertyChanged(nameof(AlgorithmCatalogText));
+    }
+
+    private void AddAlgorithmScripts(string category, string directory)
+    {
+        if (!Directory.Exists(directory))
+        {
+            return;
+        }
+
+        foreach (var file in Directory.EnumerateFiles(directory, "*.lua").OrderBy(Path.GetFileName))
+        {
+            AlgorithmRows.Add(new AlgorithmConfigRow(
+                category,
+                Path.GetFileNameWithoutExtension(file),
+                file,
+                "已发现"));
+        }
     }
 
     private async Task ConnectAsync(CancellationToken cancellationToken)
@@ -342,12 +400,12 @@ public sealed class MainViewModel : ObservableObject
             }, cancellationToken);
 
             IsConnected = true;
-            StatusText = "CAN connected";
+            SetStatus("CAN connected", DiagnosticStatusKind.Success);
             AppendLog($"CAN connected: {SelectedDeviceType}, {SelectedBaudRate}");
         }
         catch (Exception ex)
         {
-            StatusText = "Connect failed";
+            SetStatus("Connect failed", DiagnosticStatusKind.Error);
             AppendLog($"Connect failed: {ex.Message}");
             IsConnected = false;
         }
@@ -375,7 +433,7 @@ public sealed class MainViewModel : ObservableObject
             }
 
             IsConnected = false;
-            StatusText = "CAN disconnected";
+            SetStatus("CAN disconnected", DiagnosticStatusKind.Neutral);
             AppendLog("CAN disconnected.");
         }
         finally
@@ -395,7 +453,8 @@ public sealed class MainViewModel : ObservableObject
         {
             IsBusy = true;
             Progress = 0;
-            StatusText = "Flashing";
+            DownloadStatusKind = DiagnosticStatusKind.Running;
+            SetStatus("Flashing", DiagnosticStatusKind.Running);
 
             var bootFile = SelectedBootConfig ?? SelectedProject.BootConfigFile;
             var bootConfig = _bootConfigRepository.Load(bootFile);
@@ -415,7 +474,8 @@ public sealed class MainViewModel : ObservableObject
             var progress = new Progress<FlashProgress>(item =>
             {
                 Progress = Math.Clamp(item.Percent, 0, 100);
-                StatusText = item.Message;
+                DownloadStatusKind = DiagnosticStatusKind.Running;
+                SetStatus(item.Message, DiagnosticStatusKind.Running);
             });
 
             var result = await executor.ExecuteAsync(
@@ -426,8 +486,24 @@ public sealed class MainViewModel : ObservableObject
                 AppendLog,
                 cancellationToken);
 
-            StatusText = result.Success ? "Flash completed" : "Flash failed";
+            DownloadStatusKind = result.Success ? DiagnosticStatusKind.Success : DiagnosticStatusKind.Error;
+            var resultMessage = result.Success
+                ? "Flash completed"
+                : string.IsNullOrWhiteSpace(result.UserMessage) ? "Flash failed" : result.UserMessage;
+            SetStatus(resultMessage, DownloadStatusKind);
             Progress = result.Success ? 100 : Progress;
+        }
+        catch (OperationCanceledException)
+        {
+            DownloadStatusKind = DiagnosticStatusKind.Warning;
+            SetStatus("Flash canceled", DiagnosticStatusKind.Warning);
+            AppendLog("Flash canceled.");
+        }
+        catch (Exception ex)
+        {
+            DownloadStatusKind = DiagnosticStatusKind.Error;
+            SetStatus(ex.Message, DiagnosticStatusKind.Error);
+            AppendLog($"Flash failed: {ex.Message}");
         }
         finally
         {
@@ -440,7 +516,7 @@ public sealed class MainViewModel : ObservableObject
         try
         {
             IsBusy = true;
-            StatusText = "功能检测中";
+            SetStatus("功能检测中", DiagnosticStatusKind.Running);
             AppendLog($"Function check started: {SelectedFunctionCheckConfig}");
 
             foreach (var row in FunctionalChecks)
@@ -450,17 +526,17 @@ public sealed class MainViewModel : ObservableObject
                 row.MarkCompleted(row.ExpectedValue, DateTime.Now);
             }
 
-            StatusText = "功能检测完成";
+            SetStatus("功能检测完成", DiagnosticStatusKind.Success);
             AppendLog($"Function check completed: {FunctionalChecks.Count} items.");
         }
         catch (OperationCanceledException)
         {
-            StatusText = "功能检测取消";
+            SetStatus("功能检测取消", DiagnosticStatusKind.Warning);
             AppendLog("Function check canceled.");
         }
         catch (Exception ex)
         {
-            StatusText = "功能检测失败";
+            SetStatus("功能检测失败", DiagnosticStatusKind.Error);
             AppendLog($"Function check failed: {ex.Message}");
         }
         finally
@@ -566,13 +642,13 @@ public sealed class MainViewModel : ObservableObject
         var validation = ValidateProjects();
         if (!string.IsNullOrWhiteSpace(validation))
         {
-            StatusText = "Project validation failed";
+            SetStatus("Project validation failed", DiagnosticStatusKind.Error);
             AppendLog(validation);
             return;
         }
 
         _projectRepository.SaveAll(Projects);
-        StatusText = "Projects saved";
+        SetStatus("Projects saved", DiagnosticStatusKind.Success);
         AppendLog($"Projects saved: {Projects.Count}");
     }
 
@@ -641,7 +717,7 @@ public sealed class MainViewModel : ObservableObject
 
         if (!ValidateFlowConfig())
         {
-            StatusText = "Flow validation failed";
+            SetStatus("Flow validation failed", DiagnosticStatusKind.Error);
             return;
         }
 
@@ -654,7 +730,7 @@ public sealed class MainViewModel : ObservableObject
 
         _bootConfigRepository.Save(SelectedBootConfig, config);
         _loadedFlowConfig = config;
-        StatusText = "Flow saved";
+        SetStatus("Flow saved", DiagnosticStatusKind.Success);
         AppendLog($"Flow saved: {SelectedBootConfig}, steps={FlowRows.Count}");
     }
 
@@ -808,6 +884,55 @@ public sealed class MainViewModel : ObservableObject
                 LogLines.RemoveAt(0);
             }
         });
+    }
+
+    private void SetStatus(string text, DiagnosticStatusKind kind)
+    {
+        StatusText = text;
+        StatusKind = kind;
+    }
+
+    private static DiagnosticStatusKind ClassifyStatusText(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text) || ContainsAny(text, "ready", "idle", "disconnected", "未开始", "断开"))
+        {
+            return DiagnosticStatusKind.Neutral;
+        }
+
+        if (ContainsAny(text, "failed", "failure", "error", "timeout", "timed out", "nrc", "negative response", "失败", "错误", "超时", "不通过"))
+        {
+            return DiagnosticStatusKind.Error;
+        }
+
+        if (ContainsAny(text, "cancel", "canceled", "cancelled", "skip", "warning", "取消", "跳过", "告警", "警告"))
+        {
+            return DiagnosticStatusKind.Warning;
+        }
+
+        if (ContainsAny(text, "running", "flashing", "download", "executing", "pending", "step ", "执行中", "下载中", "运行", "检测中", "等待"))
+        {
+            return DiagnosticStatusKind.Running;
+        }
+
+        if (ContainsAny(text, "success", "succeeded", "completed", "saved", "connected", "ok", "pass", "完成", "已连接", "通过", "保存"))
+        {
+            return DiagnosticStatusKind.Success;
+        }
+
+        return DiagnosticStatusKind.Neutral;
+    }
+
+    private static bool ContainsAny(string value, params string[] keywords)
+    {
+        foreach (var keyword in keywords)
+        {
+            if (value.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void RunOnUi(Action action)

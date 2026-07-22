@@ -22,7 +22,7 @@
                                FontWeight="Bold"
                                Foreground="{StaticResource TextBrush}" />
                     <TextBlock Text="加载配方并运行检测，结果如下表所示"
-                               FontSize="14"
+                               FontSize="13"
                                Foreground="{StaticResource MutedTextBrush}"
                                Margin="0,4,0,0" />
                 </StackPanel>
@@ -32,10 +32,8 @@
                             VerticalAlignment="Center"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True">
                     <Button Height="36"
-                            Padding="10,0"
                             Margin="0,0,22,0"
-                            Background="Transparent"
-                            BorderThickness="0">
+                            Style="{StaticResource Button.ToolBar}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE790;"
                                        FontFamily="Segoe MDL2 Assets"
@@ -91,7 +89,7 @@
                               HorizontalAlignment="Left"
                               ItemsSource="{Binding FunctionCheckConfigs}"
                               SelectedItem="{Binding SelectedFunctionCheckConfig}"
-                              FontSize="15" />
+                              FontSize="14" />
                 </Grid>
             </Grid>
         </Border>
@@ -123,7 +121,7 @@
                             <DataGridTextColumn Header="期望值" Binding="{Binding ExpectedValue}" Width="130" ElementStyle="{StaticResource FunctionCheckCellTextStyle}" />
                             <DataGridTextColumn Header="当前值" Binding="{Binding CurrentValue}" Width="130" ElementStyle="{StaticResource FunctionCheckCellTextStyle}" />
                             <DataGridTextColumn Header="检测日期" Binding="{Binding DetectionDate}" Width="200" ElementStyle="{StaticResource FunctionCheckCellTextStyle}" />
-                            <DataGridTextColumn Header="检测结果" Binding="{Binding Result}" Width="*" ElementStyle="{StaticResource FunctionCheckCellTextStyle}" />
+                            <DataGridTextColumn Header="检测结果" Binding="{Binding Result}" Width="*" ElementStyle="{StaticResource FunctionCheckResultCellTextStyle}" />
                         </DataGrid.Columns>
                     </DataGrid>
 
@@ -134,7 +132,7 @@
                             HorizontalAlignment="Right"
                             VerticalAlignment="Bottom"
                             Command="{Binding StartFunctionCheckCommand}"
-                            Style="{StaticResource PrimaryFilledButtonStyle}">
+                            Style="{StaticResource Button.Primary}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE768;"
                                        FontFamily="Segoe MDL2 Assets"
@@ -144,7 +142,7 @@
                                        VerticalAlignment="Center" />
                             <TextBlock Text="开始检测"
                                        Foreground="White"
-                                       FontSize="15"
+                                       FontSize="14"
                                        FontWeight="SemiBold" />
                         </StackPanel>
                     </Button>

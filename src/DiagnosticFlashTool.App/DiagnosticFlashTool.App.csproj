@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="MaterialDesignThemes" Version="5.3.0" />
     <ProjectReference Include="..\DiagnosticFlashTool.Core\DiagnosticFlashTool.Core.csproj" />
     <ProjectReference Include="..\DiagnosticFlashTool.Infrastructure\DiagnosticFlashTool.Infrastructure.csproj" />
   </ItemGroup>

@@ -49,7 +49,46 @@ public sealed class FunctionalCheckRow : ObservableObject
     public string Result
     {
         get => _result;
-        set => SetProperty(ref _result, value);
+        set
+        {
+            if (SetProperty(ref _result, value))
+            {
+                OnPropertyChanged(nameof(ResultStatusKind));
+            }
+        }
+    }
+
+    public DiagnosticStatusKind ResultStatusKind
+    {
+        get
+        {
+            if (Result.Equals("NA", StringComparison.OrdinalIgnoreCase))
+            {
+                return DiagnosticStatusKind.Neutral;
+            }
+
+            if (Result.Contains("不通过", StringComparison.OrdinalIgnoreCase) ||
+                Result.Contains("失败", StringComparison.OrdinalIgnoreCase) ||
+                Result.Contains("failed", StringComparison.OrdinalIgnoreCase))
+            {
+                return DiagnosticStatusKind.Error;
+            }
+
+            if (Result.Contains("通过", StringComparison.OrdinalIgnoreCase) ||
+                Result.Contains("OK", StringComparison.OrdinalIgnoreCase) ||
+                Result.Contains("pass", StringComparison.OrdinalIgnoreCase))
+            {
+                return DiagnosticStatusKind.Success;
+            }
+
+            if (Result.Contains("检测中", StringComparison.OrdinalIgnoreCase) ||
+                Result.Contains("running", StringComparison.OrdinalIgnoreCase))
+            {
+                return DiagnosticStatusKind.Running;
+            }
+
+            return DiagnosticStatusKind.Neutral;
+        }
     }
 
     public void MarkCompleted(string currentValue, DateTime detectionDate)

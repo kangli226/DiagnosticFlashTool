@@ -2,9 +2,9 @@ using System.Windows.Controls;
 
 namespace DiagnosticFlashTool.App.Views;
 
-public partial class FirmwareFlashView : UserControl
+public partial class FlashHistoryView : UserControl
 {
-    public FirmwareFlashView()
+    public FlashHistoryView()
     {
         InitializeComponent();
     }
