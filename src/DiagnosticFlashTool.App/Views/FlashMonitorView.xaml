@@ -1,40 +1,42 @@
 <UserControl x:Class="DiagnosticFlashTool.App.Views.FlashMonitorView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Grid Margin="20">
+    <Grid Style="{StaticResource PageRootGridStyle}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Style="{StaticResource PageHeaderRowStyle}" />
+            <RowDefinition Style="{StaticResource PageHeaderGapRowStyle}" />
+            <RowDefinition Style="{StaticResource PageSummaryRowStyle}" />
+            <RowDefinition Style="{StaticResource PageSectionGapRowStyle}" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Style="{StaticResource Card.Standard}" Margin="0,0,0,16">
-            <DockPanel>
-                <StackPanel DockPanel.Dock="Left">
-                    <TextBlock Text="刷写监控" FontSize="18" FontWeight="Bold" />
+        <Border Grid.Row="0" Style="{StaticResource PageHeaderCardStyle}">
+            <DockPanel LastChildFill="True">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                    <TextBlock Text="刷写监控" Style="{StaticResource PageTitleTextStyle}" />
                     <TextBlock Text="实时查看设备连接、下载状态、刷写进度与 CAN 报文"
-                               Foreground="{StaticResource MutedTextBrush}"
-                               Margin="0,4,0,0" />
+                               Style="{StaticResource PageSubtitleTextStyle}" />
                 </StackPanel>
                 <Button Content="清空报文"
                         Command="{Binding ClearFramesCommand}"
                         DockPanel.Dock="Right"
+                        VerticalAlignment="Center"
                         Width="100"
                         Style="{StaticResource Button.Danger}" />
             </DockPanel>
         </Border>
 
-        <Grid Grid.Row="1" Margin="0,0,0,16">
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*" />
-                <ColumnDefinition Width="16" />
+                <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
                 <ColumnDefinition Width="1*" />
-                <ColumnDefinition Width="16" />
+                <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
                 <ColumnDefinition Width="1*" />
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Style="{StaticResource Card.Standard}">
-                <StackPanel>
+            <Border Grid.Column="0" Style="{StaticResource PageSummaryCardStyle}">
+                <StackPanel Style="{StaticResource PageSummaryContentStyle}">
                     <TextBlock Text="设备状态" Foreground="{StaticResource MutedTextBrush}" />
                     <TextBlock Text="{Binding DeviceStatusText}"
                                Tag="{Binding DeviceStatusKind}"
@@ -46,8 +48,8 @@
                 </StackPanel>
             </Border>
 
-            <Border Grid.Column="2" Style="{StaticResource Card.Standard}">
-                <StackPanel>
+            <Border Grid.Column="2" Style="{StaticResource PageSummaryCardStyle}">
+                <StackPanel Style="{StaticResource PageSummaryContentStyle}">
                     <TextBlock Text="下载状态" Foreground="{StaticResource MutedTextBrush}" />
                     <TextBlock Text="{Binding DownloadStatusText}"
                                Tag="{Binding DownloadStatusKind}"
@@ -59,10 +61,10 @@
                 </StackPanel>
             </Border>
 
-            <Border Grid.Column="4" Style="{StaticResource Card.Standard}">
-                <StackPanel>
+            <Border Grid.Column="4" Style="{StaticResource PageSummaryCardStyle}">
+                <StackPanel Style="{StaticResource PageSummaryContentStyle}">
                     <TextBlock Text="刷写进度" Foreground="{StaticResource MutedTextBrush}" />
-                    <Grid Margin="0,12,0,0">
+                    <Grid Margin="{StaticResource PageContentTopGap}">
                         <ProgressBar Minimum="0"
                                      Maximum="100"
                                      Value="{Binding Progress}"
@@ -76,7 +78,7 @@
             </Border>
         </Grid>
 
-        <Border Grid.Row="2" Style="{StaticResource Card.Compact}">
+        <Border Grid.Row="4" Style="{StaticResource Card.Compact}">
             <DataGrid ItemsSource="{Binding Frames}" IsReadOnly="True">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Time" Binding="{Binding Timestamp}" Width="120" />

@@ -1,10 +1,10 @@
 <UserControl x:Class="DiagnosticFlashTool.App.Views.SystemLogView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Grid Margin="20">
+    <Grid Style="{StaticResource PageRootGridStyle}">
         <Border Style="{StaticResource Card.Standard}">
             <DockPanel>
-                <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+                <DockPanel DockPanel.Dock="Top" Margin="{StaticResource PageContentBottomGap}">
                     <StackPanel DockPanel.Dock="Left">
                         <TextBlock Text="日志" FontSize="18" FontWeight="Bold" />
                         <TextBlock Text="{Binding ConfigRootText}" Foreground="{StaticResource MutedTextBrush}" Margin="0,4,0,0" />
