@@ -5,13 +5,35 @@
     </ResourceDictionary.MergedDictionaries>
 
     <Thickness x:Key="CardHeaderContentPadding">22,0</Thickness>
+    <DropShadowEffect x:Key="CardShadowEffect"
+                      Color="#0F172A"
+                      Direction="270"
+                      ShadowDepth="1"
+                      BlurRadius="2"
+                      Opacity="0.04" />
+    <DropShadowEffect x:Key="CardElevatedShadowEffect"
+                      Color="#0F172A"
+                      Direction="270"
+                      ShadowDepth="4"
+                      BlurRadius="12"
+                      Opacity="0.06" />
 
     <Style x:Key="CardStyle" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource PanelBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Effect" Value="{StaticResource CardShadowEffect}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Effect" Value="{StaticResource CardElevatedShadowEffect}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="Card.Elevated" TargetType="Border" BasedOn="{StaticResource CardStyle}">
+        <Setter Property="Effect" Value="{StaticResource CardElevatedShadowEffect}" />
     </Style>
 
     <Style x:Key="Card.Compact" TargetType="Border" BasedOn="{StaticResource CardStyle}">
@@ -30,12 +52,12 @@
     <Style x:Key="CardHeaderTextStyle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="16" />
         <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource CardTitleTextBrush}" />
     </Style>
 
     <Style x:Key="FieldLabelStyle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="12" />
-        <Setter Property="Foreground" Value="{StaticResource SubtleTextBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource LabelTextBrush}" />
         <Setter Property="HorizontalAlignment" Value="Right" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="Margin" Value="0,0,12,0" />

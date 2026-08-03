@@ -226,7 +226,7 @@
                 <TextBlock Text="当前位置"
                            Margin="14,0,44,0"
                            FontSize="13"
-                           Foreground="{StaticResource MutedTextBrush}" />
+                           Foreground="{StaticResource LabelTextBrush}" />
                 <TextBlock Text="{Binding StatusBarContextText}"
                            FontSize="13"
                            FontWeight="SemiBold"

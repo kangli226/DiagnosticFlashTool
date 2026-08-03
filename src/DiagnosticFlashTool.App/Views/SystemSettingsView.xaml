@@ -1,54 +1,546 @@
 <UserControl x:Class="DiagnosticFlashTool.App.Views.SystemSettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+    <UserControl.Resources>
+        <Style x:Key="SettingsCardStyle" TargetType="Border" BasedOn="{StaticResource Card.Standard}">
+            <Setter Property="Margin" Value="0,0,0,12" />
+        </Style>
+
+        <Style x:Key="SettingsHeaderTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource CardTitleTextBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+
+        <Style x:Key="SettingsLabelTextStyle" TargetType="TextBlock">
+            <Setter Property="Width" Value="120" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource LabelTextBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="SettingsHintTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="{StaticResource SubtleTextBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+
+        <Style x:Key="SettingsRowStyle" TargetType="Grid">
+            <Setter Property="Margin" Value="0,0,0,12" />
+        </Style>
+
+        <Style x:Key="SettingsComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+            <Setter Property="Width" Value="280" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Margin" Value="0" />
+        </Style>
+
+        <Style x:Key="SettingsPathTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource SoftTextBoxStyle}">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Foreground" Value="{StaticResource BodyTextBrush}" />
+            <Setter Property="IsReadOnly" Value="True" />
+            <Setter Property="TextWrapping" Value="NoWrap" />
+        </Style>
+
+        <Style x:Key="SettingsSmallButtonStyle" TargetType="Button" BasedOn="{StaticResource Button.Normal}">
+            <Setter Property="Width" Value="72" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="8,0" />
+            <Setter Property="Margin" Value="8,0,0,0" />
+        </Style>
+
+        <Style x:Key="SettingsSwitchStyle" TargetType="ToggleButton">
+            <Setter Property="Width" Value="44" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Grid Width="{TemplateBinding Width}" Height="{TemplateBinding Height}">
+                            <Border x:Name="SwitchTrack"
+                                    Background="{StaticResource DividerBrush}"
+                                    CornerRadius="12" />
+                            <Ellipse x:Name="SwitchThumb"
+                                     Width="18"
+                                     Height="18"
+                                     Margin="3"
+                                     HorizontalAlignment="Left"
+                                     Fill="{StaticResource PanelBrush}" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="SwitchTrack" Property="Background" Value="{StaticResource PrimaryBrush}" />
+                                <Setter TargetName="SwitchThumb" Property="HorizontalAlignment" Value="Right" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="SwitchTrack" Property="Opacity" Value="0.55" />
+                                <Setter TargetName="SwitchThumb" Property="Opacity" Value="0.75" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SettingsDangerGhostButtonStyle" TargetType="Button" BasedOn="{StaticResource Button.Normal}">
+            <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource DangerBorderBrush}" />
+        </Style>
+    </UserControl.Resources>
+
     <Grid Style="{StaticResource PageRootGridStyle}">
-        <Border Style="{StaticResource Card.Standard}">
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <TextBlock Text="系统设置" FontSize="18" FontWeight="Bold" />
-                <TextBlock Text="基础运行配置与资源路径"
-                           Foreground="{StaticResource MutedTextBrush}"
-                           Margin="{StaticResource PageContentBottomGap}" />
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <StackPanel>
+                        <TextBlock Text="基础设置" Style="{StaticResource SettingsHeaderTextStyle}" Margin="0,0,0,14" />
 
-                <Grid Margin="{StaticResource PageFormRowBottomGap}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="120" />
-                        <ColumnDefinition Width="320" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="默认设备：" Style="{StaticResource FieldLabelStyle}" />
-                    <ComboBox Grid.Column="1"
-                              ItemsSource="{Binding DeviceTypes}"
-                              SelectedItem="{Binding SelectedDeviceType}" />
-                </Grid>
+                        <Grid Style="{StaticResource SettingsRowStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="夜间模式" Style="{StaticResource SettingsLabelTextStyle}" />
+                            <ToggleButton Grid.Column="1"
+                                          IsChecked="{Binding NightModeEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          Style="{StaticResource SettingsSwitchStyle}" />
+                        </Grid>
 
-                <Grid Margin="{StaticResource PageFormRowBottomGap}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="120" />
-                        <ColumnDefinition Width="320" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="默认波特率：" Style="{StaticResource FieldLabelStyle}" />
-                    <ComboBox Grid.Column="1"
-                              ItemsSource="{Binding BaudRates}"
-                              SelectedItem="{Binding SelectedBaudRate}" />
-                </Grid>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="后台运行" Style="{StaticResource SettingsLabelTextStyle}" />
+                            <ToggleButton Grid.Column="1"
+                                          IsChecked="{Binding KeepRunningInTray, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          Style="{StaticResource SettingsSwitchStyle}" />
+                            <TextBlock Grid.Column="3"
+                                       Text="关闭窗口时驻留到系统托盘"
+                                       Style="{StaticResource SettingsHintTextStyle}" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
 
-                <Grid Margin="{StaticResource PageFormRowBottomGap}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="120" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="配置目录：" Style="{StaticResource FieldLabelStyle}" />
-                    <TextBox Grid.Column="1"
-                             Text="{Binding ConfigRootText, Mode=OneWay}"
-                             IsReadOnly="True"
-                             Style="{StaticResource SoftTextBoxStyle}" />
-                </Grid>
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <StackPanel>
+                        <TextBlock Text="CAN 连接" Style="{StaticResource SettingsHeaderTextStyle}" Margin="0,0,0,14" />
 
-                <Button Content="刷新配置"
-                        Command="{Binding RefreshCommand}"
-                        Width="100"
-                        HorizontalAlignment="Left"
-                        Style="{StaticResource Button.Normal}" />
+                        <Grid Style="{StaticResource SettingsRowStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="CAN 设备类型" Style="{StaticResource SettingsLabelTextStyle}" />
+                            <ComboBox Grid.Column="1"
+                                      ItemsSource="{Binding DeviceTypes}"
+                                      SelectedItem="{Binding SelectedDeviceType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      Style="{StaticResource SettingsComboBoxStyle}" />
+                        </Grid>
+
+                        <Grid Style="{StaticResource SettingsRowStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="自动连接" Style="{StaticResource SettingsLabelTextStyle}" />
+                            <ToggleButton Grid.Column="1"
+                                          IsChecked="{Binding AutoFlashEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          Style="{StaticResource SettingsSwitchStyle}" />
+                            <TextBlock Grid.Column="3"
+                                       Text="开启后软件启动自动进入刷写模式"
+                                       Style="{StaticResource SettingsHintTextStyle}" />
+                        </Grid>
+
+                        <Grid Style="{StaticResource SettingsRowStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="波特率搜索" Style="{StaticResource SettingsLabelTextStyle}" />
+                            <ToggleButton Grid.Column="1"
+                                          IsChecked="{Binding AutoSearchBaudRate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          Style="{StaticResource SettingsSwitchStyle}" />
+                            <TextBlock Grid.Column="3"
+                                       Text="启动连接时自动搜索并更新刷写波特率，用户不可手动修改"
+                                       Style="{StaticResource SettingsHintTextStyle}" />
+                        </Grid>
+
+                        <Grid Style="{StaticResource SettingsRowStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="设备通道" Style="{StaticResource SettingsLabelTextStyle}" />
+                            <ComboBox Grid.Column="1"
+                                      ItemsSource="{Binding CanChannels}"
+                                      SelectedItem="{Binding SelectedCanChannel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      Style="{StaticResource SettingsComboBoxStyle}" />
+                        </Grid>
+
+                        <Grid Style="{StaticResource SettingsRowStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="刷写波特率" Style="{StaticResource SettingsLabelTextStyle}" />
+                            <ComboBox Grid.Column="1"
+                                      ItemsSource="{Binding BaudRates}"
+                                      SelectedItem="{Binding SelectedBaudRate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <ComboBox.Style>
+                                    <Style TargetType="ComboBox" BasedOn="{StaticResource SettingsComboBoxStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding AutoSearchBaudRate}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ComboBox.Style>
+                            </ComboBox>
+                        </Grid>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="连接状态" Style="{StaticResource SettingsLabelTextStyle}" />
+                            <Border Grid.Column="1"
+                                    Height="32"
+                                    MinWidth="176"
+                                    Padding="10,0"
+                                    Background="{StaticResource SurfaceBrush}"
+                                    BorderBrush="{StaticResource DividerBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding DeviceStatusIcon}"
+                                               FontWeight="Bold"
+                                               Foreground="{StaticResource PrimaryBrush}"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding ConnectionSummaryText}"
+                                               Foreground="{StaticResource BodyTextBrush}"
+                                               FontSize="13"
+                                               Margin="8,0,0,0"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+                            <Button Grid.Column="3"
+                                    Command="{Binding ToggleConnectionCommand}"
+                                    Tag="{Binding IsConnected}"
+                                    Style="{StaticResource Button.ConnectionAction}"
+                                    Width="110"
+                                    Height="32"
+                                    Margin="0">
+                                <TextBlock Text="{Binding ConnectionActionText}" />
+                            </Button>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="运行配置管理" Style="{StaticResource SettingsHeaderTextStyle}" />
+                            <Button Grid.Column="1"
+                                    Command="{Binding ImportBuiltinConfigurationCommand}"
+                                    Style="{StaticResource Button.Normal}"
+                                    Height="32"
+                                    Margin="0,0,8,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.CloudDownloadOutline}"
+                                                             Style="{StaticResource Button.PackIcon.Accent}" />
+                                    <TextBlock Text="导入内置配置" Style="{StaticResource Button.IconLabel}" />
+                                </StackPanel>
+                            </Button>
+                            <Button Grid.Column="2"
+                                    Command="{Binding ClearRuntimeConfigurationCommand}"
+                                    Style="{StaticResource SettingsDangerGhostButtonStyle}"
+                                    Height="32"
+                                    Margin="0">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.DeleteOutline}"
+                                                             Style="{StaticResource Button.PackIcon}"
+                                                             Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                    <TextBlock Text="清空全部配置"
+                                               Style="{StaticResource Button.IconLabel}"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <Grid Style="{StaticResource SettingsRowStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="流程配置" Style="{StaticResource SettingsLabelTextStyle}" />
+                            <TextBox Grid.Column="1"
+                                     Text="{Binding FlowConfigDirectory, Mode=OneWay}"
+                                     Style="{StaticResource SettingsPathTextBoxStyle}" />
+                            <Button Grid.Column="2"
+                                    Command="{Binding OpenFlowConfigDirectoryCommand}"
+                                    Style="{StaticResource SettingsSmallButtonStyle}">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.FolderOpenOutline}" Width="16" Height="16" />
+                                    <TextBlock Text="打开" Margin="5,0,0,0" />
+                                </StackPanel>
+                            </Button>
+                            <Button Grid.Column="3"
+                                    Command="{Binding ChooseFlowConfigDirectoryCommand}"
+                                    Style="{StaticResource SettingsSmallButtonStyle}">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.FolderCogOutline}" Width="16" Height="16" />
+                                    <TextBlock Text="选择" Margin="5,0,0,0" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <Grid Style="{StaticResource SettingsRowStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="配方数据库" Style="{StaticResource SettingsLabelTextStyle}" />
+                            <TextBox Grid.Column="1"
+                                     Text="{Binding FormulaDatabaseDirectory, Mode=OneWay}"
+                                     Style="{StaticResource SettingsPathTextBoxStyle}" />
+                            <Button Grid.Column="2"
+                                    Command="{Binding OpenFormulaDatabaseDirectoryCommand}"
+                                    Style="{StaticResource SettingsSmallButtonStyle}">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.FolderOpenOutline}" Width="16" Height="16" />
+                                    <TextBlock Text="打开" Margin="5,0,0,0" />
+                                </StackPanel>
+                            </Button>
+                            <Button Grid.Column="3"
+                                    Command="{Binding ChooseFormulaDatabaseDirectoryCommand}"
+                                    Style="{StaticResource SettingsSmallButtonStyle}">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.FolderCogOutline}" Width="16" Height="16" />
+                                    <TextBlock Text="选择" Margin="5,0,0,0" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="项目配置" Style="{StaticResource SettingsLabelTextStyle}" />
+                            <TextBox Grid.Column="1"
+                                     Text="{Binding ProjectConfigPath, Mode=OneWay}"
+                                     Style="{StaticResource SettingsPathTextBoxStyle}" />
+                            <Button Grid.Column="2"
+                                    Command="{Binding OpenProjectConfigDirectoryCommand}"
+                                    Style="{StaticResource SettingsSmallButtonStyle}">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.FolderOpenOutline}" Width="16" Height="16" />
+                                    <TextBlock Text="打开" Margin="5,0,0,0" />
+                                </StackPanel>
+                            </Button>
+                            <Button Grid.Column="3"
+                                    Command="{Binding ChooseProjectConfigFileCommand}"
+                                    Style="{StaticResource SettingsSmallButtonStyle}">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.FolderCogOutline}" Width="16" Height="16" />
+                                    <TextBlock Text="选择" Margin="5,0,0,0" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <StackPanel>
+                        <TextBlock Text="日志" Style="{StaticResource SettingsHeaderTextStyle}" Margin="0,0,0,14" />
+
+                        <Grid Style="{StaticResource SettingsRowStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="保存到文件" Style="{StaticResource SettingsLabelTextStyle}" />
+                            <ToggleButton Grid.Column="1"
+                                          IsChecked="{Binding LogFileEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          Style="{StaticResource SettingsSwitchStyle}" />
+                            <TextBlock Grid.Column="3"
+                                       Text="更改后重启生效"
+                                       Style="{StaticResource SettingsHintTextStyle}" />
+                        </Grid>
+
+                        <Grid Style="{StaticResource SettingsRowStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="保存地址" Style="{StaticResource SettingsLabelTextStyle}" />
+                            <TextBox Grid.Column="1"
+                                     Text="{Binding LogFilePath, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                     IsEnabled="{Binding LogFileEnabled}"
+                                     Style="{StaticResource SoftTextBoxStyle}" />
+                            <Button Grid.Column="2"
+                                    Command="{Binding OpenLogDirectoryCommand}"
+                                    IsEnabled="{Binding LogFileEnabled}"
+                                    Style="{StaticResource SettingsSmallButtonStyle}">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.FolderOpenOutline}" Width="16" Height="16" />
+                                    <TextBlock Text="打开" Margin="5,0,0,0" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="运行日志" Style="{StaticResource SettingsLabelTextStyle}" />
+                            <Button Grid.Column="1"
+                                    Command="{Binding OpenRuntimeLogPageCommand}"
+                                    Style="{StaticResource Button.Primary}"
+                                    Height="32"
+                                    Margin="0">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.TextBoxOutline}"
+                                                             Style="{StaticResource Button.PackIcon.Inverse}" />
+                                    <TextBlock Text="查看日志" Style="{StaticResource Button.IconLabel.Inverse}" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="14" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0"
+                                   Grid.Column="0"
+                                   Grid.ColumnSpan="6"
+                                   Text="管理员模式"
+                                   Style="{StaticResource SettingsHeaderTextStyle}" />
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="状态" Style="{StaticResource SettingsLabelTextStyle}" />
+                        <ToggleButton Grid.Row="2"
+                                      Grid.Column="1"
+                                      IsChecked="{Binding AdminModeEnabled, Mode=OneWay}"
+                                      Click="AdminModeToggle_Click"
+                                      Style="{StaticResource SettingsSwitchStyle}" />
+                        <TextBlock Grid.Row="2"
+                                   Grid.Column="3"
+                                   Text="{Binding AdminModeStatusText}"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{StaticResource BodyTextBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding AdminModeEnabled}" Value="True">
+                                            <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBlock Grid.Row="2"
+                                   Grid.Column="5"
+                                   Text="开启后显示配方配置、开发者选项、流程配置、项目配置。"
+                                   Style="{StaticResource SettingsHintTextStyle}" />
+                    </Grid>
+                </Border>
             </StackPanel>
+        </ScrollViewer>
+
+        <Border x:Name="AdminPasswordOverlay"
+                Visibility="Collapsed"
+                Background="#66000000">
+            <Border Width="380"
+                    Padding="22"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Style="{StaticResource DialogPanelStyle}">
+                <StackPanel>
+                    <TextBlock Text="启动管理员模式"
+                               Style="{StaticResource SettingsHeaderTextStyle}"
+                               Margin="0,0,0,10" />
+                    <TextBlock Text="请输入管理员密码，本次启动内有效。"
+                               Style="{StaticResource SettingsHintTextStyle}"
+                               Margin="0,0,0,12" />
+                    <PasswordBox x:Name="AdminPasswordBox"
+                                 Height="32"
+                                 Padding="10,4"
+                                 PasswordChar="*"
+                                 KeyDown="AdminPasswordBox_KeyDown"
+                                 Margin="0,0,0,16" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="取消"
+                                Click="CancelAdminPassword_Click"
+                                Style="{StaticResource Button.Normal}"
+                                Width="78"
+                                Height="32"
+                                Margin="0,0,8,0" />
+                        <Button Click="SubmitAdminPassword_Click"
+                                Style="{StaticResource Button.Primary}"
+                                Height="32"
+                                Margin="0">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.ShieldAccountOutline}"
+                                                         Style="{StaticResource Button.PackIcon.Inverse}" />
+                                <TextBlock Text="启动管理员模式" Style="{StaticResource Button.IconLabel.Inverse}" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
         </Border>
     </Grid>
 </UserControl>

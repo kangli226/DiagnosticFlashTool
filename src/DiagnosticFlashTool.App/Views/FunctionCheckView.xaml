@@ -23,7 +23,7 @@
                                Foreground="{StaticResource TextBrush}" />
                     <TextBlock Text="加载配方并运行检测，结果如下表所示"
                                FontSize="13"
-                               Foreground="{StaticResource MutedTextBrush}"
+                               Foreground="{StaticResource SubtleTextBrush}"
                                Margin="0,4,0,0" />
                 </StackPanel>
 

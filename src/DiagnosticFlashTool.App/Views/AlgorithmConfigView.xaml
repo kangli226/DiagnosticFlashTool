@@ -10,9 +10,9 @@
         <Border Grid.Row="0" Style="{StaticResource PageLeadStandardCardStyle}">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Left">
-                    <TextBlock Text="算法配置" FontSize="18" FontWeight="Bold" />
+                    <TextBlock Text="算法配置" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
                     <TextBlock Text="{Binding ScriptRootText}"
-                               Foreground="{StaticResource MutedTextBrush}"
+                               Foreground="{StaticResource SubtleTextBrush}"
                                Margin="0,4,0,0" />
                 </StackPanel>
                 <TextBlock Text="{Binding AlgorithmCatalogText}"

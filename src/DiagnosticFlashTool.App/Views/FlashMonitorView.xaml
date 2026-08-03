@@ -37,33 +37,33 @@
 
             <Border Grid.Column="0" Style="{StaticResource PageSummaryCardStyle}">
                 <StackPanel Style="{StaticResource PageSummaryContentStyle}">
-                    <TextBlock Text="设备状态" Foreground="{StaticResource MutedTextBrush}" />
+                    <TextBlock Text="设备状态" Foreground="{StaticResource LabelTextBrush}" />
                     <TextBlock Text="{Binding DeviceStatusText}"
                                Tag="{Binding DeviceStatusKind}"
                                Style="{StaticResource StatusValueTextStyle}"
                                FontSize="22"
                                FontWeight="Bold"
                                Margin="0,10,0,0" />
-                    <TextBlock Text="{Binding ConnectionText}" Foreground="{StaticResource MutedTextBrush}" Margin="0,6,0,0" />
+                    <TextBlock Text="{Binding ConnectionText}" Foreground="{StaticResource BodyTextBrush}" Margin="0,6,0,0" />
                 </StackPanel>
             </Border>
 
             <Border Grid.Column="2" Style="{StaticResource PageSummaryCardStyle}">
                 <StackPanel Style="{StaticResource PageSummaryContentStyle}">
-                    <TextBlock Text="下载状态" Foreground="{StaticResource MutedTextBrush}" />
+                    <TextBlock Text="下载状态" Foreground="{StaticResource LabelTextBrush}" />
                     <TextBlock Text="{Binding DownloadStatusText}"
                                Tag="{Binding DownloadStatusKind}"
                                Style="{StaticResource StatusValueTextStyle}"
                                FontSize="22"
                                FontWeight="Bold"
                                Margin="0,10,0,0" />
-                    <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource MutedTextBrush}" Margin="0,6,0,0" />
+                    <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource BodyTextBrush}" Margin="0,6,0,0" />
                 </StackPanel>
             </Border>
 
             <Border Grid.Column="4" Style="{StaticResource PageSummaryCardStyle}">
                 <StackPanel Style="{StaticResource PageSummaryContentStyle}">
-                    <TextBlock Text="刷写进度" Foreground="{StaticResource MutedTextBrush}" />
+                    <TextBlock Text="刷写进度" Foreground="{StaticResource LabelTextBrush}" />
                     <Grid Margin="{StaticResource PageContentTopGap}">
                         <ProgressBar Minimum="0"
                                      Maximum="100"

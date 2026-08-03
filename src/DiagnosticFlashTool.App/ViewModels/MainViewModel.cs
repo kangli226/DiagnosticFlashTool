@@ -1,6 +1,9 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
+using System.Text.Json;
 using System.Windows;
+using System.Windows.Media;
 using DiagnosticFlashTool.Core.Can;
 using DiagnosticFlashTool.Core.Configuration;
 using DiagnosticFlashTool.Core.Diagnostics;
@@ -15,6 +18,17 @@ namespace DiagnosticFlashTool.App.ViewModels;
 
 public sealed class MainViewModel : ObservableObject
 {
+    private static readonly JsonSerializerOptions SettingsJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        WriteIndented = true
+    };
+
+    private static readonly string AppSettingsFilePath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "DiagnosticFlashTool",
+        "settings.json");
+
     private readonly AppConfigurationPaths _paths = new();
     private readonly JsonProjectConfigRepository _projectRepository;
     private readonly JsonBootConfigRepository _bootConfigRepository;
@@ -33,7 +47,15 @@ public sealed class MainViewModel : ObservableObject
     private string _manualFrameData = "02 10 03";
     private string _manualChannel = "0";
     private string _selectedFunctionCheckConfig = "mock";
+    private string _selectedCanChannel = "0";
+    private string _logFilePath = Path.Combine("logs", "DiagnosticFlashTool.log");
     private bool _manualIsExtended = true;
+    private bool _nightModeEnabled;
+    private bool _keepRunningInTray;
+    private bool _autoFlashEnabled;
+    private bool _autoSearchBaudRate = true;
+    private bool _logFileEnabled = true;
+    private bool _adminModeEnabled;
     private bool _isConnected;
     private bool _isBusy;
     private int _selectedShellIndex;
@@ -45,6 +67,8 @@ public sealed class MainViewModel : ObservableObject
 
     public MainViewModel()
     {
+        LoadAppSettings();
+        ApplyNightMode(NightModeEnabled);
         _projectRepository = new JsonProjectConfigRepository(_paths);
         _bootConfigRepository = new JsonBootConfigRepository(_paths);
 
@@ -69,6 +93,16 @@ public sealed class MainViewModel : ObservableObject
         MoveFlowStepDownCommand = new RelayCommand(() => MoveSelectedFlowStep(1), () => SelectedFlowStep is not null);
         SendManualFrameCommand = new AsyncRelayCommand(SendManualFrameAsync, () => IsConnected && !IsBusy);
         StartFunctionCheckCommand = new AsyncRelayCommand(StartFunctionCheckAsync, () => !IsBusy);
+        ImportBuiltinConfigurationCommand = new RelayCommand(ImportBuiltinConfiguration);
+        ClearRuntimeConfigurationCommand = new RelayCommand(ClearRuntimeConfiguration);
+        OpenFlowConfigDirectoryCommand = new RelayCommand(() => OpenPathLocation(FlowConfigDirectory));
+        ChooseFlowConfigDirectoryCommand = new RelayCommand(ChooseFlowConfigDirectory);
+        OpenFormulaDatabaseDirectoryCommand = new RelayCommand(() => OpenPathLocation(FormulaDatabaseDirectory));
+        ChooseFormulaDatabaseDirectoryCommand = new RelayCommand(ChooseFormulaDatabaseDirectory);
+        OpenProjectConfigDirectoryCommand = new RelayCommand(() => OpenPathLocation(ProjectConfigPath));
+        ChooseProjectConfigFileCommand = new RelayCommand(ChooseProjectConfigFile);
+        OpenLogDirectoryCommand = new RelayCommand(() => OpenPathLocation(LogFilePath));
+        OpenRuntimeLogPageCommand = new RelayCommand(() => SelectedShellIndex = 9);
 
         LoadDefaultFunctionChecks();
         Refresh();
@@ -78,6 +112,7 @@ public sealed class MainViewModel : ObservableObject
     public ObservableCollection<string> BootConfigFiles { get; } = [];
     public ObservableCollection<string> DeviceTypes { get; } = ["Mock", "ZLG USBCAN-2A (4)"];
     public ObservableCollection<string> BaudRates { get; } = ["250K", "500K", "1000K"];
+    public ObservableCollection<string> CanChannels { get; } = ["0", "1"];
     public ObservableCollection<string> FunctionCheckConfigs { get; } = ["mock"];
     public ObservableCollection<string> LogLines { get; } = [];
     public ObservableCollection<CanFrameRow> Frames { get; } = [];
@@ -106,6 +141,16 @@ public sealed class MainViewModel : ObservableObject
     public RelayCommand MoveFlowStepDownCommand { get; }
     public AsyncRelayCommand SendManualFrameCommand { get; }
     public AsyncRelayCommand StartFunctionCheckCommand { get; }
+    public RelayCommand ImportBuiltinConfigurationCommand { get; }
+    public RelayCommand ClearRuntimeConfigurationCommand { get; }
+    public RelayCommand OpenFlowConfigDirectoryCommand { get; }
+    public RelayCommand ChooseFlowConfigDirectoryCommand { get; }
+    public RelayCommand OpenFormulaDatabaseDirectoryCommand { get; }
+    public RelayCommand ChooseFormulaDatabaseDirectoryCommand { get; }
+    public RelayCommand OpenProjectConfigDirectoryCommand { get; }
+    public RelayCommand ChooseProjectConfigFileCommand { get; }
+    public RelayCommand OpenLogDirectoryCommand { get; }
+    public RelayCommand OpenRuntimeLogPageCommand { get; }
 
     public ProjectConfigEntry? SelectedProject
     {
@@ -151,6 +196,7 @@ public sealed class MainViewModel : ObservableObject
         {
             if (SetProperty(ref _selectedDeviceType, value))
             {
+                SaveAppSettings();
                 OnPropertyChanged(nameof(ConnectionText));
                 OnPropertyChanged(nameof(ConnectionSummaryText));
             }
@@ -164,6 +210,7 @@ public sealed class MainViewModel : ObservableObject
         {
             if (SetProperty(ref _selectedBaudRate, value))
             {
+                SaveAppSettings();
                 OnPropertyChanged(nameof(ConnectionText));
                 OnPropertyChanged(nameof(ConnectionSummaryText));
                 OnPropertyChanged(nameof(BaudRateStatusText));
@@ -198,7 +245,14 @@ public sealed class MainViewModel : ObservableObject
     public string ManualChannel
     {
         get => _manualChannel;
-        set => SetProperty(ref _manualChannel, value);
+        set
+        {
+            if (SetProperty(ref _manualChannel, value) && _selectedCanChannel != value)
+            {
+                _selectedCanChannel = value;
+                OnPropertyChanged(nameof(SelectedCanChannel));
+            }
+        }
     }
 
     public bool ManualIsExtended
@@ -212,6 +266,109 @@ public sealed class MainViewModel : ObservableObject
         get => _selectedFunctionCheckConfig;
         set => SetProperty(ref _selectedFunctionCheckConfig, value);
     }
+
+    public string SelectedCanChannel
+    {
+        get => _selectedCanChannel;
+        set
+        {
+            if (SetProperty(ref _selectedCanChannel, value))
+            {
+                ManualChannel = value;
+                SaveAppSettings();
+            }
+        }
+    }
+
+    public bool NightModeEnabled
+    {
+        get => _nightModeEnabled;
+        set
+        {
+            if (SetProperty(ref _nightModeEnabled, value))
+            {
+                ApplyNightMode(value);
+                SaveAppSettings();
+                AppendLog($"Night mode {(value ? "enabled" : "disabled")}.");
+            }
+        }
+    }
+
+    public bool KeepRunningInTray
+    {
+        get => _keepRunningInTray;
+        set
+        {
+            if (SetProperty(ref _keepRunningInTray, value))
+            {
+                SaveAppSettings();
+            }
+        }
+    }
+
+    public bool AutoFlashEnabled
+    {
+        get => _autoFlashEnabled;
+        set
+        {
+            if (SetProperty(ref _autoFlashEnabled, value))
+            {
+                SaveAppSettings();
+            }
+        }
+    }
+
+    public bool AutoSearchBaudRate
+    {
+        get => _autoSearchBaudRate;
+        set
+        {
+            if (SetProperty(ref _autoSearchBaudRate, value))
+            {
+                SaveAppSettings();
+            }
+        }
+    }
+
+    public bool LogFileEnabled
+    {
+        get => _logFileEnabled;
+        set
+        {
+            if (SetProperty(ref _logFileEnabled, value))
+            {
+                SaveAppSettings();
+            }
+        }
+    }
+
+    public string LogFilePath
+    {
+        get => _logFilePath;
+        set
+        {
+            if (SetProperty(ref _logFilePath, value))
+            {
+                SaveAppSettings();
+            }
+        }
+    }
+
+    public bool AdminModeAvailable => true;
+
+    public bool AdminModeEnabled
+    {
+        get => _adminModeEnabled;
+        private set
+        {
+            if (SetProperty(ref _adminModeEnabled, value))
+            {
+                OnPropertyChanged(nameof(AdminModeStatusText));
+            }
+        }
+    }
+
+    public string AdminModeStatusText => AdminModeEnabled ? "已开启" : "关闭";
 
     public int SelectedShellIndex
     {
@@ -382,10 +539,28 @@ public sealed class MainViewModel : ObservableObject
     };
 
     public string ConfigRootText => _paths.ConfigDirectory;
+    public string FlowConfigDirectory => _paths.BootConfigDirectory;
+    public string FormulaDatabaseDirectory => _paths.FormulaDatabaseDirectory;
+    public string ProjectConfigPath => _paths.ProjectConfigPath;
 
     private bool IsConnectionFailure => !IsConnected
         && StatusKind == DiagnosticStatusKind.Error
         && ContainsAny(StatusText, "connect failed", "connection failed", "连接失败");
+
+    public bool EnableAdminMode(string password)
+    {
+        if (string.Equals(password, "admin", StringComparison.Ordinal))
+        {
+            AdminModeEnabled = true;
+            SetStatus("管理员模式已启动", DiagnosticStatusKind.Success);
+            AppendLog("Admin mode enabled.");
+            return true;
+        }
+
+        SetStatus("管理员密码错误", DiagnosticStatusKind.Warning);
+        AppendLog("Admin mode password rejected.");
+        return false;
+    }
 
     private void Refresh()
     {
@@ -408,7 +583,297 @@ public sealed class MainViewModel : ObservableObject
             ?? Projects.FirstOrDefault();
         SelectedBootConfig ??= SelectedProject?.BootConfigFile ?? BootConfigFiles.FirstOrDefault();
         LoadFlowFromSelected();
+        OnPropertyChanged(nameof(ConfigRootText));
+        OnPropertyChanged(nameof(ScriptRootText));
+        OnPropertyChanged(nameof(FlowConfigDirectory));
+        OnPropertyChanged(nameof(FormulaDatabaseDirectory));
+        OnPropertyChanged(nameof(ProjectConfigPath));
         AppendLog($"Configuration loaded: projects={Projects.Count}, boot={BootConfigFiles.Count}");
+    }
+
+    private void LoadAppSettings()
+    {
+        try
+        {
+            if (!File.Exists(AppSettingsFilePath))
+            {
+                return;
+            }
+
+            var settings = JsonSerializer.Deserialize<AppSettingsSnapshot>(
+                File.ReadAllText(AppSettingsFilePath),
+                SettingsJsonOptions);
+            if (settings is null)
+            {
+                return;
+            }
+
+            _nightModeEnabled = settings.NightModeEnabled;
+            _keepRunningInTray = settings.KeepRunningInTray;
+            _autoFlashEnabled = settings.AutoFlashEnabled;
+            _autoSearchBaudRate = settings.AutoSearchBaudRate;
+            _logFileEnabled = settings.LogFileEnabled;
+            _logFilePath = string.IsNullOrWhiteSpace(settings.LogFilePath)
+                ? _logFilePath
+                : settings.LogFilePath;
+            _selectedDeviceType = string.IsNullOrWhiteSpace(settings.SelectedDeviceType)
+                ? _selectedDeviceType
+                : settings.SelectedDeviceType;
+            _selectedBaudRate = string.IsNullOrWhiteSpace(settings.SelectedBaudRate)
+                ? _selectedBaudRate
+                : settings.SelectedBaudRate;
+            _selectedCanChannel = string.IsNullOrWhiteSpace(settings.SelectedCanChannel)
+                ? _selectedCanChannel
+                : settings.SelectedCanChannel;
+            _manualChannel = _selectedCanChannel;
+            _paths.ProjectConfigPathOverride = EmptyToNull(settings.ProjectConfigPath);
+            _paths.BootConfigDirectoryOverride = EmptyToNull(settings.FlowConfigDirectory);
+            _paths.FormulaDatabaseDirectoryOverride = EmptyToNull(settings.FormulaDatabaseDirectory);
+        }
+        catch
+        {
+            // Ignore malformed local settings and continue with defaults.
+        }
+    }
+
+    private void SaveAppSettings()
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(AppSettingsFilePath)!);
+            var settings = new AppSettingsSnapshot
+            {
+                NightModeEnabled = NightModeEnabled,
+                KeepRunningInTray = KeepRunningInTray,
+                AutoFlashEnabled = AutoFlashEnabled,
+                AutoSearchBaudRate = AutoSearchBaudRate,
+                LogFileEnabled = LogFileEnabled,
+                LogFilePath = LogFilePath,
+                SelectedDeviceType = SelectedDeviceType,
+                SelectedBaudRate = SelectedBaudRate,
+                SelectedCanChannel = SelectedCanChannel,
+                ProjectConfigPath = _paths.ProjectConfigPathOverride,
+                FlowConfigDirectory = _paths.BootConfigDirectoryOverride,
+                FormulaDatabaseDirectory = _paths.FormulaDatabaseDirectoryOverride
+            };
+            File.WriteAllText(AppSettingsFilePath, JsonSerializer.Serialize(settings, SettingsJsonOptions));
+        }
+        catch
+        {
+            // Settings persistence should never block the flashing workflow.
+        }
+    }
+
+    private void ImportBuiltinConfiguration()
+    {
+        try
+        {
+            CopyFileIfDifferent(_paths.DefaultProjectConfigPath, _paths.ProjectConfigPath);
+            CopyDirectoryIfDifferent(_paths.DefaultBootConfigDirectory, _paths.BootConfigDirectory);
+            CopyDirectoryIfDifferent(_paths.DefaultFormulaDatabaseDirectory, _paths.FormulaDatabaseDirectory);
+            Refresh();
+            SetStatus("内置配置已导入", DiagnosticStatusKind.Success);
+        }
+        catch (Exception ex)
+        {
+            SetStatus("导入内置配置失败", DiagnosticStatusKind.Error);
+            AppendLog($"Import builtin configuration failed: {ex.Message}");
+        }
+    }
+
+    private void ClearRuntimeConfiguration()
+    {
+        var result = MessageBox.Show(
+            "将清空当前项目配置和流程配置，是否继续？",
+            "清空全部配置",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+        if (result != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        try
+        {
+            if (File.Exists(_paths.ProjectConfigPath))
+            {
+                File.Delete(_paths.ProjectConfigPath);
+            }
+
+            if (Directory.Exists(_paths.BootConfigDirectory))
+            {
+                foreach (var file in Directory.EnumerateFiles(_paths.BootConfigDirectory, "*.json"))
+                {
+                    File.Delete(file);
+                }
+            }
+
+            Refresh();
+            SetStatus("运行配置已清空", DiagnosticStatusKind.Warning);
+        }
+        catch (Exception ex)
+        {
+            SetStatus("清空运行配置失败", DiagnosticStatusKind.Error);
+            AppendLog($"Clear runtime configuration failed: {ex.Message}");
+        }
+    }
+
+    private void ChooseFlowConfigDirectory()
+    {
+        BrowseFolder("选择流程配置目录", FlowConfigDirectory, path =>
+        {
+            _paths.BootConfigDirectoryOverride = path;
+            SaveAppSettings();
+            Refresh();
+        });
+    }
+
+    private void ChooseFormulaDatabaseDirectory()
+    {
+        BrowseFolder("选择配方数据库目录", FormulaDatabaseDirectory, path =>
+        {
+            _paths.FormulaDatabaseDirectoryOverride = path;
+            Directory.CreateDirectory(path);
+            SaveAppSettings();
+            Refresh();
+        });
+    }
+
+    private void ChooseProjectConfigFile()
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "选择项目配置文件",
+            Filter = "项目配置 (*.json)|*.json|所有文件 (*.*)|*.*",
+            CheckFileExists = true,
+            InitialDirectory = Directory.Exists(Path.GetDirectoryName(ProjectConfigPath))
+                ? Path.GetDirectoryName(ProjectConfigPath)
+                : _paths.DefaultConfigDirectory
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            _paths.ProjectConfigPathOverride = dialog.FileName;
+            SaveAppSettings();
+            Refresh();
+        }
+    }
+
+    private void BrowseFolder(string title, string currentPath, Action<string> setPath)
+    {
+        var initialDirectory = Directory.Exists(currentPath)
+            ? currentPath
+            : Directory.Exists(Path.GetDirectoryName(currentPath))
+                ? Path.GetDirectoryName(currentPath)
+                : _paths.DefaultConfigDirectory;
+
+        var dialog = new OpenFolderDialog
+        {
+            Title = title,
+            InitialDirectory = initialDirectory,
+            Multiselect = false
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            setPath(dialog.FolderName);
+        }
+    }
+
+    private void OpenPathLocation(string path)
+    {
+        try
+        {
+            var resolved = ResolveRuntimePath(path);
+            var directory = Directory.Exists(resolved) ? resolved : Path.GetDirectoryName(resolved);
+            if (string.IsNullOrWhiteSpace(directory) || !Directory.Exists(directory))
+            {
+                MessageBox.Show("路径不存在。", "打开路径", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo("explorer.exe", $"\"{directory}\"")
+            {
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            SetStatus("打开路径失败", DiagnosticStatusKind.Error);
+            AppendLog($"Open path failed: {ex.Message}");
+        }
+    }
+
+    private static void ApplyNightMode(bool enabled)
+    {
+        if (Application.Current is null)
+        {
+            return;
+        }
+
+        var palette = enabled
+            ? new Dictionary<string, string>
+            {
+                ["AppBackgroundBrush"] = "#0F172A",
+                ["PanelBrush"] = "#111827",
+                ["SurfaceBrush"] = "#1F2937",
+                ["CardBorderBrush"] = "#334155",
+                ["DividerBrush"] = "#334155",
+                ["InputBackgroundBrush"] = "#111827",
+                ["InputBorderBrush"] = "#475569",
+                ["TextBrush"] = "#E5E7EB",
+                ["CardTitleTextBrush"] = "#F1F5F9",
+                ["BodyTextBrush"] = "#CBD5E1",
+                ["LabelTextBrush"] = "#94A3B8",
+                ["SubtleTextBrush"] = "#94A3B8",
+                ["DisabledTextBrush"] = "#64748B",
+                ["IconDefaultBrush"] = "#94A3B8",
+                ["IconPrimaryBrush"] = "#60A5FA",
+                ["IconSuccessBrush"] = "#22C55E",
+                ["IconWarningBrush"] = "#F59E0B",
+                ["IconErrorBrush"] = "#F87171",
+                ["IconMutedBrush"] = "#64748B",
+                ["NeutralSoftBrush"] = "#1F2937",
+                ["TableHeaderBrush"] = "#1F2937",
+                ["TableAltRowBrush"] = "#111827",
+                ["ProgressTrackBrush"] = "#334155"
+            }
+            : new Dictionary<string, string>
+            {
+                ["AppBackgroundBrush"] = "#F6F8FB",
+                ["PanelBrush"] = "#FFFFFF",
+                ["SurfaceBrush"] = "#F8FAFC",
+                ["CardBorderBrush"] = "#E5EAF1",
+                ["DividerBrush"] = "#E5EAF1",
+                ["InputBackgroundBrush"] = "#FFFFFF",
+                ["InputBorderBrush"] = "#D7DEE8",
+                ["TextBrush"] = "#334155",
+                ["CardTitleTextBrush"] = "#3B4A5F",
+                ["BodyTextBrush"] = "#475569",
+                ["LabelTextBrush"] = "#64748B",
+                ["SubtleTextBrush"] = "#8A97A8",
+                ["DisabledTextBrush"] = "#B6C0CC",
+                ["IconDefaultBrush"] = "#64748B",
+                ["IconPrimaryBrush"] = "#2563EB",
+                ["IconSuccessBrush"] = "#16A34A",
+                ["IconWarningBrush"] = "#D97706",
+                ["IconErrorBrush"] = "#DC2626",
+                ["IconMutedBrush"] = "#94A3B8",
+                ["NeutralSoftBrush"] = "#F6F8FB",
+                ["TableHeaderBrush"] = "#F8FAFC",
+                ["TableAltRowBrush"] = "#F8FAFC",
+                ["ProgressTrackBrush"] = "#E5EAF1"
+            };
+
+        foreach (var (key, value) in palette)
+        {
+            Application.Current.Resources[key] = new SolidColorBrush(ToColor(value));
+        }
+    }
+
+    private static Color ToColor(string value)
+    {
+        return (Color?)ColorConverter.ConvertFromString(value) ?? Colors.Transparent;
     }
 
     private void LoadAlgorithmCatalog()
@@ -451,12 +916,12 @@ public sealed class MainViewModel : ObservableObject
             {
                 DeviceType = SelectedDeviceType,
                 BaudRate = HexUtil.ParseBaudRate(SelectedBaudRate),
-                Channel = 0
+                Channel = uint.TryParse(SelectedCanChannel, out var channel) ? channel : 0
             }, cancellationToken);
 
             IsConnected = true;
             SetStatus("CAN connected", DiagnosticStatusKind.Success);
-            AppendLog($"CAN connected: {SelectedDeviceType}, {SelectedBaudRate}");
+            AppendLog($"CAN connected: {SelectedDeviceType}, {SelectedBaudRate}, channel={SelectedCanChannel}");
         }
         catch (Exception ex)
         {
@@ -931,14 +1396,16 @@ public sealed class MainViewModel : ObservableObject
 
     private void AppendLog(string message)
     {
+        var line = $"[{DateTime.Now:HH:mm:ss}] {message}";
         RunOnUi(() =>
         {
-            LogLines.Add($"[{DateTime.Now:HH:mm:ss}] {message}");
+            LogLines.Add(line);
             while (LogLines.Count > 1000)
             {
                 LogLines.RemoveAt(0);
             }
         });
+        WriteLogLine(line);
     }
 
     private void SetStatus(string text, DiagnosticStatusKind kind)
@@ -1003,6 +1470,70 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
+    private void WriteLogLine(string line)
+    {
+        if (!LogFileEnabled || string.IsNullOrWhiteSpace(LogFilePath))
+        {
+            return;
+        }
+
+        try
+        {
+            var path = ResolveRuntimePath(LogFilePath);
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.AppendAllText(path, line + Environment.NewLine);
+        }
+        catch
+        {
+            // The in-memory log remains authoritative if file logging is unavailable.
+        }
+    }
+
+    private string ResolveRuntimePath(string path)
+    {
+        return Path.IsPathRooted(path)
+            ? path
+            : Path.Combine(_paths.RootDirectory, path);
+    }
+
+    private static void CopyFileIfDifferent(string sourcePath, string destinationPath)
+    {
+        if (!File.Exists(sourcePath) || string.Equals(
+                Path.GetFullPath(sourcePath),
+                Path.GetFullPath(destinationPath),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+        File.Copy(sourcePath, destinationPath, true);
+    }
+
+    private static void CopyDirectoryIfDifferent(string sourceDirectory, string destinationDirectory)
+    {
+        if (!Directory.Exists(sourceDirectory) || string.Equals(
+                Path.GetFullPath(sourceDirectory),
+                Path.GetFullPath(destinationDirectory),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        foreach (var sourceFile in Directory.EnumerateFiles(sourceDirectory, "*.*", SearchOption.AllDirectories))
+        {
+            var relativePath = Path.GetRelativePath(sourceDirectory, sourceFile);
+            var destinationPath = Path.Combine(destinationDirectory, relativePath);
+            Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+            File.Copy(sourceFile, destinationPath, true);
+        }
+    }
+
+    private static string? EmptyToNull(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value;
+    }
+
     private void RaiseCommandStates()
     {
         ConnectCommand.RaiseCanExecuteChanged();
@@ -1025,5 +1556,21 @@ public sealed class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(DeviceStatusKind));
         OnPropertyChanged(nameof(DeviceStatusIcon));
         OnPropertyChanged(nameof(ConnectionSummaryText));
+    }
+
+    private sealed class AppSettingsSnapshot
+    {
+        public bool NightModeEnabled { get; set; }
+        public bool KeepRunningInTray { get; set; }
+        public bool AutoFlashEnabled { get; set; }
+        public bool AutoSearchBaudRate { get; set; } = true;
+        public bool LogFileEnabled { get; set; } = true;
+        public string? LogFilePath { get; set; }
+        public string? SelectedDeviceType { get; set; }
+        public string? SelectedBaudRate { get; set; }
+        public string? SelectedCanChannel { get; set; }
+        public string? ProjectConfigPath { get; set; }
+        public string? FlowConfigDirectory { get; set; }
+        public string? FormulaDatabaseDirectory { get; set; }
     }
 }

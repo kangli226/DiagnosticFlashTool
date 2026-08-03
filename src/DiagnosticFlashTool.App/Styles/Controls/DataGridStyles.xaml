@@ -27,7 +27,7 @@
 
     <Style TargetType="DataGridColumnHeader">
         <Setter Property="Background" Value="{StaticResource TableHeaderBrush}" />
-        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource CardTitleTextBrush}" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />
@@ -39,12 +39,12 @@
     <Style TargetType="DataGridCell">
         <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
         <Setter Property="BorderThickness" Value="0,0,0,1" />
-        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource BodyTextBrush}" />
         <Setter Property="Padding" Value="10,0" />
         <Style.Triggers>
             <Trigger Property="IsSelected" Value="True">
                 <Setter Property="Background" Value="{StaticResource PrimarySoftBrush}" />
-                <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource BodyTextBrush}" />
             </Trigger>
         </Style.Triggers>
     </Style>

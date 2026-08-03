@@ -89,7 +89,7 @@
 
                             <Grid Grid.Row="0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="84" />
+                                    <ColumnDefinition Width="120" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="波特率：" Style="{StaticResource FieldLabelStyle}" />
@@ -101,7 +101,7 @@
 
                             <Grid Grid.Row="2">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="84" />
+                                    <ColumnDefinition Width="120" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
@@ -131,15 +131,21 @@
                             </Grid>
                         </Grid>
 
-                        <Grid Grid.Row="2" Margin="84,0,0,0">
+                        <Grid Grid.Row="2">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
-                                <RowDefinition Height="8" />
+                                <RowDefinition Height="10" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="10" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="10" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="10" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="1*" />
-                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
 
                             <TextBlock Grid.Row="0"
@@ -149,28 +155,45 @@
                                        FontWeight="SemiBold"
                                        Foreground="{StaticResource TextBrush}" />
 
-                            <StackPanel Grid.Row="2" Grid.Column="0">
-                                <TextBlock Text="设备类型"
-                                           FontSize="12"
-                                           Foreground="{StaticResource SubtleTextBrush}" />
-                                <TextBlock Text="{Binding SelectedDeviceType}"
-                                           Margin="0,3,0,0"
-                                           FontSize="13"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextBrush}"
-                                           TextTrimming="CharacterEllipsis" />
-                            </StackPanel>
+                            <TextBlock Grid.Row="2"
+                                       Grid.Column="0"
+                                       Text="设备类型"
+                                       Style="{StaticResource ConfigLabelTextStyle}"
+                                       Margin="0,0,16,0" />
+                            <TextBlock Grid.Row="2"
+                                       Grid.Column="1"
+                                       Text="{Binding SelectedDeviceType}"
+                                       Style="{StaticResource ConfigValueTextStyle}" />
 
-                            <StackPanel Grid.Row="2" Grid.Column="1">
-                                <TextBlock Text="波特率"
-                                           FontSize="12"
-                                           Foreground="{StaticResource SubtleTextBrush}" />
-                                <TextBlock Text="{Binding SelectedBaudRate}"
-                                           Margin="0,3,0,0"
-                                           FontSize="13"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextBrush}" />
-                            </StackPanel>
+                            <TextBlock Grid.Row="4"
+                                       Grid.Column="0"
+                                       Text="波特率"
+                                       Style="{StaticResource ConfigLabelTextStyle}"
+                                       Margin="0,0,16,0" />
+                            <TextBlock Grid.Row="4"
+                                       Grid.Column="1"
+                                       Text="{Binding SelectedBaudRate}"
+                                       Style="{StaticResource ConfigValueTextStyle}" />
+
+                            <TextBlock Grid.Row="6"
+                                       Grid.Column="0"
+                                       Text="通信协议"
+                                       Style="{StaticResource ConfigLabelTextStyle}"
+                                       Margin="0,0,16,0" />
+                            <TextBlock Grid.Row="6"
+                                       Grid.Column="1"
+                                       Text="CAN"
+                                       Style="{StaticResource ConfigValueTextStyle}" />
+
+                            <TextBlock Grid.Row="8"
+                                       Grid.Column="0"
+                                       Text="监视器"
+                                       Style="{StaticResource ConfigLabelTextStyle}"
+                                       Margin="0,0,16,0" />
+                            <TextBlock Grid.Row="8"
+                                       Grid.Column="1"
+                                       Text="BTMS"
+                                       Style="{StaticResource ConfigValueTextStyle}" />
                         </Grid>
                     </Grid>
                 </Grid>

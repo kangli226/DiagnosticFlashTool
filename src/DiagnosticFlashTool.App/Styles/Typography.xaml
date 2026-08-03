@@ -5,7 +5,28 @@
     </ResourceDictionary.MergedDictionaries>
 
     <Style TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource BodyTextBrush}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="ValueCodeTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="Segoe UI, Inter, PingFang SC, Microsoft YaHei" />
+        <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
+        <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        <Setter Property="LineHeight" Value="19.6" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style x:Key="ConfigLabelTextStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource LabelTextBrush}" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+
+    <Style x:Key="ConfigValueTextStyle" TargetType="TextBlock" BasedOn="{StaticResource ValueCodeTextStyle}">
         <Setter Property="FontSize" Value="13" />
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>

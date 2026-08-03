@@ -62,7 +62,7 @@
                                                      Kind="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"
                                                      Width="18"
                                                      Height="18"
-                                                     Foreground="{Binding Foreground, RelativeSource={RelativeSource TemplatedParent}}"
+                                                     Foreground="{StaticResource SidebarTextBrush}"
                                                      HorizontalAlignment="Center"
                                                      VerticalAlignment="Center" />
 
@@ -79,17 +79,17 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="NavBorder" Property="Background" Value="{StaticResource SidebarHoverBrush}" />
-                            <Setter TargetName="NavIcon" Property="Foreground" Value="{StaticResource InverseTextBrush}" />
+                            <Setter TargetName="NavIcon" Property="Foreground" Value="{StaticResource SidebarTextBrush}" />
                             <Setter TargetName="NavText" Property="Foreground" Value="{StaticResource InverseTextBrush}" />
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="NavBorder" Property="Background" Value="{StaticResource PrimaryBrush}" />
-                            <Setter TargetName="ActiveRail" Property="Background" Value="{StaticResource InverseTextBrush}" />
+                            <Setter TargetName="NavBorder" Property="Background" Value="{StaticResource SidebarActiveBrush}" />
+                            <Setter TargetName="ActiveRail" Property="Background" Value="{StaticResource SidebarActiveRailBrush}" />
                             <Setter TargetName="NavIcon" Property="Foreground" Value="{StaticResource InverseTextBrush}" />
                             <Setter TargetName="NavText" Property="Foreground" Value="{StaticResource InverseTextBrush}" />
                         </Trigger>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                            <Setter TargetName="ActiveRail" Property="Background" Value="{StaticResource PrimaryActiveBrush}" />
+                            <Setter TargetName="ActiveRail" Property="Background" Value="{StaticResource SidebarActiveRailBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

@@ -1,0 +1,12 @@
+global using Application = System.Windows.Application;
+global using Color = System.Windows.Media.Color;
+global using ColorConverter = System.Windows.Media.ColorConverter;
+global using Key = System.Windows.Input.Key;
+global using KeyEventArgs = System.Windows.Input.KeyEventArgs;
+global using MessageBox = System.Windows.MessageBox;
+global using MessageBoxButton = System.Windows.MessageBoxButton;
+global using MessageBoxImage = System.Windows.MessageBoxImage;
+global using MessageBoxResult = System.Windows.MessageBoxResult;
+global using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
+global using RadioButton = System.Windows.Controls.RadioButton;
+global using UserControl = System.Windows.Controls.UserControl;

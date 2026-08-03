@@ -93,47 +93,6 @@
         </Style.Triggers>
     </Style>
 
-    <Style x:Key="StatusIconBorderStyle" TargetType="Border">
-        <Setter Property="BorderBrush" Value="{StaticResource StatusNeutralBrush}" />
-        <Style.Triggers>
-            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="{x:Static vm:DiagnosticStatusKind.Success}">
-                <Setter Property="BorderBrush" Value="{StaticResource StatusSuccessBrush}" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="{x:Static vm:DiagnosticStatusKind.Running}">
-                <Setter Property="BorderBrush" Value="{StaticResource StatusRunningBrush}" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="{x:Static vm:DiagnosticStatusKind.Warning}">
-                <Setter Property="BorderBrush" Value="{StaticResource StatusWarningBrush}" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="{x:Static vm:DiagnosticStatusKind.Error}">
-                <Setter Property="BorderBrush" Value="{StaticResource StatusErrorBrush}" />
-            </DataTrigger>
-        </Style.Triggers>
-    </Style>
-
-    <Style x:Key="StatusIconTextStyle" TargetType="TextBlock">
-        <Setter Property="Foreground" Value="{StaticResource StatusNeutralBrush}" />
-        <Setter Property="FontWeight" Value="Bold" />
-        <Setter Property="FontSize" Value="16" />
-        <Setter Property="HorizontalAlignment" Value="Center" />
-        <Setter Property="VerticalAlignment" Value="Center" />
-        <Setter Property="Margin" Value="0,-3,0,0" />
-        <Style.Triggers>
-            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Border}}" Value="{x:Static vm:DiagnosticStatusKind.Success}">
-                <Setter Property="Foreground" Value="{StaticResource StatusSuccessBrush}" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Border}}" Value="{x:Static vm:DiagnosticStatusKind.Running}">
-                <Setter Property="Foreground" Value="{StaticResource StatusRunningBrush}" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Border}}" Value="{x:Static vm:DiagnosticStatusKind.Warning}">
-                <Setter Property="Foreground" Value="{StaticResource StatusWarningBrush}" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Border}}" Value="{x:Static vm:DiagnosticStatusKind.Error}">
-                <Setter Property="Foreground" Value="{StaticResource StatusErrorBrush}" />
-            </DataTrigger>
-        </Style.Triggers>
-    </Style>
-
     <Style x:Key="StatusCardPackIconStyle" TargetType="{x:Type materialDesign:PackIcon}">
         <Setter Property="Width" Value="28" />
         <Setter Property="Height" Value="28" />
@@ -156,11 +115,4 @@
         </Style.Triggers>
     </Style>
 
-    <Style x:Key="StatusCardDetailTextStyle" TargetType="TextBlock">
-        <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
-        <Setter Property="FontSize" Value="12" />
-        <Setter Property="HorizontalAlignment" Value="Center" />
-        <Setter Property="Margin" Value="0,6,0,0" />
-        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-    </Style>
 </ResourceDictionary>

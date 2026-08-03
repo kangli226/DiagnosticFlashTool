@@ -23,7 +23,7 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="4">
+                            CornerRadius="6">
                         <ContentPresenter HorizontalAlignment="Center"
                                           VerticalAlignment="Center"
                                           Margin="{TemplateBinding Padding}"
@@ -35,6 +35,9 @@
     </Style>
 
     <Style x:Key="Button.Normal" TargetType="Button" BasedOn="{StaticResource Button.Base}">
+        <Setter Property="Background" Value="{StaticResource PanelBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource PrimarySoftBorderBrush}" />
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="{StaticResource PrimarySoftBrush}" />
@@ -135,7 +138,7 @@
         <Setter Property="Margin" Value="0" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource IconDefaultBrush}" />
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="{StaticResource PrimarySoftBrush}" />
@@ -166,7 +169,7 @@
     </Style>
 
     <Style x:Key="Button.PackIcon.Accent" TargetType="{x:Type materialDesign:PackIcon}" BasedOn="{StaticResource Button.PackIcon}">
-        <Setter Property="Foreground" Value="{StaticResource BrandAccentBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource IconPrimaryBrush}" />
     </Style>
 
     <Style x:Key="Button.PackIcon.Inverse" TargetType="{x:Type materialDesign:PackIcon}" BasedOn="{StaticResource Button.PackIcon}">
@@ -183,17 +186,6 @@
     <Style x:Key="Button.IconLabel.Inverse" TargetType="TextBlock" BasedOn="{StaticResource Button.IconLabel}">
         <Setter Property="Foreground" Value="{StaticResource InverseTextBrush}" />
     </Style>
-
-    <Style x:Key="BaseButtonStyle" TargetType="Button" BasedOn="{StaticResource Button.Base}" />
-
-    <Style x:Key="PrimaryOutlineButtonStyle" TargetType="Button" BasedOn="{StaticResource Button.Normal}">
-        <Setter Property="Width" Value="146" />
-        <Setter Property="BorderBrush" Value="{StaticResource PrimaryActiveBrush}" />
-        <Setter Property="Foreground" Value="{StaticResource PrimaryActiveBrush}" />
-        <Setter Property="FontWeight" Value="SemiBold" />
-    </Style>
-
-    <Style x:Key="PrimaryFilledButtonStyle" TargetType="Button" BasedOn="{StaticResource Button.Primary}" />
 
     <Style x:Key="BaseChromeButtonStyle" TargetType="Button" BasedOn="{StaticResource Button.Icon}">
         <Setter Property="Width" Value="46" />
