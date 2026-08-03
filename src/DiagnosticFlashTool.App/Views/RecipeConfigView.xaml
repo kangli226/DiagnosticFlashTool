@@ -8,7 +8,7 @@
         </Grid.RowDefinitions>
         <Border Grid.Row="0" Style="{StaticResource PageLeadStandardCardStyle}">
             <DockPanel>
-                <TextBlock Text="配方配置" FontSize="18" FontWeight="Bold" DockPanel.Dock="Left" />
+                <TextBlock Text="配方配置" FontSize="18" FontWeight="SemiBold" DockPanel.Dock="Left" />
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Content="Add" Command="{Binding AddProjectCommand}" Width="80" Style="{StaticResource Button.ToolBar}" />
                     <Button Content="Delete" Command="{Binding DeleteProjectCommand}" Width="80" Style="{StaticResource Button.Danger}" />

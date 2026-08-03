@@ -42,7 +42,6 @@
                                Tag="{Binding DeviceStatusKind}"
                                Style="{StaticResource StatusValueTextStyle}"
                                FontSize="22"
-                               FontWeight="Bold"
                                Margin="0,10,0,0" />
                     <TextBlock Text="{Binding ConnectionText}" Foreground="{StaticResource BodyTextBrush}" Margin="0,6,0,0" />
                 </StackPanel>
@@ -55,7 +54,6 @@
                                Tag="{Binding DownloadStatusKind}"
                                Style="{StaticResource StatusValueTextStyle}"
                                FontSize="22"
-                               FontWeight="Bold"
                                Margin="0,10,0,0" />
                     <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource BodyTextBrush}" Margin="0,6,0,0" />
                 </StackPanel>
@@ -70,7 +68,7 @@
                                      Value="{Binding Progress}"
                                      Style="{StaticResource SoftProgressBarStyle}" />
                         <TextBlock Text="{Binding ProgressText}"
-                                   FontWeight="Bold"
+                                   FontWeight="SemiBold"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center" />
                     </Grid>

@@ -19,7 +19,7 @@
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
                     <TextBlock Text="功能检测"
                                FontSize="22"
-                               FontWeight="Bold"
+                               FontWeight="SemiBold"
                                Foreground="{StaticResource TextBrush}" />
                     <TextBlock Text="加载配方并运行检测，结果如下表所示"
                                FontSize="13"

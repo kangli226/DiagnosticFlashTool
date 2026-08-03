@@ -6,7 +6,7 @@
             <DockPanel>
                 <DockPanel DockPanel.Dock="Top" Margin="{StaticResource PageContentBottomGap}">
                     <StackPanel DockPanel.Dock="Left">
-                        <TextBlock Text="日志" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+                        <TextBlock Text="日志" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" />
                         <TextBlock Text="{Binding ConfigRootText}" Foreground="{StaticResource SubtleTextBrush}" Margin="0,4,0,0" />
                     </StackPanel>
                     <Button Content="Clear" Command="{Binding ClearLogCommand}" DockPanel.Dock="Right" Width="90" Style="{StaticResource Button.Danger}" />

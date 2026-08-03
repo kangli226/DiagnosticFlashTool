@@ -21,6 +21,7 @@
 
     <Style x:Key="ConfigLabelTextStyle" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{StaticResource LabelTextBrush}" />
+        <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="HorizontalAlignment" Value="Right" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="FontSize" Value="12" />

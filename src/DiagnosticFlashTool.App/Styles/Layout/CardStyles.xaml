@@ -57,6 +57,7 @@
 
     <Style x:Key="FieldLabelStyle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="Foreground" Value="{StaticResource LabelTextBrush}" />
         <Setter Property="HorizontalAlignment" Value="Right" />
         <Setter Property="VerticalAlignment" Value="Center" />

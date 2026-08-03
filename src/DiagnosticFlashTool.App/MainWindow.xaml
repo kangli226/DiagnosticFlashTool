@@ -46,10 +46,10 @@
                             Margin="16,0,0,0">
                     <Border Width="28"
                             Height="28"
-                            Background="{StaticResource PrimaryBrush}"
+                            Background="{StaticResource BrandNavigationBrush}"
                             CornerRadius="7">
                         <TextBlock Text="B"
-                                   Foreground="White"
+                                   Foreground="{StaticResource InverseTextBrush}"
                                    FontSize="14"
                                    FontWeight="Bold"
                                    HorizontalAlignment="Center"
@@ -229,8 +229,8 @@
                            Foreground="{StaticResource LabelTextBrush}" />
                 <TextBlock Text="{Binding StatusBarContextText}"
                            FontSize="13"
-                           FontWeight="SemiBold"
-                           Foreground="{StaticResource TextBrush}" />
+                           FontWeight="Normal"
+                           Foreground="{StaticResource BodyTextBrush}" />
             </StackPanel>
         </Border>
     </Grid>

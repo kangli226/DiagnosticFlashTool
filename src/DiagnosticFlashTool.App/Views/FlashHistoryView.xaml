@@ -10,7 +10,7 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel Grid.Row="0" Margin="{StaticResource PageContentBottomGap}">
-                    <TextBlock Text="历史记录" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+                    <TextBlock Text="历史记录" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" />
                     <TextBlock Text="当前版本暂未接入刷写历史持久化，刷写过程与结果可先在系统日志中追溯。"
                                Foreground="{StaticResource SubtleTextBrush}"
                                Margin="0,4,0,0" />
@@ -25,7 +25,7 @@
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                         <TextBlock Text="暂无历史记录"
                                    FontSize="22"
-                                   FontWeight="Bold"
+                                   FontWeight="SemiBold"
                                    HorizontalAlignment="Center" />
                         <TextBlock Text="完成刷写历史存储后，这里将展示项目、文件、结果、耗时与操作时间。"
                                    Foreground="{StaticResource SubtleTextBrush}"

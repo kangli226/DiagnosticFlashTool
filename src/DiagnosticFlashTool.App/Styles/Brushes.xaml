@@ -17,6 +17,7 @@
     <SolidColorBrush x:Key="PrimaryStrongBrush" Color="{StaticResource Color.Primary.Pressed}" />
     <SolidColorBrush x:Key="PrimarySoftBrush" Color="{StaticResource Color.Primary.Soft}" />
     <SolidColorBrush x:Key="PrimaryPressedBrush" Color="{StaticResource Color.Primary.SoftPressed}" />
+    <SolidColorBrush x:Key="BrandNavigationBrush" Color="{StaticResource Color.Brand.Navigation}" />
     <SolidColorBrush x:Key="TextBrush" Color="{StaticResource Color.Text.Primary}" />
     <SolidColorBrush x:Key="CardTitleTextBrush" Color="{StaticResource Color.Text.CardTitle}" />
     <SolidColorBrush x:Key="BodyTextBrush" Color="{StaticResource Color.Text.Secondary}" />
@@ -34,6 +35,7 @@
     <SolidColorBrush x:Key="SidebarHoverBrush" Color="{StaticResource Color.Sidebar.Hover}" />
     <SolidColorBrush x:Key="SidebarActiveBrush" Color="{StaticResource Color.Sidebar.Active}" />
     <SolidColorBrush x:Key="SidebarActiveRailBrush" Color="{StaticResource Color.Sidebar.ActiveRail}" />
+    <SolidColorBrush x:Key="SidebarActiveIconBrush" Color="{StaticResource Color.Sidebar.IconActive}" />
     <SolidColorBrush x:Key="SidebarTextBrush" Color="{StaticResource Color.Sidebar.Text}" />
     <SolidColorBrush x:Key="SidebarMutedTextBrush" Color="{StaticResource Color.Sidebar.TextMuted}" />
     <SolidColorBrush x:Key="TableHeaderBrush" Color="{StaticResource Color.Table.Header}" />

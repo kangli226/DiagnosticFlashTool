@@ -25,7 +25,7 @@
         <Setter Property="Margin" Value="0,14,0,4" />
         <Setter Property="Padding" Value="22,0,16,0" />
         <Setter Property="FontSize" Value="13" />
-        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="Foreground" Value="{StaticResource SidebarMutedTextBrush}" />
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
@@ -38,6 +38,7 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{StaticResource SidebarTextBrush}" />
         <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="GroupName" Value="ShellNavigation" />
         <Setter Property="Template">
@@ -85,8 +86,9 @@
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="NavBorder" Property="Background" Value="{StaticResource SidebarActiveBrush}" />
                             <Setter TargetName="ActiveRail" Property="Background" Value="{StaticResource SidebarActiveRailBrush}" />
-                            <Setter TargetName="NavIcon" Property="Foreground" Value="{StaticResource InverseTextBrush}" />
+                            <Setter TargetName="NavIcon" Property="Foreground" Value="{StaticResource SidebarActiveIconBrush}" />
                             <Setter TargetName="NavText" Property="Foreground" Value="{StaticResource InverseTextBrush}" />
+                            <Setter TargetName="NavText" Property="FontWeight" Value="Medium" />
                         </Trigger>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
                             <Setter TargetName="ActiveRail" Property="Background" Value="{StaticResource SidebarActiveRailBrush}" />

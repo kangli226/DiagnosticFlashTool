@@ -30,19 +30,14 @@
                             Orientation="Horizontal"
                             VerticalAlignment="Center">
                     <Button Width="112"
-                            Style="{StaticResource Button.ToolBar}">
+                            Margin="0"
+                            Style="{StaticResource Button.ConnectionAction}">
                         <StackPanel Orientation="Horizontal">
-                            <Border Width="22"
-                                    Height="22"
-                                    CornerRadius="4"
-                                    Background="{StaticResource TextBrush}">
-                                <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.HelpCircleOutline}"
-                                                         Width="16"
-                                                         Height="16"
-                                                         Foreground="{StaticResource InverseTextBrush}"
-                                                         HorizontalAlignment="Center"
-                                                         VerticalAlignment="Center" />
-                            </Border>
+                            <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.HelpRhombusOutline}"
+                                                     Width="16"
+                                                     Height="16"
+                                                     Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                     VerticalAlignment="Center" />
                             <TextBlock Text="&#x5E2E;&#x52A9;&#x6587;&#x6863;"
                                        Style="{StaticResource Button.IconLabel}" />
                         </StackPanel>
@@ -116,14 +111,14 @@
                                         Width="112"
                                         Style="{StaticResource Button.ConnectionAction}">
                                     <StackPanel Orientation="Horizontal">
-                                        <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.PowerPlug}"
+                                        <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.PowerPlugOutline}"
                                                                  Width="16"
                                                                  Height="16"
                                                                  Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                                                  VerticalAlignment="Center" />
                                         <TextBlock Text="{Binding ConnectionActionText}"
                                                    Margin="6,0,0,0"
-                                                   FontWeight="SemiBold"
+                                                   FontWeight="Medium"
                                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                                    VerticalAlignment="Center" />
                                     </StackPanel>
@@ -233,7 +228,7 @@
                                     Tag="{Binding DeviceStatusKind}"
                                     Style="{StaticResource StatusCardBorderStyle}">
                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.PowerPlug}"
+                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.PowerPlugOutline}"
                                                              Width="24"
                                                              Height="24"
                                                              Tag="{Binding DeviceStatusKind}"
@@ -254,7 +249,7 @@
                                     Tag="{Binding DownloadStatusKind}"
                                     Style="{StaticResource StatusCardBorderStyle}">
                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Flash}"
+                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.FlashOutline}"
                                                              Width="24"
                                                              Height="24"
                                                              Tag="{Binding DownloadStatusKind}"
@@ -285,7 +280,7 @@
                                            Margin="0,3,0,0"
                                            HorizontalAlignment="Center"
                                            FontSize="13"
-                                           FontWeight="SemiBold"
+                                           FontWeight="Medium"
                                            Foreground="{StaticResource TextBrush}"
                                            TextTrimming="CharacterEllipsis" />
                             </StackPanel>
@@ -299,7 +294,7 @@
                                            Margin="0,3,0,0"
                                            HorizontalAlignment="Center"
                                            FontSize="13"
-                                           FontWeight="SemiBold"
+                                           FontWeight="Medium"
                                            Foreground="{StaticResource TextBrush}"
                                            TextTrimming="CharacterEllipsis" />
                             </StackPanel>
@@ -328,7 +323,7 @@
                                  VerticalAlignment="Center" />
                     <TextBlock Text="{Binding ProgressText}"
                                FontSize="16"
-                               FontWeight="Bold"
+                               FontWeight="SemiBold"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                Foreground="{StaticResource TextBrush}" />

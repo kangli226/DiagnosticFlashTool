@@ -16,19 +16,19 @@
         <Style.Triggers>
             <DataTrigger Binding="{Binding ResultStatusKind}" Value="{x:Static vm:DiagnosticStatusKind.Success}">
                 <Setter Property="Foreground" Value="{StaticResource StatusSuccessBrush}" />
-                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="FontWeight" Value="Medium" />
             </DataTrigger>
             <DataTrigger Binding="{Binding ResultStatusKind}" Value="{x:Static vm:DiagnosticStatusKind.Error}">
                 <Setter Property="Foreground" Value="{StaticResource StatusErrorBrush}" />
-                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="FontWeight" Value="Medium" />
             </DataTrigger>
             <DataTrigger Binding="{Binding ResultStatusKind}" Value="{x:Static vm:DiagnosticStatusKind.Warning}">
                 <Setter Property="Foreground" Value="{StaticResource StatusWarningBrush}" />
-                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="FontWeight" Value="Medium" />
             </DataTrigger>
             <DataTrigger Binding="{Binding ResultStatusKind}" Value="{x:Static vm:DiagnosticStatusKind.Running}">
                 <Setter Property="Foreground" Value="{StaticResource StatusRunningBrush}" />
-                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="FontWeight" Value="Medium" />
             </DataTrigger>
         </Style.Triggers>
     </Style>

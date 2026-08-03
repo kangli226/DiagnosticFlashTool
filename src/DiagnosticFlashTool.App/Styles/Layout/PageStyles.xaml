@@ -51,7 +51,7 @@
 
     <Style x:Key="PageTitleTextStyle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="22" />
-        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
     </Style>
 

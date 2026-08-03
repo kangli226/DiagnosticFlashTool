@@ -18,7 +18,7 @@
         <Style x:Key="SettingsLabelTextStyle" TargetType="TextBlock">
             <Setter Property="Width" Value="120" />
             <Setter Property="FontSize" Value="14" />
-            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontWeight" Value="Normal" />
             <Setter Property="Foreground" Value="{StaticResource LabelTextBrush}" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
@@ -104,31 +104,39 @@
 
                         <Grid Style="{StaticResource SettingsRowStyle}">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="120" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="24" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="夜间模式" Style="{StaticResource SettingsLabelTextStyle}" />
-                            <ToggleButton Grid.Column="1"
-                                          IsChecked="{Binding NightModeEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          Style="{StaticResource SettingsSwitchStyle}" />
-                        </Grid>
 
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="120" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="12" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="后台运行" Style="{StaticResource SettingsLabelTextStyle}" />
-                            <ToggleButton Grid.Column="1"
-                                          IsChecked="{Binding KeepRunningInTray, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          Style="{StaticResource SettingsSwitchStyle}" />
-                            <TextBlock Grid.Column="3"
-                                       Text="关闭窗口时驻留到系统托盘"
-                                       Style="{StaticResource SettingsHintTextStyle}" />
+                            <Grid Grid.Column="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="120" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="夜间模式" Style="{StaticResource SettingsLabelTextStyle}" />
+                                <ToggleButton Grid.Column="1"
+                                              IsChecked="{Binding NightModeEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              Style="{StaticResource SettingsSwitchStyle}" />
+                            </Grid>
+
+                            <Grid Grid.Column="2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="120" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="后台运行" Style="{StaticResource SettingsLabelTextStyle}" />
+                                <ToggleButton Grid.Column="1"
+                                              IsChecked="{Binding KeepRunningInTray, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              Style="{StaticResource SettingsSwitchStyle}" />
+                                <TextBlock Grid.Column="3"
+                                           Text="关闭窗口时驻留到系统托盘"
+                                           Style="{StaticResource SettingsHintTextStyle}" />
+                            </Grid>
                         </Grid>
                     </StackPanel>
                 </Border>
@@ -478,7 +486,7 @@
                                    Grid.Column="3"
                                    Text="{Binding AdminModeStatusText}"
                                    FontSize="14"
-                                   FontWeight="SemiBold"
+                                   FontWeight="Medium"
                                    VerticalAlignment="Center">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">

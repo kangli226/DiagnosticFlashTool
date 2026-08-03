@@ -29,7 +29,7 @@
         <Setter Property="Background" Value="{StaticResource TableHeaderBrush}" />
         <Setter Property="Foreground" Value="{StaticResource CardTitleTextBrush}" />
         <Setter Property="FontSize" Value="13" />
-        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />
         <Setter Property="Padding" Value="10,0" />
         <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />

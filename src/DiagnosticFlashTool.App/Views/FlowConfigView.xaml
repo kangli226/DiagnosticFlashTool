@@ -45,7 +45,7 @@
         </Border>
         <Border Grid.Row="2" Style="{StaticResource PageTrailingCompactCardStyle}">
             <DockPanel>
-                <TextBlock DockPanel.Dock="Top" Text="Validation" FontSize="16" FontWeight="Bold" Margin="0,0,0,8" />
+                <TextBlock DockPanel.Dock="Top" Text="Validation" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8" />
                 <TextBox Text="{Binding FlowValidationText}" Style="{StaticResource LogTextBoxStyle}" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" />
             </DockPanel>
         </Border>

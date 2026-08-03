@@ -8,6 +8,7 @@
 
     <Style x:Key="StatusValueTextStyle" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{StaticResource StatusNeutralBrush}" />
+        <Setter Property="FontWeight" Value="Medium" />
         <Style.Triggers>
             <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="{x:Static vm:DiagnosticStatusKind.Success}">
                 <Setter Property="Foreground" Value="{StaticResource StatusSuccessBrush}" />
@@ -76,7 +77,7 @@
     <Style x:Key="StatusBadgeTextStyle" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{StaticResource StatusNeutralBrush}" />
         <Setter Property="FontSize" Value="13" />
-        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontWeight" Value="Medium" />
         <Style.Triggers>
             <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Border}}" Value="{x:Static vm:DiagnosticStatusKind.Success}">
                 <Setter Property="Foreground" Value="{StaticResource StatusSuccessBrush}" />
