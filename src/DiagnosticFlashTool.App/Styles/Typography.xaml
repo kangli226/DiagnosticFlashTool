@@ -19,6 +19,13 @@
         <Setter Property="TextTrimming" Value="CharacterEllipsis" />
     </Style>
 
+    <Style x:Key="HintTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{StaticResource SubtleTextBrush}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
     <Style x:Key="ConfigLabelTextStyle" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{StaticResource LabelTextBrush}" />
         <Setter Property="FontWeight" Value="Normal" />

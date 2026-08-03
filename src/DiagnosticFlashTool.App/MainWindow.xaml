@@ -109,7 +109,7 @@
                         <TextBlock Text="刷写中心"
                                    Style="{StaticResource ShellNavGroupTextStyle}" />
                         <RadioButton Content="固件刷写"
-                                     Tag="{x:Static materialDesign:PackIconKind.Flash}"
+                                     Tag="{x:Static materialDesign:PackIconKind.FlashOutline}"
                                      CommandParameter="0"
                                      IsChecked="True"
                                      Checked="ShellNav_Checked"
