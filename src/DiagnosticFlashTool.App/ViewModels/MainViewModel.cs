@@ -28,6 +28,149 @@ public sealed class MainViewModel : ObservableObject
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "DiagnosticFlashTool",
         "settings.json");
+    private static readonly string DefaultLogFilePath = Path.Combine("logs", "DiagnosticFlashTool.log");
+    private const int DefaultLogRetentionDays = 30;
+    private const int DefaultLogMaxFileSizeMb = 10;
+    private const int MinimumLogRetentionDays = 1;
+    private const int MaximumLogRetentionDays = 3650;
+    private const int MinimumLogMaxFileSizeMb = 1;
+    private const int MaximumLogMaxFileSizeMb = 1024;
+    private const int MaxLogEntries = 1000;
+    private const int MaxRecentLogEntries = 10;
+
+    private static readonly IReadOnlyDictionary<string, string> LightThemeBrushes = new Dictionary<string, string>
+    {
+        ["AppBackgroundBrush"] = "#F6F8FB",
+        ["PanelBrush"] = "#FFFFFF",
+        ["SurfaceBrush"] = "#F8FAFC",
+        ["CardBorderBrush"] = "#E5EAF1",
+        ["DividerBrush"] = "#E5EAF1",
+        ["InputBackgroundBrush"] = "#FFFFFF",
+        ["InputBorderBrush"] = "#D7DEE8",
+        ["PrimarySoftBorderBrush"] = "#B8CAE5",
+        ["PrimaryBrush"] = "#3568B8",
+        ["PrimaryActiveBrush"] = "#2E5B9E",
+        ["PrimaryStrongBrush"] = "#274D86",
+        ["PrimarySoftBrush"] = "#EDF3FC",
+        ["PrimaryPressedBrush"] = "#DCE7F6",
+        ["BrandNavigationBrush"] = "#3F67A3",
+        ["TextBrush"] = "#334155",
+        ["CardTitleTextBrush"] = "#3B4A5F",
+        ["BodyTextBrush"] = "#475569",
+        ["LabelTextBrush"] = "#64748B",
+        ["SubtleTextBrush"] = "#8A97A8",
+        ["DisabledTextBrush"] = "#B6C0CC",
+        ["InverseTextBrush"] = "#FFFFFF",
+        ["IconDefaultBrush"] = "#64748B",
+        ["IconPrimaryBrush"] = "#3568B8",
+        ["IconSuccessBrush"] = "#16A34A",
+        ["IconWarningBrush"] = "#D97706",
+        ["IconErrorBrush"] = "#DC2626",
+        ["IconMutedBrush"] = "#94A3B8",
+        ["SidebarBrush"] = "#182335",
+        ["SidebarHoverBrush"] = "#202D42",
+        ["SidebarActiveBrush"] = "#4D3F67A3",
+        ["SidebarActiveRailBrush"] = "#6F95C8",
+        ["SidebarActiveIconBrush"] = "#C6D5E8",
+        ["SidebarTextBrush"] = "#A8B3C4",
+        ["SidebarMutedTextBrush"] = "#7F8CA1",
+        ["TableHeaderBrush"] = "#F8FAFC",
+        ["TableAltRowBrush"] = "#F8FAFC",
+        ["ProgressTrackBrush"] = "#E5EAF1",
+        ["LogPanelBrush"] = "#0F172A",
+        ["LogHoverBrush"] = "#111827",
+        ["LogSelectedBrush"] = "#1E293B",
+        ["LogTextBrush"] = "#CBD5E1",
+        ["SuccessBrush"] = "#16A34A",
+        ["StatusSuccessBrush"] = "#16A34A",
+        ["StatusSuccessSoftBrush"] = "#DCFCE7",
+        ["StatusSuccessBorderBrush"] = "#86EFAC",
+        ["StatusRunningBrush"] = "#3568B8",
+        ["StatusRunningSoftBrush"] = "#EDF3FC",
+        ["StatusRunningBorderBrush"] = "#6F95C8",
+        ["StatusWarningBrush"] = "#D97706",
+        ["StatusWarningSoftBrush"] = "#FEF3C7",
+        ["StatusWarningBorderBrush"] = "#FCD34D",
+        ["StatusErrorBrush"] = "#DC2626",
+        ["StatusErrorSoftBrush"] = "#FEE2E2",
+        ["StatusErrorBorderBrush"] = "#FCA5A5",
+        ["StatusNeutralBrush"] = "#94A3B8",
+        ["StatusNeutralSoftBrush"] = "#F6F8FB",
+        ["StatusNeutralBorderBrush"] = "#D7DEE8",
+        ["DangerBrush"] = "#D97706",
+        ["DangerActiveBrush"] = "#B45309",
+        ["DangerPressedBrush"] = "#92400E",
+        ["DangerBorderBrush"] = "#FCD34D",
+        ["DangerTextBrush"] = "#1E293B",
+        ["NeutralSoftBrush"] = "#F6F8FB"
+    };
+
+    private static readonly IReadOnlyDictionary<string, string> DarkThemeBrushes = new Dictionary<string, string>
+    {
+        ["AppBackgroundBrush"] = "#0F172A",
+        ["PanelBrush"] = "#111827",
+        ["SurfaceBrush"] = "#1F2937",
+        ["CardBorderBrush"] = "#334155",
+        ["DividerBrush"] = "#334155",
+        ["InputBackgroundBrush"] = "#111827",
+        ["InputBorderBrush"] = "#475569",
+        ["PrimarySoftBorderBrush"] = "#2563EB",
+        ["PrimaryBrush"] = "#3B82F6",
+        ["PrimaryActiveBrush"] = "#60A5FA",
+        ["PrimaryStrongBrush"] = "#2563EB",
+        ["PrimarySoftBrush"] = "#1E3A5F",
+        ["PrimaryPressedBrush"] = "#1D4ED8",
+        ["BrandNavigationBrush"] = "#2563EB",
+        ["TextBrush"] = "#E5E7EB",
+        ["CardTitleTextBrush"] = "#F1F5F9",
+        ["BodyTextBrush"] = "#CBD5E1",
+        ["LabelTextBrush"] = "#94A3B8",
+        ["SubtleTextBrush"] = "#94A3B8",
+        ["DisabledTextBrush"] = "#64748B",
+        ["InverseTextBrush"] = "#FFFFFF",
+        ["IconDefaultBrush"] = "#94A3B8",
+        ["IconPrimaryBrush"] = "#93C5FD",
+        ["IconSuccessBrush"] = "#22C55E",
+        ["IconWarningBrush"] = "#F59E0B",
+        ["IconErrorBrush"] = "#F87171",
+        ["IconMutedBrush"] = "#64748B",
+        ["SidebarBrush"] = "#0B1220",
+        ["SidebarHoverBrush"] = "#1E293B",
+        ["SidebarActiveBrush"] = "#334155",
+        ["SidebarActiveRailBrush"] = "#60A5FA",
+        ["SidebarActiveIconBrush"] = "#BFDBFE",
+        ["SidebarTextBrush"] = "#CBD5E1",
+        ["SidebarMutedTextBrush"] = "#94A3B8",
+        ["TableHeaderBrush"] = "#1F2937",
+        ["TableAltRowBrush"] = "#111827",
+        ["ProgressTrackBrush"] = "#334155",
+        ["LogPanelBrush"] = "#020617",
+        ["LogHoverBrush"] = "#0F172A",
+        ["LogSelectedBrush"] = "#1E293B",
+        ["LogTextBrush"] = "#CBD5E1",
+        ["SuccessBrush"] = "#22C55E",
+        ["StatusSuccessBrush"] = "#22C55E",
+        ["StatusSuccessSoftBrush"] = "#052E16",
+        ["StatusSuccessBorderBrush"] = "#15803D",
+        ["StatusRunningBrush"] = "#60A5FA",
+        ["StatusRunningSoftBrush"] = "#172554",
+        ["StatusRunningBorderBrush"] = "#2563EB",
+        ["StatusWarningBrush"] = "#F59E0B",
+        ["StatusWarningSoftBrush"] = "#451A03",
+        ["StatusWarningBorderBrush"] = "#D97706",
+        ["StatusErrorBrush"] = "#F87171",
+        ["StatusErrorSoftBrush"] = "#450A0A",
+        ["StatusErrorBorderBrush"] = "#B91C1C",
+        ["StatusNeutralBrush"] = "#94A3B8",
+        ["StatusNeutralSoftBrush"] = "#1F2937",
+        ["StatusNeutralBorderBrush"] = "#334155",
+        ["DangerBrush"] = "#F59E0B",
+        ["DangerActiveBrush"] = "#D97706",
+        ["DangerPressedBrush"] = "#B45309",
+        ["DangerBorderBrush"] = "#FCD34D",
+        ["DangerTextBrush"] = "#111827",
+        ["NeutralSoftBrush"] = "#1F2937"
+    };
 
     private readonly AppConfigurationPaths _paths = new();
     private readonly JsonProjectConfigRepository _projectRepository;
@@ -48,22 +191,32 @@ public sealed class MainViewModel : ObservableObject
     private string _manualChannel = "0";
     private string _selectedFunctionCheckConfig = "mock";
     private string _selectedCanChannel = "0";
-    private string _logFilePath = Path.Combine("logs", "DiagnosticFlashTool.log");
+    private string _logFilePath = DefaultLogFilePath;
+    private string _selectedLogLevelFilter = "全部";
+    private string _selectedLogTimeRangeFilter = "全部";
+    private string _logSearchText = string.Empty;
     private bool _manualIsExtended = true;
     private bool _nightModeEnabled;
     private bool _keepRunningInTray;
     private bool _autoFlashEnabled;
     private bool _autoSearchBaudRate = true;
     private bool _logFileEnabled = true;
+    private bool _logAutoScrollEnabled = true;
     private bool _adminModeEnabled;
+    private bool _adminPasswordPromptVisible;
     private bool _isConnected;
     private bool _isBusy;
     private int _selectedShellIndex;
     private int _progress;
+    private int _logRetentionDays = DefaultLogRetentionDays;
+    private int _logMaxFileSizeMb = DefaultLogMaxFileSizeMb;
     private string _statusText = "Ready";
     private DiagnosticStatusKind _statusKind = DiagnosticStatusKind.Neutral;
     private DiagnosticStatusKind _downloadStatusKind = DiagnosticStatusKind.Neutral;
     private string _flowValidationText = "No flow loaded.";
+    private string _adminPassword = string.Empty;
+    private string _adminPasswordMessage = "请输入管理员密码，本次启动内有效。";
+    private SystemLogEntry? _latestLogEntry;
 
     public MainViewModel()
     {
@@ -79,7 +232,10 @@ public sealed class MainViewModel : ObservableObject
         BrowseDriverCommand = new RelayCommand(() => BrowseFirmware(path => DriverFilePath = path));
         BrowseApplicationCommand = new RelayCommand(() => BrowseFirmware(path => ApplicationFilePath = path));
         StartFlashCommand = new AsyncRelayCommand(StartFlashAsync, () => IsConnected && SelectedProject is not null && !IsBusy);
-        ClearLogCommand = new RelayCommand(() => LogLines.Clear());
+        RefreshLogCommand = new RelayCommand(ApplyLogFilters);
+        ClearLogCommand = new RelayCommand(ClearLogs);
+        OpenLogFileCommand = new RelayCommand(OpenLogFile);
+        ExportLogCommand = new RelayCommand(ExportLog);
         ClearFramesCommand = new RelayCommand(() => Frames.Clear());
         AddProjectCommand = new RelayCommand(AddProject);
         DeleteProjectCommand = new RelayCommand(DeleteSelectedProject, () => SelectedProject is not null);
@@ -102,7 +258,12 @@ public sealed class MainViewModel : ObservableObject
         OpenProjectConfigDirectoryCommand = new RelayCommand(() => OpenPathLocation(ProjectConfigPath));
         ChooseProjectConfigFileCommand = new RelayCommand(ChooseProjectConfigFile);
         OpenLogDirectoryCommand = new RelayCommand(() => OpenPathLocation(LogFilePath));
+        ChooseLogFileCommand = new RelayCommand(ChooseLogFile);
+        RestoreDefaultLogStorageCommand = new RelayCommand(RestoreDefaultLogStorage);
         OpenRuntimeLogPageCommand = new RelayCommand(() => SelectedShellIndex = 9);
+        ShowAdminPasswordCommand = new RelayCommand(ShowAdminPasswordPrompt);
+        SubmitAdminPasswordCommand = new RelayCommand(SubmitAdminPassword);
+        CancelAdminPasswordCommand = new RelayCommand(CancelAdminPasswordPrompt);
 
         LoadDefaultFunctionChecks();
         Refresh();
@@ -114,7 +275,11 @@ public sealed class MainViewModel : ObservableObject
     public ObservableCollection<string> BaudRates { get; } = ["250K", "500K", "1000K"];
     public ObservableCollection<string> CanChannels { get; } = ["0", "1"];
     public ObservableCollection<string> FunctionCheckConfigs { get; } = ["mock"];
-    public ObservableCollection<string> LogLines { get; } = [];
+    public ObservableCollection<string> LogLevelFilters { get; } = ["全部", "普通", "成功", "运行", "警告", "错误"];
+    public ObservableCollection<string> LogTimeRangeFilters { get; } = ["全部", "最近1小时", "今天", "最近24小时", "最近7天"];
+    public ObservableCollection<SystemLogEntry> LogEntries { get; } = [];
+    public ObservableCollection<SystemLogEntry> FilteredLogEntries { get; } = [];
+    public ObservableCollection<SystemLogEntry> RecentLogEntries { get; } = [];
     public ObservableCollection<CanFrameRow> Frames { get; } = [];
     public ObservableCollection<FlowStepEditorRow> FlowRows { get; } = [];
     public ObservableCollection<FunctionalCheckRow> FunctionalChecks { get; } = [];
@@ -127,7 +292,10 @@ public sealed class MainViewModel : ObservableObject
     public RelayCommand BrowseDriverCommand { get; }
     public RelayCommand BrowseApplicationCommand { get; }
     public AsyncRelayCommand StartFlashCommand { get; }
+    public RelayCommand RefreshLogCommand { get; }
     public RelayCommand ClearLogCommand { get; }
+    public RelayCommand OpenLogFileCommand { get; }
+    public RelayCommand ExportLogCommand { get; }
     public RelayCommand ClearFramesCommand { get; }
     public RelayCommand AddProjectCommand { get; }
     public RelayCommand DeleteProjectCommand { get; }
@@ -150,7 +318,12 @@ public sealed class MainViewModel : ObservableObject
     public RelayCommand OpenProjectConfigDirectoryCommand { get; }
     public RelayCommand ChooseProjectConfigFileCommand { get; }
     public RelayCommand OpenLogDirectoryCommand { get; }
+    public RelayCommand ChooseLogFileCommand { get; }
+    public RelayCommand RestoreDefaultLogStorageCommand { get; }
     public RelayCommand OpenRuntimeLogPageCommand { get; }
+    public RelayCommand ShowAdminPasswordCommand { get; }
+    public RelayCommand SubmitAdminPasswordCommand { get; }
+    public RelayCommand CancelAdminPasswordCommand { get; }
 
     public ProjectConfigEntry? SelectedProject
     {
@@ -288,11 +461,14 @@ public sealed class MainViewModel : ObservableObject
             if (SetProperty(ref _nightModeEnabled, value))
             {
                 ApplyNightMode(value);
+                OnPropertyChanged(nameof(PageModeStatusText));
                 SaveAppSettings();
                 AppendLog($"Night mode {(value ? "enabled" : "disabled")}.");
             }
         }
     }
+
+    public string PageModeStatusText => NightModeEnabled ? "深色页面已启用" : "浅色页面已启用";
 
     public bool KeepRunningInTray
     {
@@ -301,10 +477,16 @@ public sealed class MainViewModel : ObservableObject
         {
             if (SetProperty(ref _keepRunningInTray, value))
             {
+                OnPropertyChanged(nameof(KeepRunningInTrayStatusText));
                 SaveAppSettings();
+                AppendLog($"Run in background {(value ? "enabled" : "disabled")}.");
             }
         }
     }
+
+    public string KeepRunningInTrayStatusText => KeepRunningInTray
+        ? "关闭窗口时驻留到系统托盘"
+        : "关闭窗口时直接退出程序";
 
     public bool AutoFlashEnabled
     {
@@ -337,6 +519,8 @@ public sealed class MainViewModel : ObservableObject
         {
             if (SetProperty(ref _logFileEnabled, value))
             {
+                OnPropertyChanged(nameof(LogFileStatusText));
+                OnPropertyChanged(nameof(LogFileStatusKind));
                 SaveAppSettings();
             }
         }
@@ -348,6 +532,89 @@ public sealed class MainViewModel : ObservableObject
         set
         {
             if (SetProperty(ref _logFilePath, value))
+            {
+                OnPropertyChanged(nameof(LogFileStatusPathText));
+                SaveAppSettings();
+            }
+        }
+    }
+
+    public string LogFileStatusText => LogFileEnabled ? "文件日志：已开启" : "文件日志：未开启";
+
+    public DiagnosticStatusKind LogFileStatusKind => LogFileEnabled ? DiagnosticStatusKind.Success : DiagnosticStatusKind.Neutral;
+
+    public string LogFileStatusPathText => LogFilePath;
+
+    public string SelectedLogLevelFilter
+    {
+        get => _selectedLogLevelFilter;
+        set
+        {
+            if (SetProperty(ref _selectedLogLevelFilter, value))
+            {
+                ApplyLogFilters();
+            }
+        }
+    }
+
+    public string LogSearchText
+    {
+        get => _logSearchText;
+        set
+        {
+            if (SetProperty(ref _logSearchText, value))
+            {
+                ApplyLogFilters();
+            }
+        }
+    }
+
+    public string SelectedLogTimeRangeFilter
+    {
+        get => _selectedLogTimeRangeFilter;
+        set
+        {
+            if (SetProperty(ref _selectedLogTimeRangeFilter, value))
+            {
+                ApplyLogFilters();
+            }
+        }
+    }
+
+    public bool LogAutoScrollEnabled
+    {
+        get => _logAutoScrollEnabled;
+        set
+        {
+            if (SetProperty(ref _logAutoScrollEnabled, value))
+            {
+                SaveAppSettings();
+            }
+        }
+    }
+
+    public string LogFilterSummaryText => $"显示 {FilteredLogEntries.Count} / {LogEntries.Count} 条";
+
+    public int LogRetentionDays
+    {
+        get => _logRetentionDays;
+        set
+        {
+            var normalized = NormalizeLogRetentionDays(value);
+            if (SetProperty(ref _logRetentionDays, normalized))
+            {
+                SaveAppSettings();
+            }
+        }
+    }
+
+    public int LogMaxFileSizeMb
+    {
+        get => _logMaxFileSizeMb;
+        set
+        {
+            var normalized = NormalizeLogMaxFileSizeMb(value);
+            if (SetProperty(ref _logMaxFileSizeMb, normalized))
             {
                 SaveAppSettings();
             }
@@ -369,6 +636,24 @@ public sealed class MainViewModel : ObservableObject
     }
 
     public string AdminModeStatusText => AdminModeEnabled ? "已开启" : "关闭";
+
+    public bool AdminPasswordPromptVisible
+    {
+        get => _adminPasswordPromptVisible;
+        private set => SetProperty(ref _adminPasswordPromptVisible, value);
+    }
+
+    public string AdminPassword
+    {
+        get => _adminPassword;
+        set => SetProperty(ref _adminPassword, value);
+    }
+
+    public string AdminPasswordMessage
+    {
+        get => _adminPasswordMessage;
+        private set => SetProperty(ref _adminPasswordMessage, value);
+    }
 
     public int SelectedShellIndex
     {
@@ -538,6 +823,16 @@ public sealed class MainViewModel : ObservableObject
         _ => DatabaseStatusText
     };
 
+    public SystemLogEntry? LatestLogEntry
+    {
+        get => _latestLogEntry;
+        private set => SetProperty(ref _latestLogEntry, value);
+    }
+
+    public bool HasLogEntries => LogEntries.Count > 0;
+    public string LatestLogText => LatestLogEntry?.Text ?? "暂无日志";
+    public string LogEntryCountText => HasLogEntries ? $"已记录 {LogEntries.Count} 条" : "暂无日志";
+
     public string ConfigRootText => _paths.ConfigDirectory;
     public string FlowConfigDirectory => _paths.BootConfigDirectory;
     public string FormulaDatabaseDirectory => _paths.FormulaDatabaseDirectory;
@@ -560,6 +855,36 @@ public sealed class MainViewModel : ObservableObject
         SetStatus("管理员密码错误", DiagnosticStatusKind.Warning);
         AppendLog("Admin mode password rejected.");
         return false;
+    }
+
+    private void ShowAdminPasswordPrompt()
+    {
+        if (AdminModeEnabled)
+        {
+            return;
+        }
+
+        AdminPassword = string.Empty;
+        AdminPasswordMessage = "请输入管理员密码，本次启动内有效。";
+        AdminPasswordPromptVisible = true;
+    }
+
+    private void SubmitAdminPassword()
+    {
+        if (EnableAdminMode(AdminPassword))
+        {
+            CancelAdminPasswordPrompt();
+            return;
+        }
+
+        AdminPassword = string.Empty;
+        AdminPasswordMessage = "密码错误，请重新输入。";
+    }
+
+    private void CancelAdminPasswordPrompt()
+    {
+        AdminPassword = string.Empty;
+        AdminPasswordPromptVisible = false;
     }
 
     private void Refresh()
@@ -616,6 +941,9 @@ public sealed class MainViewModel : ObservableObject
             _logFilePath = string.IsNullOrWhiteSpace(settings.LogFilePath)
                 ? _logFilePath
                 : settings.LogFilePath;
+            _logRetentionDays = NormalizeLogRetentionDays(settings.LogRetentionDays);
+            _logMaxFileSizeMb = NormalizeLogMaxFileSizeMb(settings.LogMaxFileSizeMb);
+            _logAutoScrollEnabled = settings.LogAutoScrollEnabled;
             _selectedDeviceType = string.IsNullOrWhiteSpace(settings.SelectedDeviceType)
                 ? _selectedDeviceType
                 : settings.SelectedDeviceType;
@@ -649,6 +977,9 @@ public sealed class MainViewModel : ObservableObject
                 AutoSearchBaudRate = AutoSearchBaudRate,
                 LogFileEnabled = LogFileEnabled,
                 LogFilePath = LogFilePath,
+                LogRetentionDays = LogRetentionDays,
+                LogMaxFileSizeMb = LogMaxFileSizeMb,
+                LogAutoScrollEnabled = LogAutoScrollEnabled,
                 SelectedDeviceType = SelectedDeviceType,
                 SelectedBaudRate = SelectedBaudRate,
                 SelectedCanChannel = SelectedCanChannel,
@@ -780,6 +1111,100 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
+    private void ChooseLogFile()
+    {
+        var currentPath = ResolveRuntimePath(LogFilePath);
+        var currentDirectory = Path.GetDirectoryName(currentPath);
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "选择日志文件",
+            Filter = "日志文件 (*.log)|*.log|所有文件 (*.*)|*.*",
+            FileName = Path.GetFileName(currentPath),
+            DefaultExt = ".log",
+            AddExtension = true,
+            OverwritePrompt = false,
+            InitialDirectory = Directory.Exists(currentDirectory)
+                ? currentDirectory
+                : _paths.RootDirectory
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            LogFilePath = ToRuntimeRelativePath(dialog.FileName);
+        }
+    }
+
+    private void RestoreDefaultLogStorage()
+    {
+        LogFilePath = DefaultLogFilePath;
+        LogRetentionDays = DefaultLogRetentionDays;
+        LogMaxFileSizeMb = DefaultLogMaxFileSizeMb;
+    }
+
+    private void OpenLogFile()
+    {
+        try
+        {
+            var path = ResolveRuntimePath(LogFilePath);
+            if (!File.Exists(path))
+            {
+                MessageBox.Show("日志文件不存在。", "打开日志文件", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo(path)
+            {
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            SetStatus("打开日志文件失败", DiagnosticStatusKind.Error);
+            AppendLog($"Open log file failed: {ex.Message}");
+        }
+    }
+
+    private void ExportLog()
+    {
+        var logDirectory = Path.GetDirectoryName(ResolveRuntimePath(LogFilePath));
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "导出日志",
+            Filter = "日志文件 (*.log)|*.log|文本文件 (*.txt)|*.txt|所有文件 (*.*)|*.*",
+            FileName = $"DiagnosticFlashTool_{DateTime.Now:yyyyMMdd_HHmmss}.log",
+            DefaultExt = ".log",
+            AddExtension = true,
+            InitialDirectory = Directory.Exists(logDirectory)
+                ? logDirectory
+                : _paths.RootDirectory
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            File.WriteAllLines(dialog.FileName, FilteredLogEntries.Select(entry => entry.Text));
+            SetStatus("日志已导出", DiagnosticStatusKind.Success);
+        }
+        catch (Exception ex)
+        {
+            SetStatus("导出日志失败", DiagnosticStatusKind.Error);
+            AppendLog($"Export log failed: {ex.Message}");
+        }
+    }
+
+    private void ClearLogs()
+    {
+        LogEntries.Clear();
+        FilteredLogEntries.Clear();
+        RecentLogEntries.Clear();
+        LatestLogEntry = null;
+        RaiseLogSummaryProperties();
+    }
+
     private void OpenPathLocation(string path)
     {
         try
@@ -811,64 +1236,50 @@ public sealed class MainViewModel : ObservableObject
             return;
         }
 
-        var palette = enabled
-            ? new Dictionary<string, string>
-            {
-                ["AppBackgroundBrush"] = "#0F172A",
-                ["PanelBrush"] = "#111827",
-                ["SurfaceBrush"] = "#1F2937",
-                ["CardBorderBrush"] = "#334155",
-                ["DividerBrush"] = "#334155",
-                ["InputBackgroundBrush"] = "#111827",
-                ["InputBorderBrush"] = "#475569",
-                ["TextBrush"] = "#E5E7EB",
-                ["CardTitleTextBrush"] = "#F1F5F9",
-                ["BodyTextBrush"] = "#CBD5E1",
-                ["LabelTextBrush"] = "#94A3B8",
-                ["SubtleTextBrush"] = "#94A3B8",
-                ["DisabledTextBrush"] = "#64748B",
-                ["IconDefaultBrush"] = "#94A3B8",
-                ["IconPrimaryBrush"] = "#7EA2D2",
-                ["IconSuccessBrush"] = "#22C55E",
-                ["IconWarningBrush"] = "#F59E0B",
-                ["IconErrorBrush"] = "#F87171",
-                ["IconMutedBrush"] = "#64748B",
-                ["NeutralSoftBrush"] = "#1F2937",
-                ["TableHeaderBrush"] = "#1F2937",
-                ["TableAltRowBrush"] = "#111827",
-                ["ProgressTrackBrush"] = "#334155"
-            }
-            : new Dictionary<string, string>
-            {
-                ["AppBackgroundBrush"] = "#F6F8FB",
-                ["PanelBrush"] = "#FFFFFF",
-                ["SurfaceBrush"] = "#F8FAFC",
-                ["CardBorderBrush"] = "#E5EAF1",
-                ["DividerBrush"] = "#E5EAF1",
-                ["InputBackgroundBrush"] = "#FFFFFF",
-                ["InputBorderBrush"] = "#D7DEE8",
-                ["TextBrush"] = "#334155",
-                ["CardTitleTextBrush"] = "#3B4A5F",
-                ["BodyTextBrush"] = "#475569",
-                ["LabelTextBrush"] = "#64748B",
-                ["SubtleTextBrush"] = "#8A97A8",
-                ["DisabledTextBrush"] = "#B6C0CC",
-                ["IconDefaultBrush"] = "#64748B",
-                ["IconPrimaryBrush"] = "#3568B8",
-                ["IconSuccessBrush"] = "#16A34A",
-                ["IconWarningBrush"] = "#D97706",
-                ["IconErrorBrush"] = "#DC2626",
-                ["IconMutedBrush"] = "#94A3B8",
-                ["NeutralSoftBrush"] = "#F6F8FB",
-                ["TableHeaderBrush"] = "#F8FAFC",
-                ["TableAltRowBrush"] = "#F8FAFC",
-                ["ProgressTrackBrush"] = "#E5EAF1"
-            };
+        var palette = enabled ? DarkThemeBrushes : LightThemeBrushes;
 
         foreach (var (key, value) in palette)
         {
-            Application.Current.Resources[key] = new SolidColorBrush(ToColor(value));
+            var color = ToColor(value);
+            if (!TryUpdateBrushResource(Application.Current.Resources, key, color))
+            {
+                Application.Current.Resources[key] = new SolidColorBrush(color);
+            }
         }
+
+        foreach (Window window in Application.Current.Windows)
+        {
+            window.InvalidateVisual();
+        }
+    }
+
+    private static bool TryUpdateBrushResource(ResourceDictionary dictionary, string key, Color color)
+    {
+        var updated = false;
+
+        if (dictionary.Contains(key))
+        {
+            if (dictionary[key] is SolidColorBrush brush && !brush.IsFrozen)
+            {
+                brush.Color = color;
+            }
+            else
+            {
+                dictionary[key] = new SolidColorBrush(color);
+            }
+
+            updated = true;
+        }
+
+        foreach (var mergedDictionary in dictionary.MergedDictionaries)
+        {
+            if (TryUpdateBrushResource(mergedDictionary, key, color))
+            {
+                updated = true;
+            }
+        }
+
+        return updated;
     }
 
     private static Color ToColor(string value)
@@ -1396,16 +1807,62 @@ public sealed class MainViewModel : ObservableObject
 
     private void AppendLog(string message)
     {
-        var line = $"[{DateTime.Now:HH:mm:ss}] {message}";
+        var entry = new SystemLogEntry(DateTime.Now, ClassifyStatusText(message), message);
         RunOnUi(() =>
         {
-            LogLines.Add(line);
-            while (LogLines.Count > 1000)
+            LogEntries.Add(entry);
+            RecentLogEntries.Add(entry);
+            LatestLogEntry = entry;
+
+            while (LogEntries.Count > MaxLogEntries)
             {
-                LogLines.RemoveAt(0);
+                LogEntries.RemoveAt(0);
             }
+
+            while (RecentLogEntries.Count > MaxRecentLogEntries)
+            {
+                RecentLogEntries.RemoveAt(0);
+            }
+
+            ApplyLogFilters();
+            RaiseLogSummaryProperties();
         });
-        WriteLogLine(line);
+        WriteLogLine(entry.Text);
+    }
+
+    private void ApplyLogFilters()
+    {
+        FilteredLogEntries.Clear();
+        foreach (var entry in LogEntries.Where(LogEntryMatchesFilter))
+        {
+            FilteredLogEntries.Add(entry);
+        }
+
+        OnPropertyChanged(nameof(LogFilterSummaryText));
+    }
+
+    private bool LogEntryMatchesFilter(SystemLogEntry entry)
+    {
+        if (!string.Equals(SelectedLogLevelFilter, "全部", StringComparison.Ordinal)
+            && !string.Equals(entry.LevelText, SelectedLogLevelFilter, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(LogSearchText)
+            && !entry.Text.Contains(LogSearchText, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return SelectedLogTimeRangeFilter switch
+        {
+            "最近1小时" => entry.Timestamp >= DateTime.Now.AddHours(-1),
+            "今天" => entry.Timestamp.Date == DateTime.Today,
+            "最近24小时" => entry.Timestamp >= DateTime.Now.AddDays(-1),
+            "最近7天" => entry.Timestamp >= DateTime.Now.AddDays(-7),
+            _ => true
+        };
     }
 
     private void SetStatus(string text, DiagnosticStatusKind kind)
@@ -1480,8 +1937,16 @@ public sealed class MainViewModel : ObservableObject
         try
         {
             var path = ResolveRuntimePath(LogFilePath);
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            var directory = Path.GetDirectoryName(path);
+            if (string.IsNullOrWhiteSpace(directory))
+            {
+                return;
+            }
+
+            Directory.CreateDirectory(directory);
+            RotateLogFileIfNeeded(path);
             File.AppendAllText(path, line + Environment.NewLine);
+            CleanupExpiredLogFiles(path);
         }
         catch
         {
@@ -1494,6 +1959,101 @@ public sealed class MainViewModel : ObservableObject
         return Path.IsPathRooted(path)
             ? path
             : Path.Combine(_paths.RootDirectory, path);
+    }
+
+    private string ToRuntimeRelativePath(string path)
+    {
+        try
+        {
+            var root = Path.GetFullPath(_paths.RootDirectory);
+            var fullPath = Path.GetFullPath(path);
+            var relativePath = Path.GetRelativePath(root, fullPath);
+
+            if (!Path.IsPathRooted(relativePath)
+                && relativePath != ".."
+                && !relativePath.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal)
+                && !relativePath.StartsWith(".." + Path.AltDirectorySeparatorChar, StringComparison.Ordinal))
+            {
+                return relativePath;
+            }
+        }
+        catch
+        {
+            // Keep the absolute path if it cannot be safely relativized.
+        }
+
+        return path;
+    }
+
+    private void RotateLogFileIfNeeded(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return;
+        }
+
+        var maxBytes = (long)LogMaxFileSizeMb * 1024 * 1024;
+        if (new FileInfo(path).Length < maxBytes)
+        {
+            return;
+        }
+
+        File.Move(path, CreateRotatedLogFilePath(path));
+    }
+
+    private void CleanupExpiredLogFiles(string path)
+    {
+        var directory = Path.GetDirectoryName(path);
+        if (string.IsNullOrWhiteSpace(directory) || !Directory.Exists(directory))
+        {
+            return;
+        }
+
+        var cutoff = DateTime.Now.AddDays(-LogRetentionDays);
+        foreach (var file in Directory.EnumerateFiles(directory, GetRotatedLogSearchPattern(path)))
+        {
+            if (File.GetLastWriteTime(file) < cutoff)
+            {
+                File.Delete(file);
+            }
+        }
+    }
+
+    private static string CreateRotatedLogFilePath(string path)
+    {
+        var directory = Path.GetDirectoryName(path)!;
+        var fileName = Path.GetFileNameWithoutExtension(path);
+        var extension = GetLogFileExtension(path);
+        var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        var rotatedPath = Path.Combine(directory, $"{fileName}_{timestamp}{extension}");
+
+        for (var index = 1; File.Exists(rotatedPath); index++)
+        {
+            rotatedPath = Path.Combine(directory, $"{fileName}_{timestamp}_{index}{extension}");
+        }
+
+        return rotatedPath;
+    }
+
+    private static string GetRotatedLogSearchPattern(string path)
+    {
+        return $"{Path.GetFileNameWithoutExtension(path)}_*{GetLogFileExtension(path)}";
+    }
+
+    private static string GetLogFileExtension(string path)
+    {
+        var extension = Path.GetExtension(path);
+        return string.IsNullOrWhiteSpace(extension) ? ".log" : extension;
+    }
+
+    private static int NormalizeLogRetentionDays(int? days)
+    {
+        return Math.Clamp(days.GetValueOrDefault(DefaultLogRetentionDays), MinimumLogRetentionDays, MaximumLogRetentionDays);
+    }
+
+    private static int NormalizeLogMaxFileSizeMb(int? sizeMb)
+    {
+        return Math.Clamp(sizeMb.GetValueOrDefault(DefaultLogMaxFileSizeMb), MinimumLogMaxFileSizeMb, MaximumLogMaxFileSizeMb);
     }
 
     private static void CopyFileIfDifferent(string sourcePath, string destinationPath)
@@ -1550,6 +2110,14 @@ public sealed class MainViewModel : ObservableObject
         StartFunctionCheckCommand.RaiseCanExecuteChanged();
     }
 
+    private void RaiseLogSummaryProperties()
+    {
+        OnPropertyChanged(nameof(HasLogEntries));
+        OnPropertyChanged(nameof(LatestLogText));
+        OnPropertyChanged(nameof(LogEntryCountText));
+        OnPropertyChanged(nameof(LogFilterSummaryText));
+    }
+
     private void RaiseDeviceStatusProperties()
     {
         OnPropertyChanged(nameof(DeviceStatusText));
@@ -1566,6 +2134,9 @@ public sealed class MainViewModel : ObservableObject
         public bool AutoSearchBaudRate { get; set; } = true;
         public bool LogFileEnabled { get; set; } = true;
         public string? LogFilePath { get; set; }
+        public int? LogRetentionDays { get; set; }
+        public int? LogMaxFileSizeMb { get; set; }
+        public bool LogAutoScrollEnabled { get; set; } = true;
         public string? SelectedDeviceType { get; set; }
         public string? SelectedBaudRate { get; set; }
         public string? SelectedCanChannel { get; set; }

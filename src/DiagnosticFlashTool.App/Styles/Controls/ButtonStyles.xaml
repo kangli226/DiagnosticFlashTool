@@ -129,6 +129,41 @@
         </Style.Triggers>
     </Style>
 
+    <Style x:Key="Button.HelpDocument" TargetType="Button" BasedOn="{StaticResource Button.ConnectionAction}">
+        <Setter Property="Width" Value="112" />
+        <Setter Property="Margin" Value="0" />
+    </Style>
+
+    <Style x:Key="Button.ConnectionPrimaryAction" TargetType="Button" BasedOn="{StaticResource Button.Primary}">
+        <Setter Property="Height" Value="36" />
+        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="FontSize" Value="13" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="True">
+                <Setter Property="Background" Value="{StaticResource DangerBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource DangerBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource DangerTextBrush}" />
+            </DataTrigger>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="True" />
+                    <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="Background" Value="{StaticResource DangerActiveBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource DangerActiveBrush}" />
+            </MultiDataTrigger>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="True" />
+                    <Condition Binding="{Binding IsPressed, RelativeSource={RelativeSource Self}}" Value="True" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="Background" Value="{StaticResource DangerPressedBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource DangerPressedBrush}" />
+            </MultiDataTrigger>
+        </Style.Triggers>
+    </Style>
+
     <Style x:Key="Button.Icon" TargetType="Button" BasedOn="{StaticResource Button.Base}">
         <Setter Property="Width" Value="36" />
         <Setter Property="Height" Value="36" />
@@ -164,12 +199,46 @@
         <Setter Property="Margin" Value="8,0,0,0" />
     </Style>
 
+    <Style x:Key="Button.PathAction" TargetType="Button" BasedOn="{StaticResource Button.Base}">
+        <Setter Property="Height" Value="30" />
+        <Setter Property="MinWidth" Value="52" />
+        <Setter Property="Padding" Value="8,0" />
+        <Setter Property="Margin" Value="6,0,0,0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}" />
+        <Setter Property="FontSize" Value="13" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource PrimarySoftBrush}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{StaticResource PrimaryPressedBrush}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="{StaticResource DisabledTextBrush}" />
+                <Setter Property="Background" Value="Transparent" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
     <Style x:Key="Button.PackIcon" TargetType="{x:Type materialDesign:PackIcon}">
         <Setter Property="Width" Value="18" />
         <Setter Property="Height" Value="18" />
         <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
         <Setter Property="HorizontalAlignment" Value="Center" />
         <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="Button.InlineContent" TargetType="StackPanel">
+        <Setter Property="Orientation" Value="Horizontal" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="Button.PackIcon.Current" TargetType="{x:Type materialDesign:PackIcon}" BasedOn="{StaticResource Button.PackIcon}">
+        <Setter Property="Width" Value="16" />
+        <Setter Property="Height" Value="16" />
+        <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
     </Style>
 
     <Style x:Key="Button.PackIcon.Accent" TargetType="{x:Type materialDesign:PackIcon}" BasedOn="{StaticResource Button.PackIcon}">
@@ -189,6 +258,23 @@
 
     <Style x:Key="Button.IconLabel.Inverse" TargetType="TextBlock" BasedOn="{StaticResource Button.IconLabel}">
         <Setter Property="Foreground" Value="{StaticResource InverseTextBrush}" />
+    </Style>
+
+    <Style x:Key="Button.PathActionIcon" TargetType="{x:Type materialDesign:PackIcon}" BasedOn="{StaticResource Button.PackIcon.Current}" />
+
+    <Style x:Key="Button.PathActionLabel" TargetType="TextBlock" BasedOn="{StaticResource Button.IconLabel}">
+        <Setter Property="Margin" Value="5,0,0,0" />
+    </Style>
+
+    <Style x:Key="Button.DialogSecondary" TargetType="Button" BasedOn="{StaticResource Button.Normal}">
+        <Setter Property="Width" Value="78" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Margin" Value="0,0,8,0" />
+    </Style>
+
+    <Style x:Key="Button.DialogPrimary" TargetType="Button" BasedOn="{StaticResource Button.Primary}">
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Margin" Value="0" />
     </Style>
 
     <Style x:Key="BaseChromeButtonStyle" TargetType="Button" BasedOn="{StaticResource Button.Icon}">

@@ -14,6 +14,7 @@ namespace DiagnosticFlashTool.App;
 
 public partial class MainWindow : Window
 {
+    private const int WmGetMinMaxInfo = 0x0024;
     private const int DwmWindowCornerPreferenceAttribute = 33;
     private Forms.NotifyIcon? _notifyIcon;
     private bool _exitRequested;
@@ -21,12 +22,17 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        DataContext = new MainViewModel();
+        var viewModel = new MainViewModel();
+        viewModel.PropertyChanged += MainViewModel_PropertyChanged;
+        DataContext = viewModel;
+        SyncNotifyIcon(viewModel);
     }
 
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
+        var source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
+        source?.AddHook(WndProc);
         ApplyNativeRoundedCorners();
     }
 
@@ -72,9 +78,37 @@ public partial class MainWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
+        if (DataContext is MainViewModel viewModel)
+        {
+            viewModel.PropertyChanged -= MainViewModel_PropertyChanged;
+        }
+
         _notifyIcon?.Dispose();
         _notifyIcon = null;
         base.OnClosed(e);
+    }
+
+    private void MainViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MainViewModel.KeepRunningInTray)
+            && sender is MainViewModel viewModel)
+        {
+            SyncNotifyIcon(viewModel);
+        }
+    }
+
+    private void SyncNotifyIcon(MainViewModel viewModel)
+    {
+        if (viewModel.KeepRunningInTray)
+        {
+            EnsureNotifyIcon();
+            return;
+        }
+
+        if (_notifyIcon is not null)
+        {
+            _notifyIcon.Visible = false;
+        }
     }
 
     private void ShellNav_Checked(object sender, RoutedEventArgs e)
@@ -114,6 +148,44 @@ public partial class MainWindow : Window
             DwmWindowCornerPreferenceAttribute,
             ref preference,
             Marshal.SizeOf<int>());
+    }
+
+    private nint WndProc(nint hwnd, int msg, nint wParam, nint lParam, ref bool handled)
+    {
+        if (msg != WmGetMinMaxInfo)
+        {
+            return nint.Zero;
+        }
+
+        handled = true;
+        AdjustMaximizedBounds(hwnd, lParam);
+        return nint.Zero;
+    }
+
+    private static void AdjustMaximizedBounds(nint hwnd, nint lParam)
+    {
+        var monitor = MonitorFromWindow(hwnd, MonitorDefaultTonearest);
+        if (monitor == nint.Zero)
+        {
+            return;
+        }
+
+        var monitorInfo = new MonitorInfo
+        {
+            cbSize = Marshal.SizeOf<MonitorInfo>()
+        };
+
+        if (!GetMonitorInfo(monitor, ref monitorInfo))
+        {
+            return;
+        }
+
+        var minMaxInfo = Marshal.PtrToStructure<MinMaxInfo>(lParam);
+        minMaxInfo.ptMaxPosition.x = monitorInfo.rcWork.Left - monitorInfo.rcMonitor.Left;
+        minMaxInfo.ptMaxPosition.y = monitorInfo.rcWork.Top - monitorInfo.rcMonitor.Top;
+        minMaxInfo.ptMaxSize.x = monitorInfo.rcWork.Right - monitorInfo.rcWork.Left;
+        minMaxInfo.ptMaxSize.y = monitorInfo.rcWork.Bottom - monitorInfo.rcWork.Top;
+        Marshal.StructureToPtr(minMaxInfo, lParam, true);
     }
 
     private void EnsureNotifyIcon()
@@ -175,11 +247,55 @@ public partial class MainWindow : Window
         ref int pvAttribute,
         int cbAttribute);
 
+    [DllImport("user32.dll")]
+    private static extern nint MonitorFromWindow(nint hwnd, int dwFlags);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetMonitorInfo(nint hMonitor, ref MonitorInfo lpmi);
+
     private enum DwmWindowCornerPreference
     {
         Default = 0,
         DoNotRound = 1,
         Round = 2,
         RoundSmall = 3
+    }
+
+    private const int MonitorDefaultTonearest = 2;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Point
+    {
+        public int x;
+        public int y;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MinMaxInfo
+    {
+        public Point ptReserved;
+        public Point ptMaxSize;
+        public Point ptMaxPosition;
+        public Point ptMinTrackSize;
+        public Point ptMaxTrackSize;
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    private struct MonitorInfo
+    {
+        public int cbSize;
+        public Rect rcMonitor;
+        public Rect rcWork;
+        public int dwFlags;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Rect
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
     }
 }

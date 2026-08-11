@@ -1,6 +1,7 @@
 <UserControl x:Class="DiagnosticFlashTool.App.Views.FirmwareFlashView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
     <Grid Style="{StaticResource PageRootGridStyle}">
         <Grid.RowDefinitions>
@@ -11,40 +12,13 @@
             <RowDefinition Style="{StaticResource PageSummaryRowStyle}" />
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0"
-                Style="{StaticResource PageHeaderCardStyle}">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-
-                <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                    <TextBlock Text="固件刷写"
-                               Style="{StaticResource PageTitleTextStyle}" />
-                    <TextBlock Text="连接 CAN 设备并监控刷写状态与进度"
-                               Style="{StaticResource PageSubtitleTextStyle}" />
-                </StackPanel>
-
-                <StackPanel Grid.Column="1"
-                            Orientation="Horizontal"
-                            VerticalAlignment="Center">
-                    <Button Width="112"
-                            Margin="0"
-                            Style="{StaticResource Button.ConnectionAction}">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.HelpRhombusOutline}"
-                                                     Width="16"
-                                                     Height="16"
-                                                     Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                                     VerticalAlignment="Center" />
-                            <TextBlock Text="&#x5E2E;&#x52A9;&#x6587;&#x6863;"
-                                       Style="{StaticResource Button.IconLabel}" />
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
-            </Grid>
-        </Border>
+        <controls:PageHeader Grid.Row="0"
+                             Title="固件刷写"
+                             Subtitle="连接 CAN 设备并监控刷写状态与进度">
+            <controls:PageHeader.Actions>
+                <controls:PageHelpDocumentButton />
+            </controls:PageHeader.Actions>
+        </controls:PageHeader>
 
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
@@ -84,7 +58,7 @@
 
                             <Grid Grid.Row="0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="120" />
+                                    <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="波特率：" Style="{StaticResource FieldLabelStyle}" />
@@ -96,7 +70,7 @@
 
                             <Grid Grid.Row="2">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="120" />
+                                    <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
@@ -110,17 +84,11 @@
                                         Tag="{Binding IsConnected}"
                                         Width="112"
                                         Style="{StaticResource Button.ConnectionAction}">
-                                    <StackPanel Orientation="Horizontal">
+                                    <StackPanel Style="{StaticResource Button.InlineContent}">
                                         <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.PowerPlugOutline}"
-                                                                 Width="16"
-                                                                 Height="16"
-                                                                 Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                                                 VerticalAlignment="Center" />
+                                                                 Style="{StaticResource Button.PackIcon.Current}" />
                                         <TextBlock Text="{Binding ConnectionActionText}"
-                                                   Margin="6,0,0,0"
-                                                   FontWeight="Medium"
-                                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                                   VerticalAlignment="Center" />
+                                                   Style="{StaticResource Button.IconLabel}" />
                                     </StackPanel>
                                 </Button>
                             </Grid>
@@ -139,7 +107,7 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
 

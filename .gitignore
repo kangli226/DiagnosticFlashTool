@@ -20,6 +20,7 @@ artifacts/
 
 # Local build / verification output
 .build-check/
+.reference/
 *.wpftmp/
 
 # .NET / NuGet generated files

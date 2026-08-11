@@ -11,7 +11,10 @@
             <DockPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
                     <TextBlock Text="BOOT config" Margin="0,0,8,0" />
-                    <ComboBox Width="180" ItemsSource="{Binding BootConfigFiles}" SelectedItem="{Binding SelectedBootConfig}" />
+                    <ComboBox Width="180"
+                              ItemsSource="{Binding BootConfigFiles}"
+                              SelectedItem="{Binding SelectedBootConfig}"
+                              Style="{StaticResource StandardComboBoxStyle}" />
                     <Button Content="Load" Command="{Binding LoadFlowCommand}" Width="80" Style="{StaticResource Button.ToolBar}" />
                     <Button Content="Validate" Command="{Binding ValidateFlowCommand}" Width="90" Style="{StaticResource Button.ToolBar}" />
                     <Button Content="Save" Command="{Binding SaveFlowCommand}" Width="90" Style="{StaticResource Button.Primary}" />
