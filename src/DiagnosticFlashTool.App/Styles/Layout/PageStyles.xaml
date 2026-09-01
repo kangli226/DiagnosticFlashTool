@@ -66,6 +66,30 @@
         <Setter Property="Margin" Value="0,4,0,0" />
     </Style>
 
+    <Style x:Key="PageHeaderSubtitleTextStyle"
+           TargetType="TextBlock"
+           BasedOn="{StaticResource PageSubtitleTextStyle}">
+        <Style.Triggers>
+            <Trigger Property="Text" Value="">
+                <Setter Property="Visibility" Value="Collapsed" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="PageHeaderMetaTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="EmptyStateTitleTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="22" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
     <Style x:Key="PageSummaryCardStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}" />
 
     <Style x:Key="PageSummaryContentStyle" TargetType="StackPanel">

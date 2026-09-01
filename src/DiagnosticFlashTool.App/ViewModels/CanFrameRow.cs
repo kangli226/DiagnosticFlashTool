@@ -11,6 +11,7 @@ public sealed class CanFrameRow
         Direction = direction;
         Channel = frame.Channel;
         IdText = $"0x{frame.Id:X8}";
+        FormatText = frame.IsExtended ? "扩展帧" : "标准帧";
         Dlc = frame.Dlc;
         DataText = HexUtil.ToHex(frame.Data);
     }
@@ -19,6 +20,7 @@ public sealed class CanFrameRow
     public string Direction { get; }
     public uint Channel { get; }
     public string IdText { get; }
+    public string FormatText { get; }
     public int Dlc { get; }
     public string DataText { get; }
 }

@@ -1,39 +1,33 @@
 <UserControl x:Class="DiagnosticFlashTool.App.Views.FlashHistoryView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls">
     <Grid Style="{StaticResource PageRootGridStyle}">
-        <Border Style="{StaticResource Card.Standard}">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Style="{StaticResource PageHeaderRowStyle}" />
+            <RowDefinition Style="{StaticResource PageHeaderGapRowStyle}" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
 
-                <StackPanel Grid.Row="0" Margin="{StaticResource PageContentBottomGap}">
-                    <TextBlock Text="历史记录" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" />
-                    <TextBlock Text="当前版本暂未接入刷写历史持久化，刷写过程与结果可先在系统日志中追溯。"
+        <controls:PageHeader Grid.Row="0"
+                             Title="历史记录"
+                             Subtitle="当前版本暂未接入刷写历史持久化，刷写过程与结果可先在系统日志中追溯。" />
+
+        <Border Grid.Row="2" Style="{StaticResource Card.Standard}">
+            <Border Background="{StaticResource SurfaceBrush}"
+                    BorderBrush="{StaticResource DividerBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="20">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <TextBlock Text="暂无历史记录"
+                               Style="{StaticResource EmptyStateTitleTextStyle}" />
+                    <TextBlock Text="完成刷写历史存储后，这里将展示项目、文件、结果、耗时与操作时间。"
                                Foreground="{StaticResource SubtleTextBrush}"
-                               Margin="0,4,0,0" />
+                               Margin="0,8,0,0"
+                               HorizontalAlignment="Center" />
                 </StackPanel>
-
-                <Border Grid.Row="1"
-                        Background="{StaticResource SurfaceBrush}"
-                        BorderBrush="{StaticResource DividerBrush}"
-                        BorderThickness="1"
-                        CornerRadius="8"
-                        Padding="20">
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <TextBlock Text="暂无历史记录"
-                                   FontSize="22"
-                                   FontWeight="SemiBold"
-                                   HorizontalAlignment="Center" />
-                        <TextBlock Text="完成刷写历史存储后，这里将展示项目、文件、结果、耗时与操作时间。"
-                                   Foreground="{StaticResource SubtleTextBrush}"
-                                   Margin="0,8,0,0"
-                                   HorizontalAlignment="Center" />
-                    </StackPanel>
-                </Border>
-            </Grid>
+            </Border>
         </Border>
     </Grid>
 </UserControl>

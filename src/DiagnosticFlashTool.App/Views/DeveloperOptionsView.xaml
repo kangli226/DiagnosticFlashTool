@@ -1,21 +1,346 @@
 <UserControl x:Class="DiagnosticFlashTool.App.Views.DeveloperOptionsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
     <Grid Style="{StaticResource PageRootGridStyle}">
-        <Border Style="{StaticResource Card.Standard}">
-            <DockPanel>
-                <TextBlock DockPanel.Dock="Top"
-                           Text="开发者选项"
-                           FontSize="18"
-                           FontWeight="SemiBold"
-                           Margin="{StaticResource PageContentBottomGap}" />
-                <TextBox Text="{Binding FlowValidationText}"
-                         Style="{StaticResource LogTextBoxStyle}"
-                         IsReadOnly="True"
-                         TextWrapping="Wrap"
-                         AcceptsReturn="True"
-                         VerticalScrollBarVisibility="Auto" />
-            </DockPanel>
-        </Border>
+        <Grid.RowDefinitions>
+            <RowDefinition Style="{StaticResource PageHeaderRowStyle}" />
+            <RowDefinition Style="{StaticResource PageHeaderGapRowStyle}" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <controls:PageHeader Grid.Row="0"
+                             Title="开发者选项"
+                             Subtitle="调试刷写流程、发送 CAN 消息、查看接收日志">
+            <controls:PageHeader.Actions>
+                <controls:PageHelpDocumentButton />
+            </controls:PageHeader.Actions>
+        </controls:PageHeader>
+
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="112" />
+                <RowDefinition Style="{StaticResource PageSectionGapRowStyle}" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Style="{StaticResource CardStyle}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="50" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Style="{StaticResource PanelHeaderStyle}">
+                        <TextBlock Text="刷写配置" Style="{StaticResource CardHeaderTextStyle}" />
+                    </Border>
+
+                    <Grid Grid.Row="1"
+                          Margin="22,0"
+                          VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0"
+                                   Text="项目号："
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <ComboBox Grid.Column="1"
+                                  Width="Auto"
+                                  HorizontalAlignment="Stretch"
+                                  ItemsSource="{Binding Projects}"
+                                  DisplayMemberPath="ProjectName"
+                                  SelectedItem="{Binding SelectedProject, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  Style="{StaticResource StandardComboBoxStyle}" />
+                        <Button Grid.Column="3"
+                                Width="118"
+                                Command="{Binding StartFlashCommand}"
+                                Style="{StaticResource Button.Primary}"
+                                ToolTip="连接 CAN 设备后开始刷写">
+                            <StackPanel Style="{StaticResource Button.InlineContent}">
+                                <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.CloudDownloadOutline}"
+                                                         Style="{StaticResource Button.PackIcon.Current}" />
+                                <TextBlock Text="开始刷写" Style="{StaticResource Button.IconLabel}" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="7*" />
+                    <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
+                    <ColumnDefinition Width="13*" />
+                </Grid.ColumnDefinitions>
+
+                <Grid Grid.Column="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="96" />
+                        <RowDefinition Style="{StaticResource PageSectionGapRowStyle}" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Style="{StaticResource CardStyle}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="50" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0" Style="{StaticResource PanelHeaderStyle}">
+                                <TextBlock Text="下载进度" Style="{StaticResource CardHeaderTextStyle}" />
+                            </Border>
+
+                            <Grid Grid.Row="1"
+                                  Margin="22,0"
+                                  VerticalAlignment="Center">
+                                <ProgressBar Minimum="0"
+                                             Maximum="100"
+                                             Value="{Binding Progress}"
+                                             Style="{StaticResource SoftProgressBarStyle}" />
+                                <TextBlock Text="{Binding ProgressText}"
+                                           FontSize="16"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextBrush}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Row="2" Style="{StaticResource CardStyle}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="50" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0" Style="{StaticResource PanelHeaderStyle}">
+                                <TextBlock Text="下载信息" Style="{StaticResource CardHeaderTextStyle}" />
+                            </Border>
+
+                            <Border Grid.Row="1"
+                                    Margin="12,0,12,12"
+                                    Padding="12,10"
+                                    Style="{StaticResource SettingGroupPanelStyle}">
+                                <TextBox Text="{Binding DownloadInfoText, Mode=OneWay}"
+                                         Height="Auto"
+                                         Margin="0"
+                                         Padding="0"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         Foreground="{StaticResource BodyTextBrush}"
+                                         FontSize="13"
+                                         IsReadOnly="True"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         VerticalContentAlignment="Top"
+                                         VerticalScrollBarVisibility="Auto" />
+                            </Border>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <Grid Grid.Column="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="148" />
+                        <RowDefinition Style="{StaticResource PageSectionGapRowStyle}" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Style="{StaticResource CardStyle}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="50" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0" Style="{StaticResource PanelHeaderStyle}">
+                                <TextBlock Text="报文发送区" Style="{StaticResource CardHeaderTextStyle}" />
+                            </Border>
+
+                            <Grid Grid.Row="1" Margin="22,0,22,12">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="32" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="32" />
+                                </Grid.RowDefinitions>
+
+                                <Grid Grid.Row="0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="104" />
+                                        <ColumnDefinition Width="16" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="104" />
+                                        <ColumnDefinition Width="16" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="104" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0"
+                                               Text="帧类型："
+                                               Style="{StaticResource FieldLabelStyle}" />
+                                    <ComboBox Grid.Column="1"
+                                              Width="Auto"
+                                              HorizontalAlignment="Stretch"
+                                              ItemsSource="{Binding ManualFrameTypes}"
+                                              SelectedItem="{Binding ManualFrameType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              Style="{StaticResource StandardComboBoxStyle}" />
+
+                                    <TextBlock Grid.Column="3"
+                                               Text="帧格式："
+                                               Style="{StaticResource FieldLabelStyle}" />
+                                    <ComboBox Grid.Column="4"
+                                              Width="Auto"
+                                              HorizontalAlignment="Stretch"
+                                              ItemsSource="{Binding ManualFrameFormats}"
+                                              SelectedItem="{Binding ManualFrameFormat, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              Style="{StaticResource StandardComboBoxStyle}" />
+
+                                    <TextBlock Grid.Column="6"
+                                               Text="发送通道："
+                                               Style="{StaticResource FieldLabelStyle}" />
+                                    <ComboBox Grid.Column="7"
+                                              Width="Auto"
+                                              HorizontalAlignment="Stretch"
+                                              ItemsSource="{Binding ManualChannelOptions}"
+                                              SelectedItem="{Binding ManualChannel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              Style="{StaticResource StandardComboBoxStyle}" />
+                                </Grid>
+
+                                <Grid Grid.Row="2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="104" />
+                                        <ColumnDefinition Width="16" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="90" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0"
+                                               Text="帧ID:0x"
+                                               Style="{StaticResource FieldLabelStyle}" />
+                                    <TextBox Grid.Column="1"
+                                             Height="32"
+                                             Margin="0"
+                                             Text="{Binding ManualFrameId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="例如 0x7E0 或 7E0"
+                                             Style="{StaticResource SoftTextBoxStyle}" />
+
+                                    <TextBlock Grid.Column="3"
+                                               Text="发送数据："
+                                               Style="{StaticResource FieldLabelStyle}" />
+                                    <TextBox Grid.Column="4"
+                                             Height="32"
+                                             Margin="0"
+                                             Text="{Binding ManualFrameData, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="例如 02 10 03"
+                                             Style="{StaticResource SoftTextBoxStyle}" />
+                                    <Button Grid.Column="6"
+                                            Width="90"
+                                            Height="32"
+                                            Margin="0"
+                                            HorizontalAlignment="Right"
+                                            Command="{Binding SendManualFrameCommand}"
+                                            Style="{StaticResource Button.Primary}"
+                                            ToolTip="连接 CAN 设备后发送报文">
+                                        <StackPanel Style="{StaticResource Button.InlineContent}">
+                                            <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.SendOutline}"
+                                                                     Style="{StaticResource Button.PackIcon.Current}" />
+                                            <TextBlock Text="发送" Style="{StaticResource Button.IconLabel}" />
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Row="2" Style="{StaticResource CardStyle}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="50" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0" Style="{StaticResource PanelHeaderStyle}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0"
+                                               Text="报文接收区"
+                                               Style="{StaticResource CardHeaderTextStyle}"
+                                               VerticalAlignment="Center" />
+                                    <Button Grid.Column="1"
+                                            Width="98"
+                                            VerticalAlignment="Center"
+                                            Command="{Binding ToggleFrameCaptureCommand}"
+                                            Style="{StaticResource Button.ToolBar}">
+                                        <StackPanel Style="{StaticResource Button.InlineContent}">
+                                            <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Pause}"
+                                                                     Style="{StaticResource Button.PackIcon.Current}" />
+                                            <TextBlock Text="{Binding FrameCaptureActionText}"
+                                                       Style="{StaticResource Button.IconLabel}" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Grid.Column="2"
+                                            Width="126"
+                                            VerticalAlignment="Center"
+                                            Command="{Binding ToggleFrameFilterCommand}"
+                                            Style="{StaticResource Button.ToolBar}">
+                                        <StackPanel Style="{StaticResource Button.InlineContent}">
+                                            <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.FilterOutline}"
+                                                                     Style="{StaticResource Button.PackIcon.Current}" />
+                                            <TextBlock Text="{Binding FrameFilterActionText}"
+                                                       Style="{StaticResource Button.IconLabel}" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Grid.Column="3"
+                                            Width="104"
+                                            Margin="0"
+                                            VerticalAlignment="Center"
+                                            Command="{Binding ExportFramesCommand}"
+                                            Style="{StaticResource Button.ToolBar}">
+                                        <StackPanel Style="{StaticResource Button.InlineContent}">
+                                            <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.ExportVariant}"
+                                                                     Style="{StaticResource Button.PackIcon.Current}" />
+                                            <TextBlock Text="导出" Style="{StaticResource Button.IconLabel}" />
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+                            </Border>
+
+                            <DataGrid Grid.Row="1"
+                                      Margin="12,0,12,12"
+                                      ItemsSource="{Binding Frames}"
+                                      IsReadOnly="True"
+                                      GridLinesVisibility="All"
+                                      Style="{StaticResource DataGrid.Base}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="方向" Binding="{Binding Direction}" Width="110" />
+                                    <DataGridTextColumn Header="ID" Binding="{Binding IdText}" Width="140" />
+                                    <DataGridTextColumn Header="格式" Binding="{Binding FormatText}" Width="140" />
+                                    <DataGridTextColumn Header="长度" Binding="{Binding Dlc}" Width="100" />
+                                    <DataGridTextColumn Header="数据" Binding="{Binding DataText}" Width="*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+        </Grid>
     </Grid>
 </UserControl>

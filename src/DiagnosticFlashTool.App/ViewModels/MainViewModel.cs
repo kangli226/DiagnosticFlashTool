@@ -37,6 +37,8 @@ public sealed class MainViewModel : ObservableObject
     private const int MaximumLogMaxFileSizeMb = 1024;
     private const int MaxLogEntries = 1000;
     private const int MaxRecentLogEntries = 10;
+    private const int MaxDownloadInfoEntries = 30;
+    private const int MaxFrameHistoryEntries = 5000;
 
     private static readonly IReadOnlyDictionary<string, string> LightThemeBrushes = new Dictionary<string, string>
     {
@@ -186,16 +188,17 @@ public sealed class MainViewModel : ObservableObject
     private string _selectedBaudRate = "500K";
     private string _driverFilePath = string.Empty;
     private string _applicationFilePath = string.Empty;
-    private string _manualFrameId = "0x18DA5535";
+    private string _manualFrameId = "7E0";
     private string _manualFrameData = "02 10 03";
-    private string _manualChannel = "0";
+    private string _manualChannel = "Index0";
+    private string _manualFrameType = "数据帧";
+    private string _manualFrameFormat = "标准帧";
     private string _selectedFunctionCheckConfig = "mock";
     private string _selectedCanChannel = "0";
     private string _logFilePath = DefaultLogFilePath;
     private string _selectedLogLevelFilter = "全部";
     private string _selectedLogTimeRangeFilter = "全部";
     private string _logSearchText = string.Empty;
-    private bool _manualIsExtended = true;
     private bool _nightModeEnabled;
     private bool _keepRunningInTray;
     private bool _autoFlashEnabled;
@@ -204,6 +207,8 @@ public sealed class MainViewModel : ObservableObject
     private bool _logAutoScrollEnabled = true;
     private bool _adminModeEnabled;
     private bool _adminPasswordPromptVisible;
+    private bool _isFrameCapturePaused;
+    private bool _isFrameFilterEnabled;
     private bool _isConnected;
     private bool _isBusy;
     private int _selectedShellIndex;
@@ -217,6 +222,7 @@ public sealed class MainViewModel : ObservableObject
     private string _adminPassword = string.Empty;
     private string _adminPasswordMessage = "请输入管理员密码，本次启动内有效。";
     private SystemLogEntry? _latestLogEntry;
+    private readonly List<CanFrameRow> _frameHistory = [];
 
     public MainViewModel()
     {
@@ -236,7 +242,10 @@ public sealed class MainViewModel : ObservableObject
         ClearLogCommand = new RelayCommand(ClearLogs);
         OpenLogFileCommand = new RelayCommand(OpenLogFile);
         ExportLogCommand = new RelayCommand(ExportLog);
-        ClearFramesCommand = new RelayCommand(() => Frames.Clear());
+        ClearFramesCommand = new RelayCommand(ClearFrames);
+        ToggleFrameCaptureCommand = new RelayCommand(ToggleFrameCapture);
+        ToggleFrameFilterCommand = new RelayCommand(ToggleFrameFilter);
+        ExportFramesCommand = new RelayCommand(ExportFrames);
         AddProjectCommand = new RelayCommand(AddProject);
         DeleteProjectCommand = new RelayCommand(DeleteSelectedProject, () => SelectedProject is not null);
         SaveProjectsCommand = new RelayCommand(SaveProjects);
@@ -274,6 +283,9 @@ public sealed class MainViewModel : ObservableObject
     public ObservableCollection<string> DeviceTypes { get; } = ["Mock", "ZLG USBCAN-2A (4)"];
     public ObservableCollection<string> BaudRates { get; } = ["250K", "500K", "1000K"];
     public ObservableCollection<string> CanChannels { get; } = ["0", "1"];
+    public ObservableCollection<string> ManualFrameTypes { get; } = ["数据帧", "远程帧"];
+    public ObservableCollection<string> ManualFrameFormats { get; } = ["标准帧", "扩展帧"];
+    public ObservableCollection<string> ManualChannelOptions { get; } = ["Index0", "Index1"];
     public ObservableCollection<string> FunctionCheckConfigs { get; } = ["mock"];
     public ObservableCollection<string> LogLevelFilters { get; } = ["全部", "普通", "成功", "运行", "警告", "错误"];
     public ObservableCollection<string> LogTimeRangeFilters { get; } = ["全部", "最近1小时", "今天", "最近24小时", "最近7天"];
@@ -297,6 +309,9 @@ public sealed class MainViewModel : ObservableObject
     public RelayCommand OpenLogFileCommand { get; }
     public RelayCommand ExportLogCommand { get; }
     public RelayCommand ClearFramesCommand { get; }
+    public RelayCommand ToggleFrameCaptureCommand { get; }
+    public RelayCommand ToggleFrameFilterCommand { get; }
+    public RelayCommand ExportFramesCommand { get; }
     public RelayCommand AddProjectCommand { get; }
     public RelayCommand DeleteProjectCommand { get; }
     public RelayCommand SaveProjectsCommand { get; }
@@ -333,6 +348,11 @@ public sealed class MainViewModel : ObservableObject
             if (SetProperty(ref _selectedProject, value))
             {
                 ApplySelectedProject();
+                if (IsFrameFilterEnabled)
+                {
+                    Frames.Clear();
+                }
+
                 RaiseCommandStates();
             }
         }
@@ -418,20 +438,31 @@ public sealed class MainViewModel : ObservableObject
     public string ManualChannel
     {
         get => _manualChannel;
+        set => SetProperty(ref _manualChannel, value);
+    }
+
+    public string ManualFrameType
+    {
+        get => _manualFrameType;
+        set => SetProperty(ref _manualFrameType, value);
+    }
+
+    public string ManualFrameFormat
+    {
+        get => _manualFrameFormat;
         set
         {
-            if (SetProperty(ref _manualChannel, value) && _selectedCanChannel != value)
+            if (SetProperty(ref _manualFrameFormat, value))
             {
-                _selectedCanChannel = value;
-                OnPropertyChanged(nameof(SelectedCanChannel));
+                OnPropertyChanged(nameof(ManualIsExtended));
             }
         }
     }
 
     public bool ManualIsExtended
     {
-        get => _manualIsExtended;
-        set => SetProperty(ref _manualIsExtended, value);
+        get => string.Equals(ManualFrameFormat, "扩展帧", StringComparison.Ordinal);
+        set => ManualFrameFormat = value ? "扩展帧" : "标准帧";
     }
 
     public string SelectedFunctionCheckConfig
@@ -447,7 +478,7 @@ public sealed class MainViewModel : ObservableObject
         {
             if (SetProperty(ref _selectedCanChannel, value))
             {
-                ManualChannel = value;
+                ManualChannel = $"Index{value}";
                 SaveAppSettings();
             }
         }
@@ -594,6 +625,37 @@ public sealed class MainViewModel : ObservableObject
     }
 
     public string LogFilterSummaryText => $"显示 {FilteredLogEntries.Count} / {LogEntries.Count} 条";
+
+    public bool IsFrameCapturePaused
+    {
+        get => _isFrameCapturePaused;
+        private set
+        {
+            if (SetProperty(ref _isFrameCapturePaused, value))
+            {
+                OnPropertyChanged(nameof(FrameCaptureActionText));
+            }
+        }
+    }
+
+    public bool IsFrameFilterEnabled
+    {
+        get => _isFrameFilterEnabled;
+        private set
+        {
+            if (SetProperty(ref _isFrameFilterEnabled, value))
+            {
+                OnPropertyChanged(nameof(FrameFilterActionText));
+            }
+        }
+    }
+
+    public string FrameCaptureActionText => IsFrameCapturePaused ? "继续" : "暂停";
+    public string FrameFilterActionText => IsFrameFilterEnabled ? "过滤开启" : "过滤关闭";
+
+    public string DownloadInfoText => LogEntries.Count == 0
+        ? "暂无下载信息"
+        : string.Join(Environment.NewLine, LogEntries.TakeLast(MaxDownloadInfoEntries).Select(entry => entry.Text));
 
     public int LogRetentionDays
     {
@@ -953,7 +1015,7 @@ public sealed class MainViewModel : ObservableObject
             _selectedCanChannel = string.IsNullOrWhiteSpace(settings.SelectedCanChannel)
                 ? _selectedCanChannel
                 : settings.SelectedCanChannel;
-            _manualChannel = _selectedCanChannel;
+            _manualChannel = $"Index{_selectedCanChannel}";
             _paths.ProjectConfigPathOverride = EmptyToNull(settings.ProjectConfigPath);
             _paths.BootConfigDirectoryOverride = EmptyToNull(settings.FlowConfigDirectory);
             _paths.FormulaDatabaseDirectoryOverride = EmptyToNull(settings.FormulaDatabaseDirectory);
@@ -1491,8 +1553,23 @@ public sealed class MainViewModel : ObservableObject
                 throw new InvalidOperationException("Classic CAN frame data is limited to 8 bytes.");
             }
 
-            var channel = uint.TryParse(ManualChannel, out var parsedChannel) ? parsedChannel : 0;
-            var frame = new CanFrame(HexUtil.ParseUInt32(ManualFrameId), data, channel, ManualIsExtended);
+            var channelText = ManualChannel.StartsWith("Index", StringComparison.OrdinalIgnoreCase)
+                ? ManualChannel[5..]
+                : ManualChannel;
+            var channel = uint.TryParse(channelText, out var parsedChannel) ? parsedChannel : 0;
+            var frameId = ParseManualFrameId(ManualFrameId);
+            if (!ManualIsExtended && frameId > 0x7FF)
+            {
+                throw new InvalidOperationException("标准帧 ID 范围为 0x000~0x7FF。 ");
+            }
+
+            if (ManualIsExtended && frameId > 0x1FFFFFFF)
+            {
+                throw new InvalidOperationException("扩展帧 ID 范围为 0x00000000~0x1FFFFFFF。 ");
+            }
+
+            var isRemote = string.Equals(ManualFrameType, "远程帧", StringComparison.Ordinal);
+            var frame = new CanFrame(frameId, data, channel, ManualIsExtended, isRemote);
             await _canDevice.SendAsync(frame, cancellationToken);
             AppendLog($"Manual TX: {frame}");
         }
@@ -1772,7 +1849,6 @@ public sealed class MainViewModel : ObservableObject
         SelectedBaudRate = SelectedProject.BaudRate;
         DriverFilePath = SelectedProject.DriveFilePath;
         ApplicationFilePath = SelectedProject.FlashFilePath;
-        ManualFrameId = SelectedProject.PhysicalRequestId;
     }
 
     private void BrowseFirmware(Action<string> setPath)
@@ -1789,20 +1865,179 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
+    private void ToggleFrameCapture()
+    {
+        IsFrameCapturePaused = !IsFrameCapturePaused;
+        AppendLog(IsFrameCapturePaused ? "CAN 接收显示已暂停" : "CAN 接收显示已继续");
+    }
+
+    private void ToggleFrameFilter()
+    {
+        IsFrameFilterEnabled = !IsFrameFilterEnabled;
+        Frames.Clear();
+        AppendLog(IsFrameFilterEnabled
+            ? "CAN ID 过滤已开启，仅显示当前项目相关 ID"
+            : "CAN ID 过滤已关闭");
+    }
+
+    private void ClearFrames()
+    {
+        Frames.Clear();
+        _frameHistory.Clear();
+    }
+
+    private void ExportFrames()
+    {
+        if (_frameHistory.Count == 0)
+        {
+            SetStatus("当前没有可导出的报文", DiagnosticStatusKind.Warning);
+            AppendLog("CAN 报文导出失败：当前没有可导出的报文");
+            return;
+        }
+
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*",
+            FileName = $"can-frames-{DateTime.Now:yyyyMMdd-HHmmss}.csv"
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            var exportFrames = _frameHistory.ToArray();
+            var lines = new[] { "Time,Direction,Channel,ID,Format,DLC,Data" }
+                .Concat(exportFrames.Select(frame => string.Join(
+                    ",",
+                    frame.Timestamp,
+                    frame.Direction,
+                    frame.Channel,
+                    frame.IdText,
+                    frame.FormatText,
+                    frame.Dlc,
+                    frame.DataText)));
+            File.WriteAllLines(dialog.FileName, lines);
+            SetStatus("报文已导出", DiagnosticStatusKind.Success);
+        }
+        catch (Exception ex)
+        {
+            SetStatus("导出报文失败", DiagnosticStatusKind.Error);
+            AppendLog($"Export frames failed: {ex.Message}");
+        }
+    }
+
     private void OnFrameReceived(object? sender, CanFrame frame) => AddFrame("RX", frame);
 
     private void OnFrameSent(object? sender, CanFrame frame) => AddFrame("TX", frame);
+
+    private static uint ParseManualFrameId(string value)
+    {
+        var text = value.Trim();
+        if (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+        {
+            text = text[2..];
+        }
+
+        if (text.Length == 0)
+        {
+            throw new FormatException("CAN ID 不能为空。");
+        }
+
+        return uint.Parse(
+            text,
+            System.Globalization.NumberStyles.HexNumber,
+            System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    private static bool TryParseConfiguredCanId(string? value, out uint id)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            id = 0;
+            return false;
+        }
+
+        try
+        {
+            id = HexUtil.ParseUInt32(value);
+            return id > 0;
+        }
+        catch
+        {
+            try
+            {
+                id = ParseManualFrameId(value ?? string.Empty);
+                return id > 0;
+            }
+            catch
+            {
+                id = 0;
+                return false;
+            }
+        }
+    }
 
     private void AddFrame(string direction, CanFrame frame)
     {
         RunOnUi(() =>
         {
-            Frames.Add(new CanFrameRow(direction, frame));
+            var row = new CanFrameRow(direction, frame);
+            _frameHistory.Add(row);
+            while (_frameHistory.Count > MaxFrameHistoryEntries)
+            {
+                _frameHistory.RemoveAt(0);
+            }
+
+            if ((IsFrameCapturePaused && string.Equals(direction, "RX", StringComparison.Ordinal))
+                || !FrameMatchesFilter(frame))
+            {
+                return;
+            }
+
+            Frames.Add(row);
             while (Frames.Count > 1000)
             {
                 Frames.RemoveAt(0);
             }
         });
+    }
+
+    private bool FrameMatchesFilter(CanFrame frame)
+    {
+        if (!IsFrameFilterEnabled)
+        {
+            return true;
+        }
+
+        if (SelectedProject is null)
+        {
+            return true;
+        }
+
+        var projectIds = new[]
+        {
+            SelectedProject.PhysicalRequestId,
+            SelectedProject.FunctionalRequestId,
+            SelectedProject.ResponseAddressId
+        };
+
+        var hasValidProjectId = false;
+        foreach (var projectId in projectIds)
+        {
+            if (TryParseConfiguredCanId(projectId, out var parsedProjectId))
+            {
+                hasValidProjectId = true;
+                if (frame.Id == parsedProjectId)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return !hasValidProjectId;
     }
 
     private void AppendLog(string message)
@@ -2116,6 +2351,7 @@ public sealed class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(LatestLogText));
         OnPropertyChanged(nameof(LogEntryCountText));
         OnPropertyChanged(nameof(LogFilterSummaryText));
+        OnPropertyChanged(nameof(DownloadInfoText));
     }
 
     private void RaiseDeviceStatusProperties()

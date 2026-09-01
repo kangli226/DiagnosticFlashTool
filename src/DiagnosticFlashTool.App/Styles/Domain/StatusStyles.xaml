@@ -78,6 +78,9 @@
         <Setter Property="Foreground" Value="{StaticResource StatusNeutralBrush}" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextAlignment" Value="Center" />
         <Style.Triggers>
             <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Border}}" Value="{x:Static vm:DiagnosticStatusKind.Success}">
                 <Setter Property="Foreground" Value="{StaticResource StatusSuccessBrush}" />

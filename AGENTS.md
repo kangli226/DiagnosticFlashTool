@@ -44,6 +44,15 @@ dotnet build DiagnosticFlashTool.slnx -c Debug
 - `App/GlobalUsings.cs` 已对 WPF 类型做别名（如 `MessageBox`、`Color`、`Key`），避免引入冲突 using。
 - UI 文案为中文（如 "刷写完成"），新增文案保持一致。
 
+### Git 提交信息规范
+- 所有自动生成或建议的 Git 提交信息必须使用中文；仅保留 Conventional Commits 所需的英文 `type` 关键字。
+- 首行格式为 `<type>(<scope>): <中文主题>`，无明确范围时省略 `(scope)`；冒号后必须有一个空格。
+- `type` 必须使用小写的 `feat`、`fix`、`refactor`、`style`、`perf`、`test`、`docs`、`build`、`ci`、`chore` 或 `revert`。
+- 中文主题应使用祈使式、准确描述变更，控制在 72 个字符以内，不以句号或其他结束标点收尾；禁止生成仅有英文的泛化文案（例如 `Refactor code structure...`）。
+- 需要补充说明时，首行后空一行，正文继续使用中文，说明变更内容与原因；多项内容使用 `-` 分行。
+- 破坏性变更在 `type` 后加 `!`，并在正文中使用 `BREAKING CHANGE:` 明确说明影响和迁移方式。
+- 示例：`feat(刷写): 支持 BIN 固件校验`、`fix(配置): 保存流程时保留传输参数`、`refactor(ui): 重构日志列表布局`。
+
 ## 配置与 JSON
 
 - 配置模型用 `[JsonPropertyName("...")]` 显式映射；注意 `ProjectConfigEntry` 的属性名大小写与 JSON 键并不一致，务必以 `JsonPropertyName` 为准。

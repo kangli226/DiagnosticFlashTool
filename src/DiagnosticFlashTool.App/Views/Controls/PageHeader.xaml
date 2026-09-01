@@ -13,7 +13,7 @@
                 <TextBlock Text="{Binding Title, ElementName=Root}"
                            Style="{StaticResource PageTitleTextStyle}" />
                 <TextBlock Text="{Binding Subtitle, ElementName=Root}"
-                           Style="{StaticResource PageSubtitleTextStyle}" />
+                           Style="{StaticResource PageHeaderSubtitleTextStyle}" />
             </StackPanel>
 
             <ContentControl Grid.Column="1"
