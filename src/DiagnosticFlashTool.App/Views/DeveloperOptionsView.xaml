@@ -28,7 +28,7 @@
             <Border Grid.Row="0" Style="{StaticResource CardStyle}">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="50" />
+                        <RowDefinition Style="{StaticResource PanelHeaderRowStyle}" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
@@ -37,7 +37,7 @@
                     </Border>
 
                     <Grid Grid.Row="1"
-                          Margin="22,0"
+                          Style="{StaticResource PanelContentGridStyle}"
                           VerticalAlignment="Center">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
@@ -88,7 +88,7 @@
                     <Border Grid.Row="0" Style="{StaticResource CardStyle}">
                         <Grid>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="50" />
+                                <RowDefinition Style="{StaticResource PanelHeaderRowStyle}" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
 
@@ -97,7 +97,7 @@
                             </Border>
 
                             <Grid Grid.Row="1"
-                                  Margin="22,0"
+                                  Style="{StaticResource PanelContentGridStyle}"
                                   VerticalAlignment="Center">
                                 <ProgressBar Minimum="0"
                                              Maximum="100"
@@ -116,7 +116,7 @@
                     <Border Grid.Row="2" Style="{StaticResource CardStyle}">
                         <Grid>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="50" />
+                                <RowDefinition Style="{StaticResource PanelHeaderRowStyle}" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
 
@@ -125,9 +125,7 @@
                             </Border>
 
                             <Border Grid.Row="1"
-                                    Margin="12,0,12,12"
-                                    Padding="12,10"
-                                    Style="{StaticResource SettingGroupPanelStyle}">
+                                    Style="{StaticResource PanelContentGroupStyle}">
                                 <TextBox Text="{Binding DownloadInfoText, Mode=OneWay}"
                                          Height="Auto"
                                          Margin="0"
@@ -156,7 +154,7 @@
                     <Border Grid.Row="0" Style="{StaticResource CardStyle}">
                         <Grid>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="50" />
+                                <RowDefinition Style="{StaticResource PanelHeaderRowStyle}" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
 
@@ -164,7 +162,7 @@
                                 <TextBlock Text="报文发送区" Style="{StaticResource CardHeaderTextStyle}" />
                             </Border>
 
-                            <Grid Grid.Row="1" Margin="22,0,22,12">
+                            <Grid Grid.Row="1" Style="{StaticResource PanelContentGridStyle}">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="32" />
                                     <RowDefinition Height="10" />
@@ -267,7 +265,7 @@
                     <Border Grid.Row="2" Style="{StaticResource CardStyle}">
                         <Grid>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="50" />
+                                <RowDefinition Style="{StaticResource PanelHeaderRowStyle}" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
 
@@ -324,7 +322,7 @@
                             </Border>
 
                             <DataGrid Grid.Row="1"
-                                      Margin="12,0,12,12"
+                                      Margin="{StaticResource PanelContentMargin}"
                                       ItemsSource="{Binding Frames}"
                                       IsReadOnly="True"
                                       GridLinesVisibility="All"

@@ -1,0 +1,5 @@
+<Project>
+  <PropertyGroup>
+    <DefaultItemExcludes>$(DefaultItemExcludes);build-validation/**</DefaultItemExcludes>
+  </PropertyGroup>
+</Project>

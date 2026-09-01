@@ -56,8 +56,7 @@
             <DockPanel>
                 <TextBlock DockPanel.Dock="Top"
                            Text="Validation"
-                           Style="{StaticResource CardHeaderTextStyle}"
-                           Margin="0,0,0,8" />
+                           Style="{StaticResource CardContentTitleTextStyle}" />
                 <TextBox Text="{Binding FlowValidationText, Mode=OneWay}" Style="{StaticResource LogTextBoxStyle}" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" />
             </DockPanel>
         </Border>

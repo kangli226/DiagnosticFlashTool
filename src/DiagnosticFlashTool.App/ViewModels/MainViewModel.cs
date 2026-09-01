@@ -697,7 +697,7 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
-    public string AdminModeStatusText => AdminModeEnabled ? "已开启" : "关闭";
+    public string AdminModeStatusText => AdminModeEnabled ? "已启用" : "未启用";
 
     public bool AdminPasswordPromptVisible
     {
@@ -899,6 +899,9 @@ public sealed class MainViewModel : ObservableObject
     public string FlowConfigDirectory => _paths.BootConfigDirectory;
     public string FormulaDatabaseDirectory => _paths.FormulaDatabaseDirectory;
     public string ProjectConfigPath => _paths.ProjectConfigPath;
+    public string FlowConfigDirectoryDisplay => GetCompactPathDisplay(FlowConfigDirectory);
+    public string FormulaDatabaseDirectoryDisplay => GetCompactPathDisplay(FormulaDatabaseDirectory);
+    public string ProjectConfigPathDisplay => GetCompactPathDisplay(ProjectConfigPath);
 
     private bool IsConnectionFailure => !IsConnected
         && StatusKind == DiagnosticStatusKind.Error
@@ -975,6 +978,9 @@ public sealed class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(FlowConfigDirectory));
         OnPropertyChanged(nameof(FormulaDatabaseDirectory));
         OnPropertyChanged(nameof(ProjectConfigPath));
+        OnPropertyChanged(nameof(FlowConfigDirectoryDisplay));
+        OnPropertyChanged(nameof(FormulaDatabaseDirectoryDisplay));
+        OnPropertyChanged(nameof(ProjectConfigPathDisplay));
         AppendLog($"Configuration loaded: projects={Projects.Count}, boot={BootConfigFiles.Count}");
     }
 
@@ -2218,6 +2224,31 @@ public sealed class MainViewModel : ObservableObject
         }
 
         return path;
+    }
+
+    private string GetCompactPathDisplay(string path)
+    {
+        try
+        {
+            var root = Path.GetFullPath(_paths.RootDirectory);
+            var fullPath = Path.GetFullPath(path);
+            var relativePath = Path.GetRelativePath(root, fullPath);
+
+            if (!Path.IsPathRooted(relativePath)
+                && relativePath != ".."
+                && !relativePath.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal)
+                && !relativePath.StartsWith(".." + Path.AltDirectorySeparatorChar, StringComparison.Ordinal))
+            {
+                return relativePath;
+            }
+
+            var name = Path.GetFileName(fullPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            return string.IsNullOrWhiteSpace(name) ? fullPath : $"...{Path.DirectorySeparatorChar}{name}";
+        }
+        catch
+        {
+            return path;
+        }
     }
 
     private void RotateLogFileIfNeeded(string path)

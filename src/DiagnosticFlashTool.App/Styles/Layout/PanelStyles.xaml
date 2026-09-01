@@ -5,10 +5,26 @@
         <ResourceDictionary Source="CardStyles.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <Style x:Key="PanelHeaderStyle" TargetType="Border">
+    <Thickness x:Key="PanelContentMargin">22,12,22,12</Thickness>
+
+    <Style x:Key="PanelHeaderRowStyle" TargetType="RowDefinition">
         <Setter Property="Height" Value="50" />
+    </Style>
+
+    <Style x:Key="PanelHeaderStyle" TargetType="Border">
         <Setter Property="Padding" Value="{StaticResource CardHeaderContentPadding}" />
         <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
         <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <Style x:Key="PanelContentGridStyle" TargetType="Grid">
+        <Setter Property="Margin" Value="{StaticResource PanelContentMargin}" />
+    </Style>
+
+    <Style x:Key="PanelContentGroupStyle"
+           TargetType="Border"
+           BasedOn="{StaticResource SettingGroupPanelStyle}">
+        <Setter Property="Margin" Value="{StaticResource PanelContentMargin}" />
+        <Setter Property="Padding" Value="12,10" />
     </Style>
 </ResourceDictionary>

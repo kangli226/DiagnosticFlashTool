@@ -5,6 +5,8 @@
     </ResourceDictionary.MergedDictionaries>
 
     <Thickness x:Key="CardHeaderContentPadding">22,0</Thickness>
+    <Thickness x:Key="PageCardContentPadding">16</Thickness>
+    <Thickness x:Key="CardContentTitleMargin">0,0,0,10</Thickness>
     <DropShadowEffect x:Key="CardShadowEffect"
                       Color="#0F172A"
                       Direction="270"
@@ -37,11 +39,11 @@
     </Style>
 
     <Style x:Key="Card.Compact" TargetType="Border" BasedOn="{StaticResource CardStyle}">
-        <Setter Property="Padding" Value="14" />
+        <Setter Property="Padding" Value="{StaticResource PageCardContentPadding}" />
     </Style>
 
     <Style x:Key="Card.Standard" TargetType="Border" BasedOn="{StaticResource CardStyle}">
-        <Setter Property="Padding" Value="18" />
+        <Setter Property="Padding" Value="{StaticResource PageCardContentPadding}" />
     </Style>
 
     <Style x:Key="DialogPanelStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}">
@@ -67,6 +69,21 @@
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{StaticResource CardTitleTextBrush}" />
         <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="CardContentTitleTextStyle"
+           TargetType="TextBlock"
+           BasedOn="{StaticResource CardHeaderTextStyle}">
+        <Setter Property="Margin" Value="{StaticResource CardContentTitleMargin}" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+    </Style>
+
+    <Style x:Key="CardContentHeaderGridStyle" TargetType="Grid">
+        <Setter Property="Margin" Value="{StaticResource CardContentTitleMargin}" />
+    </Style>
+
+    <Style x:Key="CardContentTitleGapRowStyle" TargetType="RowDefinition">
+        <Setter Property="Height" Value="10" />
     </Style>
 
     <Style x:Key="FieldLabelStyle" TargetType="TextBlock">

@@ -30,7 +30,7 @@
             <Border Grid.Column="0" Style="{StaticResource CardStyle}">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="50" />
+                        <RowDefinition Style="{StaticResource PanelHeaderRowStyle}" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
@@ -39,7 +39,7 @@
                                    Style="{StaticResource CardHeaderTextStyle}" />
                     </Border>
 
-                    <Grid Grid.Row="1" Margin="20,20,20,0">
+                    <Grid Grid.Row="1" Style="{StaticResource PanelContentGridStyle}">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="74" />
                             <RowDefinition Height="14" />
@@ -161,7 +161,7 @@
             <Border Grid.Column="2" Style="{StaticResource CardStyle}">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="50" />
+                        <RowDefinition Style="{StaticResource PanelHeaderRowStyle}" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
@@ -170,7 +170,7 @@
                                    Style="{StaticResource CardHeaderTextStyle}" />
                     </Border>
 
-                    <Grid Grid.Row="1" Margin="20,20,20,0">
+                    <Grid Grid.Row="1" Style="{StaticResource PanelContentGridStyle}">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="74" />
                             <RowDefinition Height="14" />
@@ -269,7 +269,7 @@
         <Border Grid.Row="4" Style="{StaticResource CardStyle}">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="50" />
+                    <RowDefinition Style="{StaticResource PanelHeaderRowStyle}" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
@@ -277,7 +277,7 @@
                     <TextBlock Text="下载进度" Style="{StaticResource CardHeaderTextStyle}" />
                 </Border>
 
-                <Grid Grid.Row="1" Margin="{StaticResource PagePanelHorizontalMargin}">
+                <Grid Grid.Row="1" Style="{StaticResource PanelContentGridStyle}">
                     <ProgressBar Minimum="0"
                                  Maximum="100"
                                  Value="{Binding Progress}"

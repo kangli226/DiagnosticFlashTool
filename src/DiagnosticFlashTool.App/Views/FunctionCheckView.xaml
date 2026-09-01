@@ -56,7 +56,7 @@
         <Border Grid.Row="2" Style="{StaticResource CardStyle}">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="44" />
+                    <RowDefinition Style="{StaticResource PanelHeaderRowStyle}" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
@@ -64,7 +64,7 @@
                     <TextBlock Text="配方选择" Style="{StaticResource CardHeaderTextStyle}" />
                 </Border>
 
-                <Grid Grid.Row="1" Margin="{StaticResource PagePanelHorizontalMargin}" VerticalAlignment="Center">
+                <Grid Grid.Row="1" Style="{StaticResource PanelContentGridStyle}" VerticalAlignment="Center">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
                         <ColumnDefinition Width="300" />
@@ -87,7 +87,7 @@
         <Border Grid.Row="4" Style="{StaticResource CardStyle}">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="44" />
+                    <RowDefinition Style="{StaticResource PanelHeaderRowStyle}" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
@@ -95,7 +95,7 @@
                     <TextBlock Text="功能检测" Style="{StaticResource CardHeaderTextStyle}" />
                 </Border>
 
-                <Grid Grid.Row="1" Margin="{StaticResource PagePanelContentMargin}">
+                <Grid Grid.Row="1" Style="{StaticResource PanelContentGridStyle}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
