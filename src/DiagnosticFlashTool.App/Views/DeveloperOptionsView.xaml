@@ -20,45 +20,39 @@
 
         <Grid Grid.Row="2">
             <Grid.RowDefinitions>
-                <RowDefinition Height="112" />
-                <RowDefinition Style="{StaticResource PageSectionGapRowStyle}" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <Border Grid.Row="0" Style="{StaticResource CardStyle}">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Style="{StaticResource PanelHeaderRowStyle}" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
+            <Border Grid.Row="0" Style="{StaticResource PageLeadStandardCardStyle}">
+                <controls:CardContentPanel Style="{StaticResource Card.FormContent}">
+                    <TextBlock Text="刷写配置"
+                               Style="{StaticResource CardContentPanelTitleTextStyle}" />
 
-                    <Border Grid.Row="0" Style="{StaticResource PanelHeaderStyle}">
-                        <TextBlock Text="刷写配置" Style="{StaticResource CardHeaderTextStyle}" />
-                    </Border>
-
-                    <Grid Grid.Row="1"
-                          Style="{StaticResource PanelContentGridStyle}"
-                          VerticalAlignment="Center">
+                    <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
                         <TextBlock Grid.Column="0"
                                    Text="项目号："
-                                   Style="{StaticResource FieldLabelStyle}" />
-                        <ComboBox Grid.Column="1"
+                                   Style="{StaticResource FieldLabelStyle}"
+                                   Margin="0" />
+                        <ComboBox Grid.Column="2"
                                   Width="Auto"
                                   HorizontalAlignment="Stretch"
                                   ItemsSource="{Binding Projects}"
                                   DisplayMemberPath="ProjectName"
                                   SelectedItem="{Binding SelectedProject, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                   Style="{StaticResource StandardComboBoxStyle}" />
-                        <Button Grid.Column="3"
+                        <Button Grid.Column="4"
                                 Width="118"
                                 Command="{Binding StartFlashCommand}"
+                                Margin="0"
                                 Style="{StaticResource Button.Primary}"
                                 ToolTip="连接 CAN 设备后开始刷写">
                             <StackPanel Style="{StaticResource Button.InlineContent}">
@@ -68,10 +62,10 @@
                             </StackPanel>
                         </Button>
                     </Grid>
-                </Grid>
+                </controls:CardContentPanel>
             </Border>
 
-            <Grid Grid.Row="2">
+            <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="7*" />
                     <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
@@ -80,25 +74,22 @@
 
                 <Grid Grid.Column="0">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="96" />
-                        <RowDefinition Style="{StaticResource PageSectionGapRowStyle}" />
+                        <RowDefinition Height="108" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <Border Grid.Row="0" Style="{StaticResource CardStyle}">
+                    <Border Grid.Row="0" Style="{StaticResource PageLeadStandardCardStyle}">
                         <Grid>
                             <Grid.RowDefinitions>
-                                <RowDefinition Style="{StaticResource PanelHeaderRowStyle}" />
+                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
 
-                            <Border Grid.Row="0" Style="{StaticResource PanelHeaderStyle}">
-                                <TextBlock Text="下载进度" Style="{StaticResource CardHeaderTextStyle}" />
-                            </Border>
+                            <TextBlock Grid.Row="0"
+                                       Text="下载进度"
+                                       Style="{StaticResource CardContentTitleTextStyle}" />
 
-                            <Grid Grid.Row="1"
-                                  Style="{StaticResource PanelContentGridStyle}"
-                                  VerticalAlignment="Center">
+                            <Grid Grid.Row="1" VerticalAlignment="Center">
                                 <ProgressBar Minimum="0"
                                              Maximum="100"
                                              Value="{Binding Progress}"
@@ -113,116 +104,56 @@
                         </Grid>
                     </Border>
 
-                    <Border Grid.Row="2" Style="{StaticResource CardStyle}">
+                    <Border Grid.Row="1" Style="{StaticResource PageLeadStandardCardStyle}">
                         <Grid>
                             <Grid.RowDefinitions>
-                                <RowDefinition Style="{StaticResource PanelHeaderRowStyle}" />
+                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
 
-                            <Border Grid.Row="0" Style="{StaticResource PanelHeaderStyle}">
-                                <TextBlock Text="下载信息" Style="{StaticResource CardHeaderTextStyle}" />
-                            </Border>
+                            <TextBlock Grid.Row="0"
+                                       Text="下载信息"
+                                       Style="{StaticResource CardContentTitleTextStyle}" />
 
-                            <Border Grid.Row="1"
-                                    Style="{StaticResource PanelContentGroupStyle}">
-                                <TextBox Text="{Binding DownloadInfoText, Mode=OneWay}"
-                                         Height="Auto"
-                                         Margin="0"
-                                         Padding="0"
-                                         Background="Transparent"
-                                         BorderThickness="0"
-                                         Foreground="{StaticResource BodyTextBrush}"
-                                         FontSize="13"
-                                         IsReadOnly="True"
-                                         AcceptsReturn="True"
-                                         TextWrapping="Wrap"
-                                         VerticalContentAlignment="Top"
-                                         VerticalScrollBarVisibility="Auto" />
-                            </Border>
+                            <TextBox Grid.Row="1"
+                                     Text="{Binding DownloadInfoText, Mode=OneWay}"
+                                     Height="Auto"
+                                     Margin="0"
+                                     Padding="0"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Foreground="{StaticResource BodyTextBrush}"
+                                     FontSize="13"
+                                     IsReadOnly="True"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     VerticalContentAlignment="Top"
+                                     VerticalScrollBarVisibility="Auto" />
                         </Grid>
                     </Border>
                 </Grid>
 
                 <Grid Grid.Column="2">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="148" />
-                        <RowDefinition Style="{StaticResource PageSectionGapRowStyle}" />
+                        <RowDefinition Height="108" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <Border Grid.Row="0" Style="{StaticResource CardStyle}">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Style="{StaticResource PanelHeaderRowStyle}" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
+                    <Border Grid.Row="0" Style="{StaticResource PageLeadStandardCardStyle}">
+                        <controls:CardContentPanel Style="{StaticResource Card.FormContent}">
+                            <TextBlock Text="报文发送区"
+                                       Style="{StaticResource CardContentPanelTitleTextStyle}" />
 
-                            <Border Grid.Row="0" Style="{StaticResource PanelHeaderStyle}">
-                                <TextBlock Text="报文发送区" Style="{StaticResource CardHeaderTextStyle}" />
-                            </Border>
-
-                            <Grid Grid.Row="1" Style="{StaticResource PanelContentGridStyle}">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="32" />
-                                    <RowDefinition Height="10" />
-                                    <RowDefinition Height="32" />
-                                </Grid.RowDefinitions>
-
-                                <Grid Grid.Row="0">
-                                    <Grid.ColumnDefinitions>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="104" />
-                                        <ColumnDefinition Width="16" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="104" />
-                                        <ColumnDefinition Width="16" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="104" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <TextBlock Grid.Column="0"
-                                               Text="帧类型："
-                                               Style="{StaticResource FieldLabelStyle}" />
-                                    <ComboBox Grid.Column="1"
-                                              Width="Auto"
-                                              HorizontalAlignment="Stretch"
-                                              ItemsSource="{Binding ManualFrameTypes}"
-                                              SelectedItem="{Binding ManualFrameType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                              Style="{StaticResource StandardComboBoxStyle}" />
-
-                                    <TextBlock Grid.Column="3"
-                                               Text="帧格式："
-                                               Style="{StaticResource FieldLabelStyle}" />
-                                    <ComboBox Grid.Column="4"
-                                              Width="Auto"
-                                              HorizontalAlignment="Stretch"
-                                              ItemsSource="{Binding ManualFrameFormats}"
-                                              SelectedItem="{Binding ManualFrameFormat, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                              Style="{StaticResource StandardComboBoxStyle}" />
-
-                                    <TextBlock Grid.Column="6"
-                                               Text="发送通道："
-                                               Style="{StaticResource FieldLabelStyle}" />
-                                    <ComboBox Grid.Column="7"
-                                              Width="Auto"
-                                              HorizontalAlignment="Stretch"
-                                              ItemsSource="{Binding ManualChannelOptions}"
-                                              SelectedItem="{Binding ManualChannel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                              Style="{StaticResource StandardComboBoxStyle}" />
-                                </Grid>
-
-                                <Grid Grid.Row="2">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="104" />
-                                        <ColumnDefinition Width="16" />
+                                        <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
                                         <ColumnDefinition Width="90" />
-                                    </Grid.ColumnDefinitions>
+                                </Grid.ColumnDefinitions>
 
                                     <TextBlock Grid.Column="0"
                                                Text="帧ID:0x"
@@ -258,71 +189,68 @@
                                         </StackPanel>
                                     </Button>
                                 </Grid>
-                            </Grid>
-                        </Grid>
+                        </controls:CardContentPanel>
                     </Border>
 
-                    <Border Grid.Row="2" Style="{StaticResource CardStyle}">
+                    <Border Grid.Row="1" Style="{StaticResource PageLeadStandardCardStyle}">
                         <Grid>
                             <Grid.RowDefinitions>
-                                <RowDefinition Style="{StaticResource PanelHeaderRowStyle}" />
+                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
 
-                            <Border Grid.Row="0" Style="{StaticResource PanelHeaderStyle}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
+                            <Grid Grid.Row="0" Style="{StaticResource CardContentHeaderGridStyle}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
 
-                                    <TextBlock Grid.Column="0"
-                                               Text="报文接收区"
-                                               Style="{StaticResource CardHeaderTextStyle}"
-                                               VerticalAlignment="Center" />
-                                    <Button Grid.Column="1"
-                                            Width="98"
-                                            VerticalAlignment="Center"
-                                            Command="{Binding ToggleFrameCaptureCommand}"
-                                            Style="{StaticResource Button.ToolBar}">
-                                        <StackPanel Style="{StaticResource Button.InlineContent}">
-                                            <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Pause}"
-                                                                     Style="{StaticResource Button.PackIcon.Current}" />
-                                            <TextBlock Text="{Binding FrameCaptureActionText}"
-                                                       Style="{StaticResource Button.IconLabel}" />
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Grid.Column="2"
-                                            Width="126"
-                                            VerticalAlignment="Center"
-                                            Command="{Binding ToggleFrameFilterCommand}"
-                                            Style="{StaticResource Button.ToolBar}">
-                                        <StackPanel Style="{StaticResource Button.InlineContent}">
-                                            <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.FilterOutline}"
-                                                                     Style="{StaticResource Button.PackIcon.Current}" />
-                                            <TextBlock Text="{Binding FrameFilterActionText}"
-                                                       Style="{StaticResource Button.IconLabel}" />
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Grid.Column="3"
-                                            Width="104"
-                                            Margin="0"
-                                            VerticalAlignment="Center"
-                                            Command="{Binding ExportFramesCommand}"
-                                            Style="{StaticResource Button.ToolBar}">
-                                        <StackPanel Style="{StaticResource Button.InlineContent}">
-                                            <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.ExportVariant}"
-                                                                     Style="{StaticResource Button.PackIcon.Current}" />
-                                            <TextBlock Text="导出" Style="{StaticResource Button.IconLabel}" />
-                                        </StackPanel>
-                                    </Button>
-                                </Grid>
-                            </Border>
+                                <TextBlock Grid.Column="0"
+                                           Text="报文接收区"
+                                           Style="{StaticResource CardContentTitleTextStyle}"
+                                           VerticalAlignment="Center" />
+                                <Button Grid.Column="1"
+                                        Width="98"
+                                        VerticalAlignment="Center"
+                                        Command="{Binding ToggleFrameCaptureCommand}"
+                                        Style="{StaticResource Button.ToolBar}">
+                                    <StackPanel Style="{StaticResource Button.InlineContent}">
+                                        <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Pause}"
+                                                                 Style="{StaticResource Button.PackIcon.Current}" />
+                                        <TextBlock Text="{Binding FrameCaptureActionText}"
+                                                   Style="{StaticResource Button.IconLabel}" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Grid.Column="2"
+                                        Width="126"
+                                        VerticalAlignment="Center"
+                                        Command="{Binding ToggleFrameFilterCommand}"
+                                        Style="{StaticResource Button.ToolBar}">
+                                    <StackPanel Style="{StaticResource Button.InlineContent}">
+                                        <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.FilterOutline}"
+                                                                 Style="{StaticResource Button.PackIcon.Current}" />
+                                        <TextBlock Text="{Binding FrameFilterActionText}"
+                                                   Style="{StaticResource Button.IconLabel}" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Grid.Column="3"
+                                        Width="104"
+                                        Margin="0"
+                                        VerticalAlignment="Center"
+                                        Command="{Binding ExportFramesCommand}"
+                                        Style="{StaticResource Button.ToolBar}">
+                                    <StackPanel Style="{StaticResource Button.InlineContent}">
+                                        <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.ExportVariant}"
+                                                                 Style="{StaticResource Button.PackIcon.Current}" />
+                                        <TextBlock Text="导出" Style="{StaticResource Button.IconLabel}" />
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
 
                             <DataGrid Grid.Row="1"
-                                      Margin="{StaticResource PanelContentMargin}"
+                                      Margin="0"
                                       ItemsSource="{Binding Frames}"
                                       IsReadOnly="True"
                                       GridLinesVisibility="All"

@@ -1,11 +1,13 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="../Brushes.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
     <Thickness x:Key="CardHeaderContentPadding">22,0</Thickness>
     <Thickness x:Key="PageCardContentPadding">16</Thickness>
+    <Thickness x:Key="CardFormContentPadding">16</Thickness>
     <Thickness x:Key="CardContentTitleMargin">0,0,0,10</Thickness>
     <DropShadowEffect x:Key="CardShadowEffect"
                       Color="#0F172A"
@@ -24,7 +26,7 @@
         <Setter Property="Background" Value="{StaticResource PanelBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="CornerRadius" Value="{StaticResource CornerRadius.Card}" />
         <Setter Property="Effect" Value="{StaticResource CardShadowEffect}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Style.Triggers>
@@ -46,9 +48,21 @@
         <Setter Property="Padding" Value="{StaticResource PageCardContentPadding}" />
     </Style>
 
+    <!-- Card.Form fixes the title-to-card and last-row-to-card distances via padding. -->
+    <Style x:Key="Card.Form" TargetType="Border" BasedOn="{StaticResource Card.Standard}">
+        <Setter Property="Padding" Value="{StaticResource CardFormContentPadding}" />
+    </Style>
+
+    <!-- Standard form card rhythm: title gap 10, row gap 12, no extra last-row gap. -->
+    <Style x:Key="Card.FormContent" TargetType="{x:Type controls:CardContentPanel}">
+        <Setter Property="HeaderSpacing" Value="10" />
+        <Setter Property="RowSpacing" Value="12" />
+        <Setter Property="LastRowBottomSpacing" Value="0" />
+    </Style>
+
     <Style x:Key="DialogPanelStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}">
         <Setter Property="Padding" Value="24" />
-        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="CornerRadius" Value="{StaticResource CornerRadius.Card}" />
     </Style>
 
     <Style x:Key="DialogOverlayStyle" TargetType="Border">
@@ -61,7 +75,7 @@
         <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="CornerRadius" Value="{StaticResource CornerRadius.Control}" />
     </Style>
 
     <Style x:Key="CardHeaderTextStyle" TargetType="TextBlock">
@@ -76,6 +90,18 @@
            BasedOn="{StaticResource CardHeaderTextStyle}">
         <Setter Property="Margin" Value="{StaticResource CardContentTitleMargin}" />
         <Setter Property="VerticalAlignment" Value="Top" />
+    </Style>
+
+    <!-- Used inside CardContentPanel; the panel owns the title-to-first-row gap. -->
+    <Style x:Key="CardContentPanelTitleTextStyle"
+           TargetType="TextBlock"
+           BasedOn="{StaticResource CardHeaderTextStyle}">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+    </Style>
+
+    <Style x:Key="CardContentPanelHeaderGridStyle" TargetType="Grid">
+        <Setter Property="Margin" Value="0" />
     </Style>
 
     <Style x:Key="CardContentHeaderGridStyle" TargetType="Grid">

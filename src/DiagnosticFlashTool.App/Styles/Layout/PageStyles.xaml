@@ -44,7 +44,7 @@
         <Setter Property="Padding" Value="{StaticResource CardHeaderContentPadding}" />
     </Style>
 
-    <Style x:Key="PageLeadStandardCardStyle" TargetType="Border" BasedOn="{StaticResource Card.Standard}">
+    <Style x:Key="PageLeadStandardCardStyle" TargetType="Border" BasedOn="{StaticResource Card.Form}">
         <Setter Property="Margin" Value="{StaticResource PageCardBottomGap}" />
     </Style>
 

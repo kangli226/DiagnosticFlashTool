@@ -15,7 +15,7 @@
         Background="{StaticResource AppBackgroundBrush}">
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="0"
-                            CornerRadius="10"
+                            CornerRadius="{StaticResource CornerRadius.Window}"
                             GlassFrameThickness="0"
                             ResizeBorderThickness="6"
                             UseAeroCaptionButtons="False" />
@@ -48,7 +48,7 @@
                     <Border Width="28"
                             Height="28"
                             Background="{StaticResource BrandNavigationBrush}"
-                            CornerRadius="7">
+                            CornerRadius="{StaticResource CornerRadius.Brand}">
                         <TextBlock Text="B"
                                    Foreground="{StaticResource InverseTextBrush}"
                                    FontSize="14"

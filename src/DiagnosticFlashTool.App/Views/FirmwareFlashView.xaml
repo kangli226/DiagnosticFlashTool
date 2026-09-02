@@ -186,7 +186,6 @@
                                     Height="74"
                                     Margin="0,0,12,0"
                                     BorderThickness="1"
-                                    CornerRadius="8"
                                     Tag="{Binding DeviceStatusKind}"
                                     Style="{StaticResource StatusCardBorderStyle}">
                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -207,7 +206,6 @@
                             <Border Width="144"
                                     Height="74"
                                     BorderThickness="1"
-                                    CornerRadius="8"
                                     Tag="{Binding DownloadStatusKind}"
                                     Style="{StaticResource StatusCardBorderStyle}">
                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">

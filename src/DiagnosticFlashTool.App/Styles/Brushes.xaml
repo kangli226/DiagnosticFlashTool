@@ -4,6 +4,13 @@
         <ResourceDictionary Source="Colors.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
+    <!-- Shared radius tokens keep cards and their controls visually aligned. -->
+    <CornerRadius x:Key="CornerRadius.Window">10</CornerRadius>
+    <CornerRadius x:Key="CornerRadius.Brand">7</CornerRadius>
+    <CornerRadius x:Key="CornerRadius.Card">8</CornerRadius>
+    <CornerRadius x:Key="CornerRadius.Control">6</CornerRadius>
+    <CornerRadius x:Key="CornerRadius.Compact">4</CornerRadius>
+
     <SolidColorBrush x:Key="AppBackgroundBrush" Color="{StaticResource Color.App.Background}" />
     <SolidColorBrush x:Key="PanelBrush" Color="{StaticResource Color.Card.Background}" />
     <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource Color.Surface.Background}" />

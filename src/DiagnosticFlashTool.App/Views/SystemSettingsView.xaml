@@ -23,8 +23,8 @@
                       VerticalScrollBarVisibility="Auto">
             <StackPanel>
                 <Border Style="{StaticResource PageLeadStandardCardStyle}">
-                    <StackPanel>
-                        <TextBlock Text="基础设置" Style="{StaticResource CardContentTitleTextStyle}" />
+                    <controls:CardContentPanel Style="{StaticResource Card.FormContent}">
+                        <TextBlock Text="基础设置" Style="{StaticResource CardContentPanelTitleTextStyle}" />
 
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -65,14 +65,14 @@
                                            Style="{StaticResource SettingAssistTextStyle}" />
                             </Grid>
                         </Grid>
-                    </StackPanel>
+                    </controls:CardContentPanel>
                 </Border>
 
                 <Border Style="{StaticResource PageLeadStandardCardStyle}">
-                    <StackPanel>
-                        <TextBlock Text="CAN 适配器设置" Style="{StaticResource CardContentTitleTextStyle}" />
+                    <controls:CardContentPanel Style="{StaticResource Card.FormContent}">
+                        <TextBlock Text="CAN 适配器设置" Style="{StaticResource CardContentPanelTitleTextStyle}" />
 
-                        <Grid Margin="{StaticResource PageContentBottomGap}">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
                                 <ColumnDefinition Width="*" />
@@ -86,7 +86,7 @@
                                       Style="{StaticResource StandardComboBoxStyle}" />
                         </Grid>
 
-                        <Grid Margin="{StaticResource PageContentBottomGap}">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
                                 <ColumnDefinition Width="*" />
@@ -115,12 +115,12 @@
                                        Text="软件启动后使用上述设备和通道自动连接"
                                        Style="{StaticResource SettingAssistTextStyle}" />
                         </Grid>
-                    </StackPanel>
+                    </controls:CardContentPanel>
                 </Border>
 
                 <Border Style="{StaticResource PageLeadStandardCardStyle}">
-                    <StackPanel>
-                        <Grid Style="{StaticResource CardContentHeaderGridStyle}">
+                    <controls:CardContentPanel Style="{StaticResource Card.FormContent}">
+                        <Grid Style="{StaticResource CardContentPanelHeaderGridStyle}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
@@ -128,7 +128,7 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
                                        Text="运行配置管理"
-                                       Style="{StaticResource CardContentTitleTextStyle}" />
+                                       Style="{StaticResource CardContentPanelTitleTextStyle}" />
                             <Button Grid.Column="1"
                                     Command="{Binding ImportBuiltinConfigurationCommand}"
                                     Style="{StaticResource Button.Normal}"
@@ -137,7 +137,7 @@
                                 <StackPanel Style="{StaticResource Button.InlineContent}">
                                     <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.CloudDownloadOutline}"
                                                              Style="{StaticResource Button.PackIcon.Accent}" />
-                                    <TextBlock Text="导入内置配置" Style="{StaticResource Button.IconLabel}" />
+                                    <TextBlock Text="导入" Style="{StaticResource Button.IconLabel}" />
                                 </StackPanel>
                             </Button>
                             <Button Grid.Column="2"
@@ -148,13 +148,13 @@
                                 <StackPanel Style="{StaticResource Button.InlineContent}">
                                     <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.DeleteOutline}"
                                                              Style="{StaticResource Button.PackIcon.Accent}" />
-                                    <TextBlock Text="清空全部配置"
+                                    <TextBlock Text="清空"
                                                Style="{StaticResource Button.IconLabel}" />
                                 </StackPanel>
                             </Button>
                         </Grid>
 
-                        <Grid Margin="{StaticResource PageContentBottomGap}">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
                                 <ColumnDefinition Width="*" />
@@ -188,7 +188,7 @@
                             </Button>
                         </Grid>
 
-                        <Grid Margin="{StaticResource PageContentBottomGap}">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
                                 <ColumnDefinition Width="*" />
@@ -255,14 +255,14 @@
                                 </StackPanel>
                             </Button>
                         </Grid>
-                    </StackPanel>
+                    </controls:CardContentPanel>
                 </Border>
 
                 <Border Style="{StaticResource PageLeadStandardCardStyle}">
-                    <StackPanel>
-                        <TextBlock Text="日志存储" Style="{StaticResource CardContentTitleTextStyle}" />
+                    <controls:CardContentPanel Style="{StaticResource Card.FormContent}">
+                        <TextBlock Text="日志存储" Style="{StaticResource CardContentPanelTitleTextStyle}" />
 
-                        <Grid Margin="{StaticResource PageContentBottomGap}">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
                                 <ColumnDefinition Width="Auto" />
@@ -278,7 +278,7 @@
                                        Style="{StaticResource SettingAssistTextStyle}" />
                         </Grid>
 
-                        <Grid Margin="{StaticResource PageContentBottomGap}">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
                                 <ColumnDefinition Width="*" />
@@ -355,12 +355,12 @@
                                        Text="MB"
                                        Style="{StaticResource SettingAssistTextStyle}" />
                         </Grid>
-                    </StackPanel>
+                    </controls:CardContentPanel>
                 </Border>
 
                 <Border Style="{StaticResource PageLeadStandardCardStyle}">
-                    <StackPanel>
-                        <TextBlock Text="管理员模式" Style="{StaticResource CardContentTitleTextStyle}" />
+                    <controls:CardContentPanel Style="{StaticResource Card.FormContent}">
+                        <TextBlock Text="管理员模式" Style="{StaticResource CardContentPanelTitleTextStyle}" />
 
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -395,7 +395,7 @@
                                        Text="开启后显示配方配置、开发者选项、流程配置、项目配置。"
                                        Style="{StaticResource HintTextStyle}" />
                         </Grid>
-                    </StackPanel>
+                    </controls:CardContentPanel>
                 </Border>
             </StackPanel>
         </ScrollViewer>

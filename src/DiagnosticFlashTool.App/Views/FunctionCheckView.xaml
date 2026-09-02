@@ -8,7 +8,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Style="{StaticResource PageHeaderRowStyle}" />
             <RowDefinition Style="{StaticResource PageHeaderGapRowStyle}" />
-            <RowDefinition Height="120" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Style="{StaticResource PageSectionGapRowStyle}" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
@@ -53,18 +53,12 @@
             </controls:PageHeader.Actions>
         </controls:PageHeader>
 
-        <Border Grid.Row="2" Style="{StaticResource CardStyle}">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Style="{StaticResource PanelHeaderRowStyle}" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
+        <Border Grid.Row="2" Style="{StaticResource Card.Form}">
+            <controls:CardContentPanel Style="{StaticResource Card.FormContent}">
+                <TextBlock Text="配方选择"
+                           Style="{StaticResource CardContentPanelTitleTextStyle}" />
 
-                <Border Grid.Row="0" Style="{StaticResource PanelHeaderStyle}">
-                    <TextBlock Text="配方选择" Style="{StaticResource CardHeaderTextStyle}" />
-                </Border>
-
-                <Grid Grid.Row="1" Style="{StaticResource PanelContentGridStyle}" VerticalAlignment="Center">
+                <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
                         <ColumnDefinition Width="300" />
@@ -81,7 +75,7 @@
                               SelectedItem="{Binding SelectedFunctionCheckConfig}"
                               Style="{StaticResource StandardComboBoxStyle}" />
                 </Grid>
-            </Grid>
+            </controls:CardContentPanel>
         </Border>
 
         <Border Grid.Row="4" Style="{StaticResource CardStyle}">

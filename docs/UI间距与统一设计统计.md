@@ -27,8 +27,10 @@
 | 样式/模板 | 尺寸、内外边距、位置规则 | 统一程度 |
 |---|---|---|
 | `CardStyle` | 背景面板色；边框 1；圆角 8；默认阴影；悬停使用增强阴影 | 统一模板 |
-| `Card.Compact` | 继承 `CardStyle`，内边距 14（四边） | 统一模板，表格/紧凑内容 |
-| `Card.Standard` | 继承 `CardStyle`，内边距 18 | 统一模板，标准内容 |
+| `Card.Compact` | 继承 `CardStyle`，内边距 16（四边） | 统一模板，表格/紧凑内容 |
+| `Card.Standard` | 继承 `CardStyle`，内边距 16（四边） | 统一模板，标准内容 |
+| `Card.Form` | 继承 `Card.Standard`，使用 `CardFormContentPadding=16` 固定内容区内边距 | 统一模板，表单卡片外壳 |
+| `Card.FormContent` / `CardContentPanel` | 标题后 10；数据行之间 12；末行额外底部间距 0；首个可见子项作为标题 | 统一模板，表单卡片内容布局 |
 | `Card.Elevated` | 继承 `CardStyle`，固定增强阴影 | 统一模板，页头 |
 | `DialogPanelStyle` | 继承卡片，内边距 24，圆角 8 | 统一模板 |
 | `PageHeaderCardStyle` | 继承 `Card.Elevated`，左右内边距 22 | 统一模板 |
@@ -37,10 +39,13 @@
 | `PanelContentGridStyle` | `Margin=22,12,22,12` | 统一模板 |
 | `PanelContentGroupStyle` | 继承设置组，外边距 `22,12,22,12`，内边距 `12,10` | 统一模板 |
 | `CardHeaderTextStyle` | 字号 16、半粗、垂直居中 | 统一模板 |
-| `CardContentTitleTextStyle` | 继承卡片标题，下边距 10 | 统一模板 |
+| `CardContentTitleTextStyle` | 继承卡片标题，下边距 10 | 统一模板，兼容手工布局 |
+| `CardContentPanelTitleTextStyle` | 卡片标题无自身外边距，由 `CardContentPanel` 统一控制标题间距 | 统一模板 |
 | `CardContentTitleGapRowStyle` | 行高 10 | 统一模板 |
 | `FieldLabelStyle` | 字号 12、右对齐、右边距 12、垂直居中 | 统一模板 |
 | `SettingGroupPanelStyle` | 内边距 14；边框 1；圆角 6 | 统一模板 |
+
+表单型卡片统一使用 `Card.Form` 外壳和 `Card.FormContent` 内容面板；标题、首行、行间及末行间距由面板集中管理。数据表、状态摘要、工具栏和日志列表等需要填满剩余空间的卡片继续使用各自的专用布局。
 
 ### 2.2 按钮与图标
 
@@ -71,20 +76,22 @@
 | 控件/样式 | 尺寸与间距 |
 |---|---|
 | `SoftTextBoxStyle` | 高 36；`Padding=10,4`；`Margin=0`；边框 1；圆角 6 |
-| 隐式 `TextBox` | 高 30；`Margin=0,4,0,8`；`Padding=8,4` |
+| `SoftPasswordBoxStyle` | 高 32；`Padding=10,4`；`Margin=0`；边框 1；圆角 6 |
+| 隐式 `TextBox` / `PasswordBox` | 分别继承 `SoftTextBoxStyle` / `SoftPasswordBoxStyle`，保证未显式设置样式时仍使用统一圆角 |
 | `PathTextBoxStyle` | 继承软输入框；高 32；只读 |
 | `PathDisplayBorderStyle` | 高 32；`Padding=10,0`；边框 1；圆角 6 |
 | `StandardComboBoxStyle` | 默认 `280 x 32`；`Padding=10,0,34,0`；`Margin=0`；下拉最大高 260 |
 | `StandardComboBoxItemStyle` | 最小高 30；`Padding=10,5`；模板内部边距 `2,1`；圆角 4 |
 | `SoftSwitchStyle` | `44 x 24`；轨道圆角 6；滑块 `18 x 18`，外边距 3 |
-| `SoftProgressBarStyle` | 高 24；轨道/指示器圆角 12 |
+| `SoftProgressBarStyle` / 隐式 `ProgressBar` | 高 24；轨道/指示器圆角 6 |
 | `InlineStatusValueBorderStyle` | 高 32；`Padding=10,0`；边框 1；圆角 6 |
-| `DataGrid.Base` | 行高 40；表头高 38；行头宽 0；字号 13；单行选择 |
+| 圆角令牌 | `CornerRadius.Card=8`；`CornerRadius.Control=6`；`CornerRadius.Compact=4`，由 `Brushes.xaml` 全局提供 |
+| `DataGrid.Base` | 行高 40；表头高 38；行头宽 0；字号 13；单行选择；使用 `CornerRadius.Control=6` 裁剪外边界 |
 | DataGrid 表头 | 左内边距 10；下/右边框 1 |
 | DataGrid 单元格 | 左右内边距 10；底边框 1 |
 | `FunctionCheckDataGridStyle` | 继承表格基线，网格线改为 All，只读 |
-| `LogListBoxStyle` | `Padding=12,10`；列表项 `Padding=0,4`；横向内容拉伸 |
-| `LogTextBoxStyle` | `Padding=12,10`；等宽 Consolas；自动换行/滚动 |
+| `LogListBoxStyle` | `Padding=12,10`；列表项 `Padding=0,4`；横向内容拉伸；圆角裁剪 6 |
+| `LogTextBoxStyle` | `Padding=12,10`；等宽 Consolas；自动换行/滚动；圆角裁剪 6 |
 
 ### 2.4 状态与文字令牌
 
@@ -154,20 +161,20 @@
 - 根：外边距 24；页头 88 + 12；摘要行 122；摘要与表格间 12；表格占余量。
 - 摘要区三列 `1* / 12 / 1* / 12 / 1*`；每张 `PageSummaryCardStyle` 无额外内边距，内容 StackPanel 左右 18、垂直居中。
 - 每张摘要卡内部：标签；主状态值上边距 10、字号 22；次级文字上边距 6。进度卡的进度网格使用 `PageContentTopGap=0,12,0,0`，进度条高 24。
-- 底部 DataGrid：`Card.Compact` 内边距 14；表格基线行高 40、表头 38。列宽 `Time=120, Dir=70, Ch=70, ID=140, DLC=70, Data=*`。
+- 底部 DataGrid：`Card.Compact` 内边距 16；表格基线行高 40、表头 38。列宽 `Time=120, Dir=70, Ch=70, ID=140, DLC=70, Data=*`。
 
 ### 3.3 `FlashHistoryView.xaml` 历史记录
 
 - 根：外边距 24；页头 88 + 12；主体 `*`。
-- 主卡 `Card.Standard`，内边距 18。
+- 主卡 `Card.Standard`，内边距 16。
 - 空状态 Border 页面显式：内边距 20、边框 1、圆角 8，填充 Surface；居中 StackPanel。
 - 空状态标题 `EmptyStateTitleTextStyle`（字号 22）；说明文字上边距 8，水平居中。
 
 ### 3.4 `FunctionCheckView.xaml` 功能检测
 
-- 根：外边距 24；页头 88 + 12；配方卡固定高 120；间距 12；检测卡占余量。
+- 根：外边距 24；页头 88 + 12；配方卡按内容自适应高度；间距 12；检测卡占余量。
 - 页头动作区含主题按钮（高 36、右边距 12）及三个窗口控制按钮 `46 x 46`，均为页面专用组合。
-- 配方选择卡：标题行 50、标题左右 22；内容 `Margin=22,12,22,12`，标签列 90，选择列显式宽 300，ComboBox 显式宽 270（左对齐），剩余列 `*`。
+- 配方选择卡：采用 `Card.Form` + `CardContentPanel`，按标题后 10、内容行间 12 的通用节奏自适应高度；标签列 90，选择列显式宽 300，ComboBox 显式宽 270（左对齐），剩余列 `*`。检测表格仍保留专用布局。
 - 检测卡：标题行 50；内容边距 22/12；内部行 `Auto / * / 44`，底部操作区高 44。
 - DataGrid 使用 `FunctionCheckDataGridStyle`（行 40、表头 38、全网格、只读）；列宽 `序号=100, 检测项=300, 期望值=130, 当前值=130, 检测日期=200, 检测结果=*`；单元格文字样式左右外边距 10。
 - “开始检测”按钮页面显式 `130 x 36`，右下对齐，样式 `Button.Primary`。
@@ -176,61 +183,58 @@
 
 - 根：外边距 24；页头 88 + 12；主体 `*`。
 - 页头操作：Add `80`、Delete `80`、Save `90`；均横向排列，工具栏按钮间默认右边距 8（Save 仍继承主按钮基线，页面未额外改 Margin）。
-- 主卡 `Card.Compact`（内边距 14）包住 DataGrid；表格基线行高 40、表头 38、左右内边距 10。
+- 主卡 `Card.Compact`（内边距 16）包住 DataGrid；表格基线行高 40、表头 38、左右内边距 10。
 - 列宽：`Project=160, No=70, Baud=80, Physical ID=130, Functional ID=130, Response ID=130, BOOT=120, Driver file=220, Application file=*`。
 - 页面显式启用不可新增/删除、列头显示、水平网格；其余遵循 `DataGrid.Base`。
 
 ### 3.6 `RecipeConfigView.xaml` 配方配置
 
-- 布局与 `ProjectConfigView` 完全相同：根外边距 24、页头 88 + 12、主卡 `Card.Compact` 内边距 14。
+- 布局与 `ProjectConfigView` 完全相同：根外边距 24、页头 88 + 12、主卡 `Card.Compact` 内边距 16。
 - 页头操作宽度 `80 / 80 / 90`，按钮间距遵循工具栏/主按钮样式。
 - DataGrid 列宽同样为 `160 / 70 / 80 / 130 / 130 / 130 / 120 / 220 / *`；页面未定义独立配方列模板，属于复用项目表格模板。
 
 ### 3.7 `FlowConfigView.xaml` 流程配置
 
 - 根：外边距 24；页头 88 + 12；工具卡 `Auto`；表格 `*`；底部验证卡固定高 110。
-- 工具卡 `PageLeadStandardCardStyle`（继承 `Card.Standard`，内边距 18，底部间距 12），内部 DockPanel 左右两组。
+- 工具卡 `PageLeadStandardCardStyle`（继承 `Card.Form`，内边距 16，底部间距 12），内部 DockPanel 左右两组。
   - 左组：标签右边距 8；ComboBox 显式宽 180；按钮 `Load=80, Validate=90, Save=90`；工具栏按钮默认右边距 8。
   - 右组：`Add Step=100, Delete=86, Up=70, Down=70`；横向排列，最后按钮仍可能继承工具栏右边距 8。
-- 中部 DataGrid `Card.Compact`；列宽 `ID=60, Name=180, Step Type=140, Service=90, Sub=80, Extend=140, Addressing=100, Security=140, CRC=120, Timeout=90, Pending=90, Algorithm Params=*`。
-- 验证卡 `PageTrailingCompactCardStyle`（内边距 14，顶部间距 12，固定高 110）；标题 `CardContentTitleTextStyle` 下边距 10；日志框 `LogTextBoxStyle`，内边距 12/10。
+- 中部 DataGrid `Card.Compact`（内边距 16）；列宽 `ID=60, Name=180, Step Type=140, Service=90, Sub=80, Extend=140, Addressing=100, Security=140, CRC=120, Timeout=90, Pending=90, Algorithm Params=*`。
+- 验证卡 `PageTrailingCompactCardStyle`（内边距 16，顶部间距 12，固定高 110）；标题 `CardContentTitleTextStyle` 下边距 10；日志框 `LogTextBoxStyle`，内边距 12/10。
 
 ### 3.8 `AlgorithmConfigView.xaml` 算法配置
 
 - 根：外边距 24；页头 88 + 12；主体 `*`。
 - 页头副标题绑定脚本根路径；右侧元信息 `PageHeaderMetaTextStyle`（字号 13、半粗）。
-- 主卡 `Card.Compact` 内边距 14，DataGrid 只读；基线行高 40、表头 38。
+- 主卡 `Card.Compact` 内边距 16，DataGrid 只读；基线行高 40、表头 38。
 - 列宽：`Category=150, Name=180, Status=110, Source=*`；单元格左右内边距 10。
 
 ### 3.9 `DeveloperOptionsView.xaml` 开发者选项
 
-- 根：外边距 24；页头 88 + 12；内容区先为固定高 112 的刷写配置卡，再间距 12，再占余量主体。
-- 刷写配置卡：标题行 50；内容边距 22/12；标签列 90，ComboBox 列 `*`（页面显式 `Width=Auto`、拉伸），列间固定 12，开始刷写按钮显式宽 118、样式 `Button.Primary`。
+- 根：外边距 24；页头 88 + 12；内容区先为自适应高度的表单卡，再占余量主体。
+- 刷写配置卡：采用 `Card.Form` + `CardContentPanel`，标题后 10、内容行间 12；标签列 `Auto`，ComboBox 列 `*`（页面显式 `Width=Auto`、拉伸），列间固定 12，开始刷写按钮显式宽 118、样式 `Button.Primary`。
 - 主体左右比例 `7* / 12 / 13*`，中间间距 12（星号为比例而非像素）。
-- 左列：上部下载进度卡固定高 96（标题 50、内容边距 22/12、进度条 24）；下部下载信息卡占余量，标题 50；内容使用 `PanelContentGroupStyle`（外边距 22/12，内边距 12/10），内嵌 TextBox 页面显式 `Height=Auto, Margin=0, Padding=0`。
-- 右列：上部报文发送卡固定高 148；下部报文接收卡占余量；两卡间 12。
-  - 发送卡标题 50；内容边距 22/12；两行 `32 / 10 / 32`。
+- 左列：上部下载进度卡固定高 108（标题后 10、进度条 24）；下部下载信息卡占余量，标题后 10；内嵌 TextBox 页面显式 `Height=Auto, Margin=0, Padding=0`。
+- 右列：上部报文发送卡固定高 160；下部报文接收卡占余量；两卡间 12。
+  - 发送卡标题后 10；两行 `32 / 10 / 32`。
   - 第一行列结构：标签 `Auto`，下拉 `104`，间隔 16，标签 `Auto`，下拉 `104`，间隔 16，标签 `Auto`，下拉 `104`，尾列 `*`。三个 ComboBox 均页面显式拉伸覆盖默认 280 宽。
   - 第二行：标签 `Auto`，ID 输入 `104`，间隔 16，数据标签 `Auto`，数据输入 `*`，间隔 12，发送按钮 `90`。输入框高 32、Margin 0；发送按钮高 32、Margin 0。
-  - 接收卡标题行仍高 50；标题右侧按钮宽 `98 / 126 / 104`，前两个沿用工具栏右边距 8，导出按钮页面显式 Margin 0；DataGrid 使用 `Margin=22,12,22,12`（`PanelContentMargin`）、只读、全网格；列宽 `方向=110, ID=140, 格式=140, 长度=100, 数据=*`。
-- 该页的 7:13 比例、固定卡高、104/90 等列宽均为页面显式自定义，非通用模板。
+  - 接收卡标题后 10；标题右侧按钮宽 `98 / 126 / 104`，前两个沿用工具栏右边距 8，导出按钮页面显式 Margin 0；DataGrid 无额外外边距、只读、全网格；列宽 `方向=110, ID=140, 格式=140, 长度=100, 数据=*`。
+- 该页的 7:13 比例、108/160 固定卡高、104/90 等列宽均为页面显式自定义，非通用模板。
 
 ### 3.10 `SystemSettingsView.xaml` 系统设置
 
-- 根：外边距 24；页头 88 + 12；内容为垂直 ScrollViewer，卡片顺序固定，卡片均 `PageLeadStandardCardStyle`（标准内边距 18，底部间距 12）。
-- “基础设置”卡：标题 `CardContentTitleTextStyle`（下边距 10）；内容两列 `* / 24 / *`，外层底部 8。每列内部标签列 90、开关 `44 x 24`、开关后间距 12、状态辅助文字字号 12。
-- “CAN 连接”卡：标题/状态/按钮行与内容行之间使用标题间隙 10；状态徽章最小宽 176，内边距 10/4；状态点 `8 x 8`，点与文字页面显式间距 8；连接按钮宽 126、高 36、无外边距。
-  - 下方两组设置列 `* / 24 / *`；每组 `SettingGroupPanelStyle` 内边距 14、边框 1、圆角 6。
-  - 设备设置组：标题后 12；普通行间距 10；三行分别为设备类型下拉、自动连接开关（开关后间距 14）、设备通道下拉；标签列 90。
-  - 波特率组：标题后 12；自动搜索行与波特率行间 10；提示行与波特率行间 6；提示使用 `FormAssistTextAfterLabelMargin=90` 对齐标签列。
-- “运行配置管理”卡：标题操作区使用 `CardContentHeaderGridStyle`（标题下边距 10）；导入按钮高 32、右边距 8，清空按钮高 32、Margin 0。三条路径行，前两条底部间距 8；标签列 90，路径框高 32，路径操作统一 `Button.PathAction`（高 30、左边距 6、最小宽 52）。
-- “日志存储”卡：标题下边距 10；前两行均 `PageContentBottomGap`（底部 12）；保存开关后间距 12；日志文件路径操作沿用路径按钮；数值行两组之间固定间隔 24，数值输入框 `64 x 32`，单位间隔 4。
-- “管理员模式”卡：网格列 `90 / Auto / 12 / Auto / 12 / *`；标题行后 `CardContentTitleGapRowStyle=10`；开关 `44 x 24`；状态值继承 `ConfigValueTextStyle` 并按启用状态改色；右侧提示自动换行。
+- 根：外边距 24；页头 88 + 12；内容为垂直 ScrollViewer，卡片顺序固定，卡片均 `PageLeadStandardCardStyle`（继承 `Card.Form`，内边距 16，底部间距 12）。
+- “基础设置”卡：采用 `Card.Form` + `CardContentPanel`，标题后 10、数据行间 12、末行不追加间距；内容两列 `* / 24 / *`。每列内部标签列 90、开关 `44 x 24`、开关后间距 12、状态辅助文字字号 12。
+- “CAN 适配器设置”卡：采用 `CardContentPanel`，设备类型、设备通道、自动连接三行均按 12 间隔排列；标签列 90，开关后间距 12，状态辅助文字字号 12。
+- “运行配置管理”卡：采用 `CardContentPanel`，标题操作区使用无外边距的面板标题样式；标题后 10、三条路径行之间 12；导入按钮高 32、右边距 8，清空按钮高 32、Margin 0。标签列 90，路径框高 32，路径操作统一 `Button.PathAction`（高 30、左边距 6、最小宽 52）。
+- “日志存储”卡：采用 `CardContentPanel`，标题后 10、三行数据之间 12、末行不追加间距；保存开关后间距 12；日志文件路径操作沿用路径按钮；数值行两组之间固定间隔 24，数值输入框 `64 x 32`，单位间隔 4。
+- “管理员模式”卡：采用 `CardContentPanel`，标题后 10；网格列 `90 / Auto / 12 / Auto / 12 / *`；开关 `44 x 24`；状态值继承 `ConfigValueTextStyle` 并按启用状态改色；右侧提示自动换行。
 - 管理员密码弹窗：遮罩继承 `DialogOverlayStyle`（默认折叠，显示时覆盖三行）；面板宽 380、`DialogPanelStyle` 内边距 24；标题下边距 10，提示下边距 12；PasswordBox 高 32、默认下边距 16；取消按钮 `78 x 32` 且右边距 8，确认按钮高 32。
 
 ### 3.11 `SystemLogView.xaml` 日志
 
-- 根：外边距 24；页头 88 + 12；主体为 `PageLeadStandardCardStyle`（标准内边距 18）。
+- 根：外边距 24；页头 88 + 12；主体为 `PageLeadStandardCardStyle`（内边距 16）。
 - 主卡内部行：标题区 `Auto`、间距 12、工具栏 `Auto`、间距 10、日志列表 `*`。
 - 标题区：标题使用 `CardHeaderTextStyle`；标题与状态/路径行之间 `CardContentTitleGapRowStyle=10`。
 - 状态/路径行列：状态框最小宽 148；状态框与路径框间 10；路径框与右侧过滤汇总间 12；路径框高度 32、内边距 10/0。
@@ -259,7 +263,7 @@
 |---|---|
 | 页面骨架 | `PageRootGridStyle`、`PageHeaderRowStyle`、`PageHeaderGapRowStyle`、`PageSectionGapRowStyle`、`PageSummaryRowStyle`、`PageColumnGapStyle`、`FormLabelColumnStyle` |
 | 页头与复用控件 | `PageHeader`、`PageHeaderCardStyle`、`PageTitleTextStyle`、`PageSubtitleTextStyle`、`PageHeaderSubtitleTextStyle`、`PageHeaderMetaTextStyle`、`PageHelpDocumentButton` |
-| 卡片与面板 | `CardStyle`、`Card.Compact`、`Card.Standard`、`Card.Elevated`、`DialogPanelStyle`、`SettingGroupPanelStyle`、`PanelHeaderStyle`、`PanelContentGridStyle`、`PanelContentGroupStyle` |
+| 卡片与面板 | `CardStyle`、`Card.Compact`、`Card.Standard`、`Card.Form`、`Card.FormContent`、`CardContentPanel`、`Card.Elevated`、`DialogPanelStyle`、`SettingGroupPanelStyle`、`PanelHeaderStyle`、`PanelContentGridStyle`、`PanelContentGroupStyle`、`CardContentPanelTitleTextStyle` |
 | 按钮 | `Button.Base`、`Button.Normal`、`Button.Primary`、`Button.Danger`、`Button.ToolBar`、`Button.Compact`、`Button.PathAction`、`Button.ConnectionAction`、`Button.ConnectionPrimaryAction`、`Button.HelpDocument`、`Button.Icon`、对话框/窗口按钮样式 |
 | 输入与反馈 | `SoftTextBoxStyle`、`PathTextBoxStyle`、`PathDisplayBorderStyle`、`StandardComboBoxStyle`、ComboBoxItem 模板、`SoftSwitchStyle`、`SoftProgressBarStyle`、`InlineStatusValueBorderStyle` |
 | 数据展示 | `DataGrid.Base`、隐式 DataGrid/Header/Cell 样式、`FunctionCheckDataGridStyle`、`LogListBoxStyle`、`LogTextBoxStyle` |
@@ -272,7 +276,7 @@
 以下内容在页面 XAML 中直接定义，不能仅靠统一模板推导：
 
 - 每个页面的标题、副标题、字段文案、绑定命令、状态文案和业务数据列。
-- 页面显式行高/列宽/比例：例如固件页状态卡 `144 x 74`、功能检测配方卡高 120、开发者页 `7*:12:13*`、系统设置两列间距 24、流程验证卡高 110。
+- 页面显式行高/列宽/比例：例如固件页状态卡 `144 x 74`、开发者页 `7*:12:13*`、系统设置两列间距 24、流程验证卡高 110；表单卡片的垂直节奏由 `CardContentPanel` 统一提供。
 - 专用 DataGrid 列及列宽：项目/配方、流程、算法、功能检测、刷写监控、开发者报文接收。
 - `FunctionCheckView` 页头主题按钮与窗口控制按钮组合，以及开始检测按钮 `130 x 36`。
 - `DeveloperOptionsView` 报文发送/接收区域、104 宽输入/下拉列、90 宽发送按钮、接收区三按钮及自定义全网格表格。
@@ -290,10 +294,11 @@
 | `Button.ToolBar` | 17 | 7 个页面/壳层 |
 | `FieldLabelStyle` | 27 | 5 个表单型页面 |
 | `FormLabelColumnStyle` | 19 | 4 个复杂表单页面 |
-| `CardStyle`（直接引用） | 10 | 固件、功能检测、开发者页；衍生卡片另行统计 |
+| `Card.Form` / `Card.FormContent` | 8 / 7 | 系统设置、功能检测、开发者刷写配置 |
+| `CardStyle`（直接引用） | 7 | 固件、功能检测表格；衍生卡片另行统计 |
 | `Card.Compact`（直接引用） | 5 | 算法、监控、流程、项目、配方 |
-| `PageLeadStandardCardStyle` | 7 | 流程、系统设置、系统日志 |
-| `PanelHeaderRowStyle` / `PanelHeaderStyle` | 各 10 | 固件、功能检测、开发者页 |
+| `PageLeadStandardCardStyle` | 12 | 流程、系统设置、系统日志、开发者页 |
+| `PanelHeaderRowStyle` / `PanelHeaderStyle` | 各 4 | 固件、功能检测表格 |
 | `StandardComboBoxStyle` | 10 | 5 个页面 |
 | `SoftSwitchStyle` | 7 | 系统设置、系统日志 |
 | `PageHeader` 控件 | 11 | 全部业务页面 |

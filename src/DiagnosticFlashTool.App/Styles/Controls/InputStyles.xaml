@@ -21,7 +21,7 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="6">
+                            CornerRadius="{StaticResource CornerRadius.Control}">
                         <ScrollViewer x:Name="PART_ContentHost"
                                       Margin="{TemplateBinding Padding}"
                                       VerticalAlignment="Center" />
@@ -41,16 +41,47 @@
         </Setter>
     </Style>
 
-    <Style x:Key="DialogPasswordBoxStyle" TargetType="PasswordBox">
+    <Style x:Key="SoftPasswordBoxStyle" TargetType="PasswordBox">
         <Setter Property="Height" Value="32" />
         <Setter Property="Padding" Value="10,4" />
-        <Setter Property="Margin" Value="0,0,0,16" />
+        <Setter Property="Margin" Value="0" />
         <Setter Property="PasswordChar" Value="*" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}" />
         <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}" />
         <Setter Property="Foreground" Value="{StaticResource BodyTextBrush}" />
         <Setter Property="FontSize" Value="14" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="PasswordBox">
+                    <Border x:Name="PasswordBoxBorder"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{StaticResource CornerRadius.Control}">
+                        <ScrollViewer x:Name="PART_ContentHost"
+                                      Margin="{TemplateBinding Padding}"
+                                      VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="PasswordBoxBorder" Property="BorderBrush" Value="{StaticResource PrimaryActiveBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{StaticResource DisabledTextBrush}" />
+                            <Setter TargetName="PasswordBoxBorder" Property="Background" Value="{StaticResource SurfaceBrush}" />
+                            <Setter TargetName="PasswordBoxBorder" Property="BorderBrush" Value="{StaticResource DividerBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="DialogPasswordBoxStyle"
+           TargetType="PasswordBox"
+           BasedOn="{StaticResource SoftPasswordBoxStyle}">
+        <Setter Property="Margin" Value="0,0,0,16" />
     </Style>
 
     <Style x:Key="PathTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource SoftTextBoxStyle}">
@@ -66,7 +97,7 @@
         <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="CornerRadius" Value="{StaticResource CornerRadius.Control}" />
     </Style>
 
     <Style x:Key="PathDisplayTextStyle" TargetType="TextBlock">
@@ -82,7 +113,7 @@
         <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="CornerRadius" Value="{StaticResource CornerRadius.Control}" />
     </Style>
 
     <Style x:Key="InlineStatusValueTextStyle" TargetType="TextBlock" BasedOn="{StaticResource ValueCodeTextStyle}">
@@ -94,14 +125,14 @@
         <Grid Width="{TemplateBinding Width}" Height="{TemplateBinding Height}">
             <Border x:Name="SwitchTrack"
                     Background="{StaticResource DividerBrush}"
-                    CornerRadius="6" />
+                    CornerRadius="{StaticResource CornerRadius.Control}" />
             <Border x:Name="SwitchThumb"
                     Width="18"
                     Height="18"
                     Margin="3"
                     HorizontalAlignment="Left"
                     Background="{StaticResource PanelBrush}"
-                    CornerRadius="4" />
+                    CornerRadius="{StaticResource CornerRadius.Compact}" />
         </Grid>
         <ControlTemplate.Triggers>
             <Trigger Property="IsChecked" Value="True">
@@ -131,10 +162,11 @@
                     <Grid ClipToBounds="True">
                         <Border x:Name="PART_Track"
                                 Background="{StaticResource ProgressTrackBrush}"
-                                CornerRadius="12" />
+                                CornerRadius="{StaticResource CornerRadius.Control}" />
                         <Decorator x:Name="PART_Indicator"
                                    HorizontalAlignment="Left">
-                            <Border Background="{StaticResource PrimaryActiveBrush}" CornerRadius="12" />
+                            <Border Background="{StaticResource PrimaryActiveBrush}"
+                                    CornerRadius="{StaticResource CornerRadius.Control}" />
                         </Decorator>
                     </Grid>
                 </ControlTemplate>
@@ -142,7 +174,9 @@
         </Setter>
     </Style>
 
-    <Style TargetType="TextBox">
+    <Style TargetType="ProgressBar" BasedOn="{StaticResource SoftProgressBarStyle}" />
+
+    <Style TargetType="TextBox" BasedOn="{StaticResource SoftTextBoxStyle}">
         <Setter Property="Height" Value="30" />
         <Setter Property="Margin" Value="0,4,0,8" />
         <Setter Property="Padding" Value="8,4" />
@@ -151,6 +185,8 @@
         <Setter Property="Foreground" Value="{StaticResource BodyTextBrush}" />
         <Setter Property="FontSize" Value="14" />
     </Style>
+
+    <Style TargetType="PasswordBox" BasedOn="{StaticResource SoftPasswordBoxStyle}" />
 
     <Style x:Key="StandardComboBoxItemStyle" TargetType="{x:Type ComboBoxItem}">
         <Setter Property="MinHeight" Value="30" />
@@ -166,7 +202,7 @@
                             Margin="2,1"
                             Padding="{TemplateBinding Padding}"
                             Background="{TemplateBinding Background}"
-                            CornerRadius="4"
+                            CornerRadius="{StaticResource CornerRadius.Compact}"
                             SnapsToDevicePixels="True">
                         <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
@@ -204,7 +240,7 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="6"
+                                CornerRadius="{StaticResource CornerRadius.Control}"
                                 SnapsToDevicePixels="True" />
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -251,7 +287,7 @@
                     <Border Background="{StaticResource PanelBrush}"
                             BorderBrush="{StaticResource InputBorderBrush}"
                             BorderThickness="1"
-                            CornerRadius="6" />
+                            CornerRadius="{StaticResource CornerRadius.Control}" />
                     <ScrollViewer Margin="2"
                                   CanContentScroll="True"
                                   SnapsToDevicePixels="True">

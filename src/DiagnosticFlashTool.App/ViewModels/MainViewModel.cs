@@ -190,9 +190,6 @@ public sealed class MainViewModel : ObservableObject
     private string _applicationFilePath = string.Empty;
     private string _manualFrameId = "7E0";
     private string _manualFrameData = "02 10 03";
-    private string _manualChannel = "Index0";
-    private string _manualFrameType = "数据帧";
-    private string _manualFrameFormat = "标准帧";
     private string _selectedFunctionCheckConfig = "mock";
     private string _selectedCanChannel = "0";
     private string _logFilePath = DefaultLogFilePath;
@@ -283,9 +280,6 @@ public sealed class MainViewModel : ObservableObject
     public ObservableCollection<string> DeviceTypes { get; } = ["Mock", "ZLG USBCAN-2A (4)"];
     public ObservableCollection<string> BaudRates { get; } = ["250K", "500K", "1000K"];
     public ObservableCollection<string> CanChannels { get; } = ["0", "1"];
-    public ObservableCollection<string> ManualFrameTypes { get; } = ["数据帧", "远程帧"];
-    public ObservableCollection<string> ManualFrameFormats { get; } = ["标准帧", "扩展帧"];
-    public ObservableCollection<string> ManualChannelOptions { get; } = ["Index0", "Index1"];
     public ObservableCollection<string> FunctionCheckConfigs { get; } = ["mock"];
     public ObservableCollection<string> LogLevelFilters { get; } = ["全部", "普通", "成功", "运行", "警告", "错误"];
     public ObservableCollection<string> LogTimeRangeFilters { get; } = ["全部", "最近1小时", "今天", "最近24小时", "最近7天"];
@@ -435,36 +429,6 @@ public sealed class MainViewModel : ObservableObject
         set => SetProperty(ref _manualFrameData, value);
     }
 
-    public string ManualChannel
-    {
-        get => _manualChannel;
-        set => SetProperty(ref _manualChannel, value);
-    }
-
-    public string ManualFrameType
-    {
-        get => _manualFrameType;
-        set => SetProperty(ref _manualFrameType, value);
-    }
-
-    public string ManualFrameFormat
-    {
-        get => _manualFrameFormat;
-        set
-        {
-            if (SetProperty(ref _manualFrameFormat, value))
-            {
-                OnPropertyChanged(nameof(ManualIsExtended));
-            }
-        }
-    }
-
-    public bool ManualIsExtended
-    {
-        get => string.Equals(ManualFrameFormat, "扩展帧", StringComparison.Ordinal);
-        set => ManualFrameFormat = value ? "扩展帧" : "标准帧";
-    }
-
     public string SelectedFunctionCheckConfig
     {
         get => _selectedFunctionCheckConfig;
@@ -478,7 +442,6 @@ public sealed class MainViewModel : ObservableObject
         {
             if (SetProperty(ref _selectedCanChannel, value))
             {
-                ManualChannel = $"Index{value}";
                 SaveAppSettings();
             }
         }
@@ -1021,7 +984,6 @@ public sealed class MainViewModel : ObservableObject
             _selectedCanChannel = string.IsNullOrWhiteSpace(settings.SelectedCanChannel)
                 ? _selectedCanChannel
                 : settings.SelectedCanChannel;
-            _manualChannel = $"Index{_selectedCanChannel}";
             _paths.ProjectConfigPathOverride = EmptyToNull(settings.ProjectConfigPath);
             _paths.BootConfigDirectoryOverride = EmptyToNull(settings.FlowConfigDirectory);
             _paths.FormulaDatabaseDirectoryOverride = EmptyToNull(settings.FormulaDatabaseDirectory);
@@ -1559,23 +1521,15 @@ public sealed class MainViewModel : ObservableObject
                 throw new InvalidOperationException("Classic CAN frame data is limited to 8 bytes.");
             }
 
-            var channelText = ManualChannel.StartsWith("Index", StringComparison.OrdinalIgnoreCase)
-                ? ManualChannel[5..]
-                : ManualChannel;
-            var channel = uint.TryParse(channelText, out var parsedChannel) ? parsedChannel : 0;
+            var channel = uint.TryParse(SelectedCanChannel, out var parsedChannel) ? parsedChannel : 0;
             var frameId = ParseManualFrameId(ManualFrameId);
-            if (!ManualIsExtended && frameId > 0x7FF)
+            if (frameId > 0x1FFFFFFF)
             {
-                throw new InvalidOperationException("标准帧 ID 范围为 0x000~0x7FF。 ");
+                throw new InvalidOperationException("ID超出有效范围");
             }
 
-            if (ManualIsExtended && frameId > 0x1FFFFFFF)
-            {
-                throw new InvalidOperationException("扩展帧 ID 范围为 0x00000000~0x1FFFFFFF。 ");
-            }
-
-            var isRemote = string.Equals(ManualFrameType, "远程帧", StringComparison.Ordinal);
-            var frame = new CanFrame(frameId, data, channel, ManualIsExtended, isRemote);
+            var isExtended = frameId > 0x7FF;
+            var frame = new CanFrame((uint)frameId, data, channel, isExtended, false);
             await _canDevice.SendAsync(frame, cancellationToken);
             AppendLog($"Manual TX: {frame}");
         }
@@ -1939,7 +1893,7 @@ public sealed class MainViewModel : ObservableObject
 
     private void OnFrameSent(object? sender, CanFrame frame) => AddFrame("TX", frame);
 
-    private static uint ParseManualFrameId(string value)
+    private static ulong ParseManualFrameId(string value)
     {
         var text = value.Trim();
         if (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
@@ -1952,10 +1906,17 @@ public sealed class MainViewModel : ObservableObject
             throw new FormatException("CAN ID 不能为空。");
         }
 
-        return uint.Parse(
-            text,
-            System.Globalization.NumberStyles.HexNumber,
-            System.Globalization.CultureInfo.InvariantCulture);
+        try
+        {
+            return ulong.Parse(
+                text,
+                System.Globalization.NumberStyles.HexNumber,
+                System.Globalization.CultureInfo.InvariantCulture);
+        }
+        catch (OverflowException)
+        {
+            throw new InvalidOperationException("ID超出有效范围");
+        }
     }
 
     private static bool TryParseConfiguredCanId(string? value, out uint id)
@@ -1975,7 +1936,14 @@ public sealed class MainViewModel : ObservableObject
         {
             try
             {
-                id = ParseManualFrameId(value ?? string.Empty);
+                var parsedId = ParseManualFrameId(value ?? string.Empty);
+                if (parsedId > uint.MaxValue)
+                {
+                    id = 0;
+                    return false;
+                }
+
+                id = (uint)parsedId;
                 return id > 0;
             }
             catch
