@@ -1,70 +1,563 @@
 <UserControl x:Class="DiagnosticFlashTool.App.Views.FlowConfigView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls">
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+    <UserControl.Resources>
+        <Style x:Key="FlowConfigToolbarButtonStyle"
+               TargetType="Button"
+               BasedOn="{StaticResource Button.ToolBar}">
+            <Setter Property="Margin" Value="0,0,8,0" />
+        </Style>
+
+        <Style x:Key="FlowConfigPrimaryButtonStyle"
+               TargetType="Button"
+               BasedOn="{StaticResource Button.Primary}">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+
+        <Style x:Key="FlowConfigDataGridStyle"
+               TargetType="DataGrid"
+               BasedOn="{StaticResource DataGrid.Base}">
+            <Setter Property="RowHeight" Value="46" />
+            <Setter Property="ColumnHeaderHeight" Value="38" />
+            <Setter Property="CanUserReorderColumns" Value="False" />
+            <Setter Property="CanUserResizeRows" Value="False" />
+        </Style>
+
+        <Style x:Key="FlowConfigDataGridCellStyle" TargetType="DataGridCell">
+            <Setter Property="Padding" Value="4,0" />
+            <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{StaticResource PrimarySoftBrush}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="FlowConfigCellTextBoxStyle"
+               TargetType="TextBox"
+               BasedOn="{StaticResource SoftTextBoxStyle}">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Padding" Value="8,0" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+
+        <Style x:Key="FlowConfigCellComboBoxStyle"
+               TargetType="ComboBox"
+               BasedOn="{StaticResource StandardComboBoxStyle}">
+            <Setter Property="Width" Value="Auto" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+
+        <Style x:Key="FlowConfigDisabledHintTextStyle" TargetType="TextBlock">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Setter Property="Margin" Value="8,0" />
+            <Setter Property="Foreground" Value="{StaticResource DisabledTextBrush}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="IsHitTestVisible" Value="False" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsDownloadStep}" Value="True">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="FlowScriptFieldTextBoxStyle"
+               TargetType="TextBox"
+               BasedOn="{StaticResource SoftTextBoxStyle}">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Margin" Value="0" />
+        </Style>
+    </UserControl.Resources>
+
     <Grid Style="{StaticResource PageRootGridStyle}">
         <Grid.RowDefinitions>
-            <RowDefinition Style="{StaticResource PageHeaderRowStyle}" />
-            <RowDefinition Style="{StaticResource PageHeaderGapRowStyle}" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="110" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="44" />
         </Grid.RowDefinitions>
 
-        <controls:PageHeader Grid.Row="0"
-                             Title="流程配置"
-                             Subtitle="编辑 BOOT 刷写流程并校验步骤配置">
-            <controls:PageHeader.Actions>
-                <controls:PageHelpDocumentButton />
-            </controls:PageHeader.Actions>
-        </controls:PageHeader>
+        <Border Grid.Row="0" Style="{StaticResource CardStyle}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="36" />
+                    <RowDefinition Height="1" />
+                    <RowDefinition Height="60" />
+                </Grid.RowDefinitions>
 
-        <Border Grid.Row="2" Style="{StaticResource PageLeadStandardCardStyle}">
-            <DockPanel>
-                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                    <TextBlock Text="BOOT config" Margin="0,0,8,0" />
-                    <ComboBox Width="180"
-                              ItemsSource="{Binding BootConfigFiles}"
-                              SelectedItem="{Binding SelectedBootConfig}"
-                              Style="{StaticResource StandardComboBoxStyle}" />
-                    <Button Content="Load" Command="{Binding LoadFlowCommand}" Width="80" Style="{StaticResource Button.ToolBar}" />
-                    <Button Content="Validate" Command="{Binding ValidateFlowCommand}" Width="90" Style="{StaticResource Button.ToolBar}" />
-                    <Button Content="Save" Command="{Binding SaveFlowCommand}" Width="90" Style="{StaticResource Button.Primary}" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
-                    <Button Content="Add Step" Command="{Binding AddFlowStepCommand}" Width="100" Style="{StaticResource Button.ToolBar}" />
-                    <Button Content="Delete" Command="{Binding DeleteFlowStepCommand}" Width="86" Style="{StaticResource Button.Danger}" />
-                    <Button Content="Up" Command="{Binding MoveFlowStepUpCommand}" Width="70" Style="{StaticResource Button.ToolBar}" />
-                    <Button Content="Down" Command="{Binding MoveFlowStepDownCommand}" Width="70" Style="{StaticResource Button.ToolBar}" />
-                </StackPanel>
-            </DockPanel>
+                <TextBlock Grid.Row="0"
+                           Text="流程配置"
+                           Margin="14,0"
+                           Style="{StaticResource CardHeaderTextStyle}" />
+                <Border Grid.Row="1" Background="{StaticResource DividerBrush}" />
+
+                <ScrollViewer Grid.Row="2"
+                              HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Disabled">
+                    <Grid MinWidth="1010" Margin="14,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="220" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="260" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0"
+                                   Text="配置文件："
+                                   Margin="0,0,10,0"
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <ComboBox Grid.Column="1"
+                                  ItemsSource="{Binding BootConfigFiles}"
+                                  SelectedItem="{Binding SelectedBootConfig, Mode=TwoWay}"
+                                  Style="{StaticResource StandardComboBoxStyle}" />
+                        <Border Grid.Column="3"
+                                Padding="10,0"
+                                Background="{StaticResource SurfaceBrush}"
+                                BorderBrush="{StaticResource DividerBrush}"
+                                BorderThickness="1"
+                                CornerRadius="{StaticResource CornerRadius.Control}"
+                                ToolTip="{Binding FlowConfigFilePath}">
+                            <TextBlock Text="{Binding FlowConfigFilePath}"
+                                       Foreground="{StaticResource LabelTextBrush}"
+                                       FontSize="12"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis" />
+                        </Border>
+
+                        <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Command="{Binding LoadFlowCommand}"
+                                    ToolTip="重新加载当前流程配置"
+                                    Style="{StaticResource FlowConfigToolbarButtonStyle}">
+                                <StackPanel Style="{StaticResource Button.InlineContent}">
+                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Refresh}"
+                                                             Style="{StaticResource Button.PackIcon.Current}" />
+                                    <TextBlock Text="重新加载" Style="{StaticResource Button.IconLabel}" />
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding ValidateFlowCommand}"
+                                    ToolTip="校验当前流程配置"
+                                    Style="{StaticResource FlowConfigToolbarButtonStyle}">
+                                <StackPanel Style="{StaticResource Button.InlineContent}">
+                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.CheckCircleOutline}"
+                                                             Style="{StaticResource Button.PackIcon.Current}" />
+                                    <TextBlock Text="校验" Style="{StaticResource Button.IconLabel}" />
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding OpenFlowScriptEditorCommand}"
+                                    ToolTip="编辑流程脚本"
+                                    Style="{StaticResource FlowConfigToolbarButtonStyle}">
+                                <StackPanel Style="{StaticResource Button.InlineContent}">
+                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Console}"
+                                                             Style="{StaticResource Button.PackIcon.Current}" />
+                                    <TextBlock Text="脚本编辑" Style="{StaticResource Button.IconLabel}" />
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding NewFlowCommand}"
+                                    ToolTip="创建新的 BOOT 流程配置"
+                                    Style="{StaticResource FlowConfigToolbarButtonStyle}">
+                                <StackPanel Style="{StaticResource Button.InlineContent}">
+                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Plus}"
+                                                             Style="{StaticResource Button.PackIcon.Current}" />
+                                    <TextBlock Text="新增流程" Style="{StaticResource Button.IconLabel}" />
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding SaveFlowCommand}"
+                                    ToolTip="保存流程配置"
+                                    Style="{StaticResource FlowConfigPrimaryButtonStyle}">
+                                <StackPanel Style="{StaticResource Button.InlineContent}">
+                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.ContentSaveOutline}"
+                                                             Style="{StaticResource Button.PackIcon.Current}" />
+                                    <TextBlock Text="保存" Style="{StaticResource Button.IconLabel}" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </Grid>
         </Border>
-        <Border Grid.Row="3" Style="{StaticResource Card.Compact}">
-            <DataGrid ItemsSource="{Binding FlowRows}" SelectedItem="{Binding SelectedFlowStep}" AutoGenerateColumns="False"
-                      CanUserAddRows="False" CanUserDeleteRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="ID" Binding="{Binding Id, UpdateSourceTrigger=PropertyChanged}" Width="60" />
-                    <DataGridTextColumn Header="Name" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="180" />
-                    <DataGridTextColumn Header="Step Type" Binding="{Binding StepType, UpdateSourceTrigger=PropertyChanged}" Width="140" />
-                    <DataGridTextColumn Header="Service" Binding="{Binding Service, UpdateSourceTrigger=PropertyChanged}" Width="90" />
-                    <DataGridTextColumn Header="Sub" Binding="{Binding SubService, UpdateSourceTrigger=PropertyChanged}" Width="80" />
-                    <DataGridTextColumn Header="Extend" Binding="{Binding ExtendText, UpdateSourceTrigger=PropertyChanged}" Width="140" />
-                    <DataGridTextColumn Header="Addressing" Binding="{Binding AddressingMode, UpdateSourceTrigger=PropertyChanged}" Width="100" />
-                    <DataGridTextColumn Header="Security" Binding="{Binding SecurityAlgorithm, UpdateSourceTrigger=PropertyChanged}" Width="140" />
-                    <DataGridTextColumn Header="CRC" Binding="{Binding CrcAlgorithm, UpdateSourceTrigger=PropertyChanged}" Width="120" />
-                    <DataGridTextColumn Header="Timeout" Binding="{Binding TimeoutMs, UpdateSourceTrigger=PropertyChanged}" Width="90" />
-                    <DataGridTextColumn Header="Pending" Binding="{Binding PendingTimeoutMs, UpdateSourceTrigger=PropertyChanged}" Width="90" />
-                    <DataGridTextColumn Header="Algorithm Params" Binding="{Binding AlgorithmParamsText, UpdateSourceTrigger=PropertyChanged}" Width="*" />
-                </DataGrid.Columns>
-            </DataGrid>
+
+        <Border Grid.Row="2" Style="{StaticResource CardStyle}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="42" />
+                    <RowDefinition Height="1" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="14,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="流程节点" Style="{StaticResource CardHeaderTextStyle}" />
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Command="{Binding AddFlowStepCommand}"
+                                ToolTip="添加节点"
+                                Style="{StaticResource FlowConfigToolbarButtonStyle}">
+                            <StackPanel Style="{StaticResource Button.InlineContent}">
+                                <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Plus}"
+                                                         Style="{StaticResource Button.PackIcon.Current}" />
+                                <TextBlock Text="添加节点" Style="{StaticResource Button.IconLabel}" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding DeleteFlowStepCommand}"
+                                ToolTip="删除选中节点"
+                                Style="{StaticResource FlowConfigToolbarButtonStyle}">
+                            <StackPanel Style="{StaticResource Button.InlineContent}">
+                                <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.DeleteOutline}"
+                                                         Style="{StaticResource Button.PackIcon.Current}" />
+                                <TextBlock Text="删除节点" Style="{StaticResource Button.IconLabel}" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding MoveFlowStepUpCommand}"
+                                ToolTip="上移选中节点"
+                                Style="{StaticResource FlowConfigToolbarButtonStyle}">
+                            <StackPanel Style="{StaticResource Button.InlineContent}">
+                                <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.ArrowUp}"
+                                                         Style="{StaticResource Button.PackIcon.Current}" />
+                                <TextBlock Text="上移" Style="{StaticResource Button.IconLabel}" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding MoveFlowStepDownCommand}"
+                                ToolTip="下移选中节点"
+                                Style="{StaticResource FlowConfigToolbarButtonStyle}">
+                            <StackPanel Style="{StaticResource Button.InlineContent}">
+                                <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.ArrowDown}"
+                                                         Style="{StaticResource Button.PackIcon.Current}" />
+                                <TextBlock Text="下移" Style="{StaticResource Button.IconLabel}" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+                <Border Grid.Row="1" Background="{StaticResource DividerBrush}" />
+
+                <DataGrid Grid.Row="2"
+                          Margin="12,0,12,12"
+                          ItemsSource="{Binding FlowRows}"
+                          SelectedItem="{Binding SelectedFlowStep, Mode=TwoWay}"
+                          AutoGenerateColumns="False"
+                          CellStyle="{StaticResource FlowConfigDataGridCellStyle}"
+                          Style="{StaticResource FlowConfigDataGridStyle}">
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="ID" Width="76" IsReadOnly="True">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="26" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="⋮⋮"
+                                                   Foreground="{StaticResource IconMutedBrush}"
+                                                   FontSize="16"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Id}"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{StaticResource LabelTextBrush}"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center" />
+                                    </Grid>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn Header="名称" Width="180">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource FlowConfigCellTextBoxStyle}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn Header="服务" Width="68">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <TextBox Text="{Binding Service, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 IsEnabled="{Binding IsUdsStep}"
+                                                 ToolTip="服务 ID，例如 0X10"
+                                                 Style="{StaticResource FlowConfigCellTextBoxStyle}" />
+                                        <TextBlock Text="由步骤类型决定" Style="{StaticResource FlowConfigDisabledHintTextStyle}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn Header="子服务" Width="68">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <TextBox Text="{Binding SubService, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 IsEnabled="{Binding IsUdsStep}"
+                                                 ToolTip="子服务 ID，例如 0X01"
+                                                 Style="{StaticResource FlowConfigCellTextBoxStyle}" />
+                                        <TextBlock Text="由步骤类型决定" Style="{StaticResource FlowConfigDisabledHintTextStyle}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn Header="扩展数据" Width="280">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBox Text="{Binding ExtendText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="多个字节可用逗号分隔，例如 0X01, 0X03"
+                                             Style="{StaticResource FlowConfigCellTextBoxStyle}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn Header="算法" Width="170">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <ComboBox ItemsSource="{Binding DataContext.FlowAlgorithmOptions, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}"
+                                              SelectedItem="{Binding Algorithm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              ToolTip="安全访问步骤使用安全算法，下载步骤使用 CRC 算法"
+                                              Style="{StaticResource FlowConfigCellComboBoxStyle}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn Header="算法参数" Width="*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBox Text="{Binding AlgorithmParamsText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="多个参数可用逗号分隔"
+                                             Style="{StaticResource FlowConfigCellTextBoxStyle}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
         </Border>
-        <Border Grid.Row="4" Style="{StaticResource PageTrailingCompactCardStyle}">
-            <DockPanel>
-                <TextBlock DockPanel.Dock="Top"
-                           Text="Validation"
-                           Style="{StaticResource CardContentTitleTextStyle}" />
-                <TextBox Text="{Binding FlowValidationText, Mode=OneWay}" Style="{StaticResource LogTextBoxStyle}" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" />
-            </DockPanel>
+
+        <Border Grid.Row="4" Style="{StaticResource CardStyle}">
+            <Grid Margin="14,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="10" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <materialDesign:PackIcon Grid.Column="0"
+                                         Kind="{x:Static materialDesign:PackIconKind.CheckCircleOutline}"
+                                         Style="{StaticResource Button.PackIcon.Accent}" />
+                <TextBlock Grid.Column="2"
+                           Text="{Binding FlowValidationText}"
+                           Foreground="{StaticResource BodyTextBrush}"
+                           FontSize="13"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
+                           ToolTip="{Binding FlowValidationText}" />
+            </Grid>
+        </Border>
+
+        <Border Grid.RowSpan="5">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Setter Property="Background" Value="#66000000" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsFlowScriptEditorVisible}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <Border Width="900"
+                    MaxHeight="640"
+                    Margin="24"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Style="{StaticResource DialogPanelStyle}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="14" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="16" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="流程脚本编辑" Style="{StaticResource CardHeaderTextStyle}" />
+                            <TextBlock Text="脚本随当前 BOOT 配置保存"
+                                       Margin="0,4,0,0"
+                                       Style="{StaticResource HintTextStyle}" />
+                        </StackPanel>
+                        <Button Grid.Column="1"
+                                Command="{Binding CloseFlowScriptEditorCommand}"
+                                ToolTip="关闭"
+                                Style="{StaticResource Button.Icon}">
+                            <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Close}"
+                                                     Style="{StaticResource Button.PackIcon.Current}" />
+                        </Button>
+                    </Grid>
+
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="230" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Grid Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="32" />
+                                <RowDefinition Height="8" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Command="{Binding AddFlowScriptCommand}"
+                                        ToolTip="新增脚本"
+                                        Style="{StaticResource FlowConfigToolbarButtonStyle}">
+                                    <StackPanel Style="{StaticResource Button.InlineContent}">
+                                        <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Plus}"
+                                                                 Style="{StaticResource Button.PackIcon.Current}" />
+                                        <TextBlock Text="新增脚本" Style="{StaticResource Button.IconLabel}" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding DeleteFlowScriptCommand}"
+                                        ToolTip="删除选中脚本"
+                                        Style="{StaticResource FlowConfigToolbarButtonStyle}">
+                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.DeleteOutline}"
+                                                             Style="{StaticResource Button.PackIcon.Current}" />
+                                </Button>
+                            </StackPanel>
+                            <ListBox Grid.Row="2"
+                                     ItemsSource="{Binding FlowScripts}"
+                                     SelectedItem="{Binding SelectedFlowScript, Mode=TwoWay}"
+                                     Background="{StaticResource SurfaceBrush}"
+                                     BorderBrush="{StaticResource DividerBrush}"
+                                     BorderThickness="1"
+                                     DisplayMemberPath="Name" />
+                        </Grid>
+
+                        <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+                            <Grid DataContext="{Binding SelectedFlowScript}">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="12" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="12" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="12" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="12" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="72" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="56" />
+                                        <ColumnDefinition Width="120" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="脚本 ID" Style="{StaticResource FieldLabelStyle}" />
+                                    <TextBox Grid.Column="1"
+                                             Text="{Binding Id, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource FlowScriptFieldTextBoxStyle}" />
+                                    <TextBlock Grid.Column="3" Text="类型" Style="{StaticResource FieldLabelStyle}" />
+                                    <TextBox Grid.Column="4"
+                                             Text="{Binding Type, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource FlowScriptFieldTextBoxStyle}" />
+                                </Grid>
+                                <Grid Grid.Row="2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="72" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="脚本名称" Style="{StaticResource FieldLabelStyle}" />
+                                    <TextBox Grid.Column="1"
+                                             Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource FlowScriptFieldTextBoxStyle}" />
+                                </Grid>
+                                <Grid Grid.Row="4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="72" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="参数名称" Style="{StaticResource FieldLabelStyle}" />
+                                    <TextBox Grid.Column="1"
+                                             Text="{Binding ParameterNamesText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="多个参数可用逗号分隔"
+                                             Style="{StaticResource FlowScriptFieldTextBoxStyle}" />
+                                </Grid>
+                                <Grid Grid.Row="6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="72" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="说明" Style="{StaticResource FieldLabelStyle}" />
+                                    <TextBox Grid.Column="1"
+                                             Text="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource FlowScriptFieldTextBoxStyle}" />
+                                </Grid>
+                                <Grid Grid.Row="8">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="6" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="脚本内容"
+                                               HorizontalAlignment="Left"
+                                               Margin="0"
+                                               Style="{StaticResource FieldLabelStyle}" />
+                                    <TextBox Grid.Row="2"
+                                             MinHeight="180"
+                                             Text="{Binding Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             AcceptsReturn="True"
+                                             AcceptsTab="True"
+                                             FontFamily="Consolas"
+                                             TextWrapping="NoWrap"
+                                             VerticalScrollBarVisibility="Auto"
+                                             HorizontalScrollBarVisibility="Auto"
+                                             Style="{StaticResource FlowScriptFieldTextBoxStyle}" />
+                                </Grid>
+                            </Grid>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="关闭"
+                                Command="{Binding CloseFlowScriptEditorCommand}"
+                                Style="{StaticResource Button.DialogSecondary}" />
+                        <Button Command="{Binding SaveFlowScriptsCommand}"
+                                Style="{StaticResource Button.DialogPrimary}">
+                            <StackPanel Style="{StaticResource Button.InlineContent}">
+                                <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.ContentSaveOutline}"
+                                                         Style="{StaticResource Button.PackIcon.Current}" />
+                                <TextBlock Text="保存脚本" Style="{StaticResource Button.IconLabel}" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
         </Border>
     </Grid>
 </UserControl>

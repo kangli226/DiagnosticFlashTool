@@ -184,6 +184,7 @@ public sealed class MainViewModel : ObservableObject
     private ProjectConfigEntry? _selectedProject;
     private ProjectConfigEntry? _editingProject;
     private FlowStepEditorRow? _selectedFlowStep;
+    private FlowScriptEditorRow? _selectedFlowScript;
     private string? _selectedBootConfig;
     private string _selectedDeviceType = "Mock";
     private string _selectedBaudRate = "500K";
@@ -208,6 +209,8 @@ public sealed class MainViewModel : ObservableObject
     private bool _isFrameCapturePaused;
     private bool _isFrameFilterEnabled;
     private bool _isProjectEditorVisible;
+    private bool _isFlowScriptEditorVisible;
+    private bool _flowScriptsDirty;
     private bool _isConnected;
     private bool _isBusy;
     private int _selectedShellIndex;
@@ -217,7 +220,7 @@ public sealed class MainViewModel : ObservableObject
     private string _statusText = "Ready";
     private DiagnosticStatusKind _statusKind = DiagnosticStatusKind.Neutral;
     private DiagnosticStatusKind _downloadStatusKind = DiagnosticStatusKind.Neutral;
-    private string _flowValidationText = "No flow loaded.";
+    private string _flowValidationText = "未加载流程配置。";
     private string _projectEditorTitle = "新建项目";
     private string _adminPassword = string.Empty;
     private string _adminPasswordMessage = "请输入管理员密码，本次启动内有效。";
@@ -260,6 +263,12 @@ public sealed class MainViewModel : ObservableObject
         LoadFlowCommand = new RelayCommand(LoadFlowFromSelected, () => !string.IsNullOrWhiteSpace(SelectedBootConfig));
         SaveFlowCommand = new RelayCommand(SaveFlowConfig, () => !string.IsNullOrWhiteSpace(SelectedBootConfig) && FlowRows.Count > 0);
         ValidateFlowCommand = new RelayCommand(() => ValidateFlowConfig());
+        NewFlowCommand = new RelayCommand(CreateNewFlowConfig);
+        OpenFlowScriptEditorCommand = new RelayCommand(OpenFlowScriptEditor, () => !string.IsNullOrWhiteSpace(SelectedBootConfig));
+        CloseFlowScriptEditorCommand = new RelayCommand(() => IsFlowScriptEditorVisible = false);
+        AddFlowScriptCommand = new RelayCommand(AddFlowScript);
+        DeleteFlowScriptCommand = new RelayCommand(DeleteSelectedFlowScript, () => SelectedFlowScript is not null);
+        SaveFlowScriptsCommand = new RelayCommand(SaveFlowScripts, () => !string.IsNullOrWhiteSpace(SelectedBootConfig));
         AddFlowStepCommand = new RelayCommand(AddFlowStep);
         DeleteFlowStepCommand = new RelayCommand(DeleteSelectedFlowStep, () => SelectedFlowStep is not null);
         MoveFlowStepUpCommand = new RelayCommand(() => MoveSelectedFlowStep(-1), () => SelectedFlowStep is not null);
@@ -300,6 +309,8 @@ public sealed class MainViewModel : ObservableObject
     public ObservableCollection<SystemLogEntry> RecentLogEntries { get; } = [];
     public ObservableCollection<CanFrameRow> Frames { get; } = [];
     public ObservableCollection<FlowStepEditorRow> FlowRows { get; } = [];
+    public ObservableCollection<FlowScriptEditorRow> FlowScripts { get; } = [];
+    public ObservableCollection<string> FlowAlgorithmOptions { get; } = [string.Empty, "AES128_OneFunc", "CRC16_DNP"];
     public ObservableCollection<FunctionalCheckRow> FunctionalChecks { get; } = [];
     public ObservableCollection<AlgorithmConfigRow> AlgorithmRows { get; } = [];
 
@@ -332,6 +343,12 @@ public sealed class MainViewModel : ObservableObject
     public RelayCommand LoadFlowCommand { get; }
     public RelayCommand SaveFlowCommand { get; }
     public RelayCommand ValidateFlowCommand { get; }
+    public RelayCommand NewFlowCommand { get; }
+    public RelayCommand OpenFlowScriptEditorCommand { get; }
+    public RelayCommand CloseFlowScriptEditorCommand { get; }
+    public RelayCommand AddFlowScriptCommand { get; }
+    public RelayCommand DeleteFlowScriptCommand { get; }
+    public RelayCommand SaveFlowScriptsCommand { get; }
     public RelayCommand AddFlowStepCommand { get; }
     public RelayCommand DeleteFlowStepCommand { get; }
     public RelayCommand MoveFlowStepUpCommand { get; }
@@ -404,6 +421,24 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
+    public FlowScriptEditorRow? SelectedFlowScript
+    {
+        get => _selectedFlowScript;
+        set
+        {
+            if (SetProperty(ref _selectedFlowScript, value))
+            {
+                RaiseCommandStates();
+            }
+        }
+    }
+
+    public bool IsFlowScriptEditorVisible
+    {
+        get => _isFlowScriptEditorVisible;
+        private set => SetProperty(ref _isFlowScriptEditorVisible, value);
+    }
+
     public string? SelectedBootConfig
     {
         get => _selectedBootConfig;
@@ -411,7 +446,9 @@ public sealed class MainViewModel : ObservableObject
         {
             if (SetProperty(ref _selectedBootConfig, value))
             {
+                OnPropertyChanged(nameof(FlowConfigFilePath));
                 LoadFlowFromSelected();
+                RaiseCommandStates();
             }
         }
     }
@@ -900,6 +937,11 @@ public sealed class MainViewModel : ObservableObject
 
     public string ConfigRootText => _paths.ConfigDirectory;
     public string FlowConfigDirectory => _paths.BootConfigDirectory;
+    public string FlowConfigFilePath => string.IsNullOrWhiteSpace(SelectedBootConfig)
+        ? string.Empty
+        : Path.IsPathRooted(SelectedBootConfig)
+            ? SelectedBootConfig
+            : Path.Combine(FlowConfigDirectory, SelectedBootConfig);
     public string FormulaDatabaseDirectory => _paths.FormulaDatabaseDirectory;
     public string ProjectConfigPath => _paths.ProjectConfigPath;
     public string FlowConfigDirectoryDisplay => GetCompactPathDisplay(FlowConfigDirectory);
@@ -979,6 +1021,7 @@ public sealed class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(ConfigRootText));
         OnPropertyChanged(nameof(ScriptRootText));
         OnPropertyChanged(nameof(FlowConfigDirectory));
+        OnPropertyChanged(nameof(FlowConfigFilePath));
         OnPropertyChanged(nameof(FormulaDatabaseDirectory));
         OnPropertyChanged(nameof(ProjectConfigPath));
         OnPropertyChanged(nameof(FlowConfigDirectoryDisplay));
@@ -1370,7 +1413,26 @@ public sealed class MainViewModel : ObservableObject
 
         AddAlgorithmScripts("安全算法脚本", Path.Combine(ScriptRootText, "Security"));
         AddAlgorithmScripts("CRC 算法脚本", Path.Combine(ScriptRootText, "CRC"));
+        RefreshFlowAlgorithmOptions();
         OnPropertyChanged(nameof(AlgorithmCatalogText));
+    }
+
+    private void RefreshFlowAlgorithmOptions()
+    {
+        var algorithms = new[] { string.Empty, "AES128_OneFunc", "CRC16_DNP" }
+            .Concat(AlgorithmRows.Select(row => row.Name))
+            .Concat(FlowRows.Select(row => row.Algorithm))
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+            .Prepend(string.Empty)
+            .ToList();
+
+        FlowAlgorithmOptions.Clear();
+        foreach (var algorithm in algorithms)
+        {
+            FlowAlgorithmOptions.Add(algorithm);
+        }
     }
 
     private void AddAlgorithmScripts(string category, string directory)
@@ -1836,11 +1898,21 @@ public sealed class MainViewModel : ObservableObject
     private void LoadFlowFromSelected()
     {
         FlowRows.Clear();
+        foreach (var script in FlowScripts)
+        {
+            DetachFlowScript(script);
+        }
+
+        FlowScripts.Clear();
         _loadedFlowConfig = null;
+        _flowScriptsDirty = false;
+        SelectedFlowStep = null;
+        SelectedFlowScript = null;
 
         if (string.IsNullOrWhiteSpace(SelectedBootConfig))
         {
-            FlowValidationText = "No BOOT config selected.";
+            FlowValidationText = "未选择 BOOT 配置文件。";
+            RefreshFlowAlgorithmOptions();
             return;
         }
 
@@ -1852,13 +1924,23 @@ public sealed class MainViewModel : ObservableObject
                 FlowRows.Add(FlowStepEditorRow.FromConfig(step));
             }
 
+            foreach (var script in _loadedFlowConfig.Scripts)
+            {
+                var scriptRow = FlowScriptEditorRow.FromConfig(script);
+                AttachFlowScript(scriptRow);
+                FlowScripts.Add(scriptRow);
+            }
+
             SelectedFlowStep = FlowRows.FirstOrDefault();
+            SelectedFlowScript = FlowScripts.FirstOrDefault();
+            RefreshFlowAlgorithmOptions();
             ValidateFlowConfig();
             AppendLog($"Flow loaded: {SelectedBootConfig}, steps={FlowRows.Count}");
         }
         catch (Exception ex)
         {
             FlowValidationText = ex.Message;
+            RefreshFlowAlgorithmOptions();
             AppendLog($"Flow load failed: {ex.Message}");
         }
     }
@@ -1878,6 +1960,11 @@ public sealed class MainViewModel : ObservableObject
 
         var config = _loadedFlowConfig ?? _bootConfigRepository.Load(SelectedBootConfig);
         config.Flow = FlowRows.OrderBy(row => row.Id).Select(row => row.ToConfig()).ToList();
+        if (_flowScriptsDirty)
+        {
+            config.Scripts = FlowScripts.Select(script => script.ToConfig()).ToList();
+        }
+
         if (string.IsNullOrWhiteSpace(config.Name))
         {
             config.Name = Path.GetFileNameWithoutExtension(SelectedBootConfig);
@@ -1885,8 +1972,134 @@ public sealed class MainViewModel : ObservableObject
 
         _bootConfigRepository.Save(SelectedBootConfig, config);
         _loadedFlowConfig = config;
+        _flowScriptsDirty = false;
         SetStatus("Flow saved", DiagnosticStatusKind.Success);
         AppendLog($"Flow saved: {SelectedBootConfig}, steps={FlowRows.Count}");
+    }
+
+    private void CreateNewFlowConfig()
+    {
+        Directory.CreateDirectory(FlowConfigDirectory);
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "新增流程配置",
+            Filter = "BOOT 配置文件 (*.json)|*.json|所有文件 (*.*)|*.*",
+            DefaultExt = ".json",
+            AddExtension = true,
+            FileName = "新建流程.json",
+            InitialDirectory = FlowConfigDirectory
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            var path = Path.GetFullPath(dialog.FileName);
+            var config = new BootConfig
+            {
+                Name = Path.GetFileNameWithoutExtension(path)
+            };
+            _bootConfigRepository.Save(path, config);
+
+            var isInConfiguredDirectory = string.Equals(
+                Path.GetDirectoryName(path),
+                Path.GetFullPath(FlowConfigDirectory),
+                StringComparison.OrdinalIgnoreCase);
+            var configReference = isInConfiguredDirectory ? Path.GetFileName(path) : path;
+
+            if (!BootConfigFiles.Contains(configReference, StringComparer.OrdinalIgnoreCase))
+            {
+                BootConfigFiles.Add(configReference);
+            }
+
+            SelectedBootConfig = configReference;
+            SetStatus("已新增流程配置", DiagnosticStatusKind.Success);
+            AppendLog($"Flow created: {configReference}");
+        }
+        catch (Exception ex)
+        {
+            SetStatus("新增流程配置失败", DiagnosticStatusKind.Error);
+            AppendLog($"Flow creation failed: {ex.Message}");
+        }
+    }
+
+    private void OpenFlowScriptEditor()
+    {
+        if (_loadedFlowConfig is null)
+        {
+            LoadFlowFromSelected();
+        }
+
+        if (_loadedFlowConfig is not null)
+        {
+            IsFlowScriptEditorVisible = true;
+        }
+    }
+
+    private void AddFlowScript()
+    {
+        var scriptNumber = FlowScripts.Count + 1;
+        var scriptId = $"script-{scriptNumber}";
+        while (FlowScripts.Any(script => string.Equals(script.Id, scriptId, StringComparison.OrdinalIgnoreCase)))
+        {
+            scriptNumber++;
+            scriptId = $"script-{scriptNumber}";
+        }
+
+        var script = new FlowScriptEditorRow
+        {
+            Id = scriptId,
+            Name = $"新建脚本 {scriptNumber}",
+            Type = "lua"
+        };
+        AttachFlowScript(script);
+        FlowScripts.Add(script);
+        _flowScriptsDirty = true;
+        SelectedFlowScript = script;
+    }
+
+    private void DeleteSelectedFlowScript()
+    {
+        if (SelectedFlowScript is null)
+        {
+            return;
+        }
+
+        var index = FlowScripts.IndexOf(SelectedFlowScript);
+        DetachFlowScript(SelectedFlowScript);
+        FlowScripts.Remove(SelectedFlowScript);
+        _flowScriptsDirty = true;
+        SelectedFlowScript = FlowScripts.ElementAtOrDefault(Math.Clamp(index, 0, Math.Max(0, FlowScripts.Count - 1)));
+    }
+
+    private void SaveFlowScripts()
+    {
+        if (!ValidateFlowConfig())
+        {
+            SetStatus("流程校验失败", DiagnosticStatusKind.Error);
+            return;
+        }
+
+        SaveFlowConfig();
+        IsFlowScriptEditorVisible = false;
+    }
+
+    private void AttachFlowScript(FlowScriptEditorRow script)
+    {
+        script.PropertyChanged += OnFlowScriptPropertyChanged;
+    }
+
+    private void DetachFlowScript(FlowScriptEditorRow script)
+    {
+        script.PropertyChanged -= OnFlowScriptPropertyChanged;
+    }
+
+    private void OnFlowScriptPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        _flowScriptsDirty = true;
     }
 
     private bool ValidateFlowConfig()
@@ -1894,39 +2107,49 @@ public sealed class MainViewModel : ObservableObject
         var issues = new List<string>();
         if (FlowRows.Count == 0)
         {
-            issues.Add("Flow has no steps.");
+            issues.Add("流程中未配置节点。");
         }
 
         issues.AddRange(FlowRows.GroupBy(row => row.Id)
             .Where(group => group.Count() > 1)
-            .Select(group => $"Duplicate step id: {group.Key}"));
+            .Select(group => $"流程节点 ID 重复：{group.Key}"));
 
         foreach (var row in FlowRows)
         {
             if (string.IsNullOrWhiteSpace(row.Name))
             {
-                issues.Add($"Step {row.Id}: name is empty.");
+                issues.Add($"节点 {row.Id}：名称不能为空。");
             }
 
             var isDownload = string.Equals(row.StepType, "DownloadDriver", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(row.StepType, "DownloadApplication", StringComparison.OrdinalIgnoreCase);
             if (!isDownload && string.IsNullOrWhiteSpace(row.Service))
             {
-                issues.Add($"Step {row.Id}: service is empty.");
+                issues.Add($"节点 {row.Id}：服务不能为空。");
             }
 
             if (!string.IsNullOrWhiteSpace(row.Service) && !HexUtil.TryParseByte(row.Service, out _))
             {
-                issues.Add($"Step {row.Id}: service is not a byte.");
+                issues.Add($"节点 {row.Id}：服务必须是单字节十六进制值。");
             }
 
             if (!string.IsNullOrWhiteSpace(row.SubService) && !HexUtil.TryParseByte(row.SubService, out _))
             {
-                issues.Add($"Step {row.Id}: sub-service is not a byte.");
+                issues.Add($"节点 {row.Id}：子服务必须是单字节十六进制值。");
             }
         }
 
-        FlowValidationText = issues.Count == 0 ? $"OK: {FlowRows.Count} flow steps." : string.Join(Environment.NewLine, issues);
+        issues.AddRange(FlowScripts
+            .Where(script => string.IsNullOrWhiteSpace(script.Id))
+            .Select(_ => "流程脚本 ID 不能为空。"));
+        issues.AddRange(FlowScripts
+            .GroupBy(script => script.Id, StringComparer.OrdinalIgnoreCase)
+            .Where(group => !string.IsNullOrWhiteSpace(group.Key) && group.Count() > 1)
+            .Select(group => $"流程脚本 ID 重复：{group.Key}"));
+
+        FlowValidationText = issues.Count == 0
+            ? $"校验通过：共 {FlowRows.Count} 个流程节点。"
+            : string.Join(Environment.NewLine, issues);
         return issues.Count == 0;
     }
 
@@ -1936,7 +2159,7 @@ public sealed class MainViewModel : ObservableObject
         var row = new FlowStepEditorRow
         {
             Id = nextId,
-            Name = $"New Step {nextId}",
+            Name = $"新增节点 {nextId}",
             AddressingMode = "physical",
             TimeoutMs = "1500",
             PendingTimeoutMs = "30000"
@@ -1944,6 +2167,7 @@ public sealed class MainViewModel : ObservableObject
 
         FlowRows.Add(row);
         SelectedFlowStep = row;
+        RefreshFlowAlgorithmOptions();
         ValidateFlowConfig();
     }
 
@@ -1957,6 +2181,7 @@ public sealed class MainViewModel : ObservableObject
         var index = FlowRows.IndexOf(SelectedFlowStep);
         FlowRows.Remove(SelectedFlowStep);
         SelectedFlowStep = FlowRows.ElementAtOrDefault(Math.Clamp(index, 0, Math.Max(0, FlowRows.Count - 1)));
+        RefreshFlowAlgorithmOptions();
         ValidateFlowConfig();
     }
 
@@ -2525,6 +2750,9 @@ public sealed class MainViewModel : ObservableObject
         RaiseProjectEditorCommandStates();
         LoadFlowCommand.RaiseCanExecuteChanged();
         SaveFlowCommand.RaiseCanExecuteChanged();
+        OpenFlowScriptEditorCommand.RaiseCanExecuteChanged();
+        DeleteFlowScriptCommand.RaiseCanExecuteChanged();
+        SaveFlowScriptsCommand.RaiseCanExecuteChanged();
         DeleteFlowStepCommand.RaiseCanExecuteChanged();
         MoveFlowStepUpCommand.RaiseCanExecuteChanged();
         MoveFlowStepDownCommand.RaiseCanExecuteChanged();

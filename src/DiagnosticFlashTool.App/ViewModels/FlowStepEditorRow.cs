@@ -38,7 +38,15 @@ public sealed class FlowStepEditorRow : ObservableObject
     public string StepType
     {
         get => _stepType;
-        set => SetProperty(ref _stepType, value);
+        set
+        {
+            if (SetProperty(ref _stepType, value))
+            {
+                OnPropertyChanged(nameof(IsDownloadStep));
+                OnPropertyChanged(nameof(IsUdsStep));
+                OnPropertyChanged(nameof(Algorithm));
+            }
+        }
     }
 
     public string Service
@@ -68,13 +76,74 @@ public sealed class FlowStepEditorRow : ObservableObject
     public string SecurityAlgorithm
     {
         get => _securityAlgorithm;
-        set => SetProperty(ref _securityAlgorithm, value);
+        set
+        {
+            if (SetProperty(ref _securityAlgorithm, value))
+            {
+                OnPropertyChanged(nameof(Algorithm));
+            }
+        }
     }
 
     public string CrcAlgorithm
     {
         get => _crcAlgorithm;
-        set => SetProperty(ref _crcAlgorithm, value);
+        set
+        {
+            if (SetProperty(ref _crcAlgorithm, value))
+            {
+                OnPropertyChanged(nameof(Algorithm));
+            }
+        }
+    }
+
+    public bool IsDownloadStep => string.Equals(StepType, "DownloadDriver", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(StepType, "DownloadApplication", StringComparison.OrdinalIgnoreCase);
+
+    public bool IsUdsStep => !IsDownloadStep;
+
+    /// <summary>
+    /// The compact editor presents the algorithm configured by this step in one column.
+    /// Download steps own a CRC algorithm; regular UDS steps own a security algorithm.
+    /// </summary>
+    public string Algorithm
+    {
+        get => string.IsNullOrWhiteSpace(SecurityAlgorithm) ? CrcAlgorithm : SecurityAlgorithm;
+        set
+        {
+            var algorithm = value?.Trim() ?? string.Empty;
+            var useCrcAlgorithm = IsDownloadStep
+                || (string.IsNullOrWhiteSpace(SecurityAlgorithm) && !string.IsNullOrWhiteSpace(CrcAlgorithm));
+
+            if (useCrcAlgorithm)
+            {
+                var changed = !string.Equals(_crcAlgorithm, algorithm, StringComparison.Ordinal)
+                    || !string.IsNullOrEmpty(_securityAlgorithm);
+                _crcAlgorithm = algorithm;
+                _securityAlgorithm = string.Empty;
+
+                if (changed)
+                {
+                    OnPropertyChanged(nameof(CrcAlgorithm));
+                    OnPropertyChanged(nameof(SecurityAlgorithm));
+                    OnPropertyChanged();
+                }
+
+                return;
+            }
+
+            var securityChanged = !string.Equals(_securityAlgorithm, algorithm, StringComparison.Ordinal)
+                || !string.IsNullOrEmpty(_crcAlgorithm);
+            _securityAlgorithm = algorithm;
+            _crcAlgorithm = string.Empty;
+
+            if (securityChanged)
+            {
+                OnPropertyChanged(nameof(SecurityAlgorithm));
+                OnPropertyChanged(nameof(CrcAlgorithm));
+                OnPropertyChanged();
+            }
+        }
     }
 
     public string TimeoutMs
