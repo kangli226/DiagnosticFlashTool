@@ -1,4 +1,4 @@
-<UserControl x:Class="DiagnosticFlashTool.App.Views.SystemSettingsView"
+   <UserControl x:Class="DiagnosticFlashTool.App.Views.SystemSettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls"
@@ -161,7 +161,7 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="流程配置" Style="{StaticResource FieldLabelStyle}" />
+                            <TextBlock Grid.Column="0" Text="流程配置" Style="{StaticResource PathDisplayLabelStyle}" />
                             <Border Grid.Column="1"
                                     Style="{StaticResource PathDisplayBorderStyle}"
                                     ToolTip="{Binding FlowConfigDirectory}">
@@ -195,7 +195,7 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="配方数据库" Style="{StaticResource FieldLabelStyle}" />
+                            <TextBlock Grid.Column="0" Text="配方数据库" Style="{StaticResource PathDisplayLabelStyle}" />
                             <Border Grid.Column="1"
                                     Style="{StaticResource PathDisplayBorderStyle}"
                                     ToolTip="{Binding FormulaDatabaseDirectory}">
@@ -229,7 +229,7 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="项目配置" Style="{StaticResource FieldLabelStyle}" />
+                            <TextBlock Grid.Column="0" Text="项目配置" Style="{StaticResource PathDisplayLabelStyle}" />
                             <Border Grid.Column="1"
                                     Style="{StaticResource PathDisplayBorderStyle}"
                                     ToolTip="{Binding ProjectConfigPath}">
@@ -286,7 +286,7 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="日志文件" Style="{StaticResource FieldLabelStyle}" />
+                            <TextBlock Grid.Column="0" Text="日志文件" Style="{StaticResource PathDisplayLabelStyle}" />
                             <Border Grid.Column="1"
                                     Style="{StaticResource PathDisplayBorderStyle}"
                                     ToolTip="{Binding LogFilePath}">
@@ -358,7 +358,7 @@
                     </controls:CardContentPanel>
                 </Border>
 
-                <Border Style="{StaticResource PageLeadStandardCardStyle}">
+                <Border Style="{StaticResource PageTrailingStandardCardStyle}">
                     <controls:CardContentPanel Style="{StaticResource Card.FormContent}">
                         <TextBlock Text="管理员模式" Style="{StaticResource CardContentPanelTitleTextStyle}" />
 

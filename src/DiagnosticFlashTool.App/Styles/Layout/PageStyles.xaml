@@ -5,9 +5,9 @@
         <ResourceDictionary Source="CardStyles.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <Thickness x:Key="PageMargin">24</Thickness>
-    <Thickness x:Key="PageCardBottomGap">0,0,0,12</Thickness>
-    <Thickness x:Key="PageCardTopGap">0,12,0,0</Thickness>
+    <Thickness x:Key="PageMargin">16</Thickness>
+    <Thickness x:Key="PageCardBottomGap">0,0,0,16</Thickness>
+    <Thickness x:Key="PageCardTopGap">0,16,0,0</Thickness>
     <Thickness x:Key="PageContentBottomGap">0,0,0,12</Thickness>
     <Thickness x:Key="PageContentTopGap">0,12,0,0</Thickness>
     <Thickness x:Key="FormAssistTextAfterLabelMargin">90,0,0,0</Thickness>
@@ -20,13 +20,13 @@
         <Setter Property="Height" Value="88" />
     </Style>
 
-    <Style x:Key="PageHeaderGapRowStyle" TargetType="RowDefinition">
-        <Setter Property="Height" Value="24" />
+    <Style x:Key="PageSectionGapRowStyle" TargetType="RowDefinition">
+        <Setter Property="Height" Value="16" />
     </Style>
 
-    <Style x:Key="PageSectionGapRowStyle" TargetType="RowDefinition">
-        <Setter Property="Height" Value="12" />
-    </Style>
+    <Style x:Key="PageHeaderGapRowStyle"
+           TargetType="RowDefinition"
+           BasedOn="{StaticResource PageSectionGapRowStyle}" />
 
     <Style x:Key="PageSummaryRowStyle" TargetType="RowDefinition">
         <Setter Property="Height" Value="122" />
@@ -46,6 +46,10 @@
 
     <Style x:Key="PageLeadStandardCardStyle" TargetType="Border" BasedOn="{StaticResource Card.Form}">
         <Setter Property="Margin" Value="{StaticResource PageCardBottomGap}" />
+    </Style>
+
+    <Style x:Key="PageTrailingStandardCardStyle" TargetType="Border" BasedOn="{StaticResource Card.Form}">
+        <Setter Property="Margin" Value="0" />
     </Style>
 
     <Style x:Key="PageTrailingCompactCardStyle" TargetType="Border" BasedOn="{StaticResource Card.Compact}">

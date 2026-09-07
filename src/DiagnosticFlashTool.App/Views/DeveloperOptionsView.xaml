@@ -74,7 +74,7 @@
 
                 <Grid Grid.Column="0">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="108" />
+                        <RowDefinition Height="112" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
@@ -104,7 +104,7 @@
                         </Grid>
                     </Border>
 
-                    <Border Grid.Row="1" Style="{StaticResource PageLeadStandardCardStyle}">
+                    <Border Grid.Row="1" Style="{StaticResource PageTrailingStandardCardStyle}">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -135,7 +135,7 @@
 
                 <Grid Grid.Column="2">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="108" />
+                        <RowDefinition Height="112" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
@@ -192,7 +192,7 @@
                         </controls:CardContentPanel>
                     </Border>
 
-                    <Border Grid.Row="1" Style="{StaticResource PageLeadStandardCardStyle}">
+                    <Border Grid.Row="1" Style="{StaticResource PageTrailingStandardCardStyle}">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />

@@ -19,7 +19,7 @@
         </controls:PageHeader>
 
         <Border Grid.Row="2"
-                Style="{StaticResource PageLeadStandardCardStyle}">
+                Style="{StaticResource PageTrailingStandardCardStyle}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
