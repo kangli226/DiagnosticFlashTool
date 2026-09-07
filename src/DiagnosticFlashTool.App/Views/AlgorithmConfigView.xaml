@@ -13,8 +13,11 @@
                              Title="算法配置"
                              Subtitle="{Binding ScriptRootText}">
             <controls:PageHeader.Actions>
-                <TextBlock Text="{Binding AlgorithmCatalogText}"
-                           Style="{StaticResource PageHeaderMetaTextStyle}" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <TextBlock Text="{Binding AlgorithmCatalogText}"
+                               Style="{StaticResource PageHeaderMetaTextStyle}" />
+                    <controls:PageHelpDocumentButton Margin="8,0,0,0" />
+                </StackPanel>
             </controls:PageHeader.Actions>
         </controls:PageHeader>
 

@@ -11,7 +11,13 @@
             <RowDefinition Height="110" />
         </Grid.RowDefinitions>
 
-        <controls:PageHeader Grid.Row="0" Title="流程配置" />
+        <controls:PageHeader Grid.Row="0"
+                             Title="流程配置"
+                             Subtitle="编辑 BOOT 刷写流程并校验步骤配置">
+            <controls:PageHeader.Actions>
+                <controls:PageHelpDocumentButton />
+            </controls:PageHeader.Actions>
+        </controls:PageHeader>
 
         <Border Grid.Row="2" Style="{StaticResource PageLeadStandardCardStyle}">
             <DockPanel>

@@ -9,12 +9,15 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <controls:PageHeader Grid.Row="0" Title="项目配置">
+        <controls:PageHeader Grid.Row="0"
+                             Title="项目配置"
+                             Subtitle="维护项目通信参数、BOOT 配置与固件文件">
             <controls:PageHeader.Actions>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Content="Add" Command="{Binding AddProjectCommand}" Width="80" Style="{StaticResource Button.ToolBar}" />
                     <Button Content="Delete" Command="{Binding DeleteProjectCommand}" Width="80" Style="{StaticResource Button.Danger}" />
                     <Button Content="Save" Command="{Binding SaveProjectsCommand}" Width="90" Style="{StaticResource Button.Primary}" />
+                    <controls:PageHelpDocumentButton />
                 </StackPanel>
             </controls:PageHeader.Actions>
         </controls:PageHeader>
