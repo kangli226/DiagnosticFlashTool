@@ -182,6 +182,7 @@ public sealed class MainViewModel : ObservableObject
     private ICanDevice? _canDevice;
     private BootConfig? _loadedFlowConfig;
     private ProjectConfigEntry? _selectedProject;
+    private ProjectConfigEntry? _editingProject;
     private FlowStepEditorRow? _selectedFlowStep;
     private string? _selectedBootConfig;
     private string _selectedDeviceType = "Mock";
@@ -206,6 +207,7 @@ public sealed class MainViewModel : ObservableObject
     private bool _adminPasswordPromptVisible;
     private bool _isFrameCapturePaused;
     private bool _isFrameFilterEnabled;
+    private bool _isProjectEditorVisible;
     private bool _isConnected;
     private bool _isBusy;
     private int _selectedShellIndex;
@@ -216,6 +218,7 @@ public sealed class MainViewModel : ObservableObject
     private DiagnosticStatusKind _statusKind = DiagnosticStatusKind.Neutral;
     private DiagnosticStatusKind _downloadStatusKind = DiagnosticStatusKind.Neutral;
     private string _flowValidationText = "No flow loaded.";
+    private string _projectEditorTitle = "新建项目";
     private string _adminPassword = string.Empty;
     private string _adminPasswordMessage = "请输入管理员密码，本次启动内有效。";
     private SystemLogEntry? _latestLogEntry;
@@ -246,6 +249,14 @@ public sealed class MainViewModel : ObservableObject
         AddProjectCommand = new RelayCommand(AddProject);
         DeleteProjectCommand = new RelayCommand(DeleteSelectedProject, () => SelectedProject is not null);
         SaveProjectsCommand = new RelayCommand(SaveProjects);
+        RefreshProjectsCommand = new RelayCommand(RefreshProjectList);
+        NewProjectCommand = new RelayCommand(OpenNewProjectEditor);
+        EditProjectCommand = new RelayCommand(EditSelectedProject, () => SelectedProject is not null);
+        SaveProjectEditorCommand = new RelayCommand(SaveProjectEditor, () => IsProjectEditorVisible);
+        CancelProjectEditorCommand = new RelayCommand(CloseProjectEditor, () => IsProjectEditorVisible);
+        DeleteProjectEditorCommand = new RelayCommand(DeleteProjectEditor, () => IsEditingProject);
+        BrowseProjectEditorDriverCommand = new RelayCommand(() => BrowseFirmware(path => ProjectEditor.DriverFilePath = path));
+        BrowseProjectEditorApplicationCommand = new RelayCommand(() => BrowseFirmware(path => ProjectEditor.ApplicationFilePath = path));
         LoadFlowCommand = new RelayCommand(LoadFlowFromSelected, () => !string.IsNullOrWhiteSpace(SelectedBootConfig));
         SaveFlowCommand = new RelayCommand(SaveFlowConfig, () => !string.IsNullOrWhiteSpace(SelectedBootConfig) && FlowRows.Count > 0);
         ValidateFlowCommand = new RelayCommand(() => ValidateFlowConfig());
@@ -276,6 +287,7 @@ public sealed class MainViewModel : ObservableObject
     }
 
     public ObservableCollection<ProjectConfigEntry> Projects { get; } = [];
+    public ProjectEditorViewModel ProjectEditor { get; } = new();
     public ObservableCollection<string> BootConfigFiles { get; } = [];
     public ObservableCollection<string> DeviceTypes { get; } = ["Mock", "ZLG USBCAN-2A (4)"];
     public ObservableCollection<string> BaudRates { get; } = ["250K", "500K", "1000K"];
@@ -309,6 +321,14 @@ public sealed class MainViewModel : ObservableObject
     public RelayCommand AddProjectCommand { get; }
     public RelayCommand DeleteProjectCommand { get; }
     public RelayCommand SaveProjectsCommand { get; }
+    public RelayCommand RefreshProjectsCommand { get; }
+    public RelayCommand NewProjectCommand { get; }
+    public RelayCommand EditProjectCommand { get; }
+    public RelayCommand SaveProjectEditorCommand { get; }
+    public RelayCommand CancelProjectEditorCommand { get; }
+    public RelayCommand DeleteProjectEditorCommand { get; }
+    public RelayCommand BrowseProjectEditorDriverCommand { get; }
+    public RelayCommand BrowseProjectEditorApplicationCommand { get; }
     public RelayCommand LoadFlowCommand { get; }
     public RelayCommand SaveFlowCommand { get; }
     public RelayCommand ValidateFlowCommand { get; }
@@ -333,6 +353,26 @@ public sealed class MainViewModel : ObservableObject
     public RelayCommand ShowAdminPasswordCommand { get; }
     public RelayCommand SubmitAdminPasswordCommand { get; }
     public RelayCommand CancelAdminPasswordCommand { get; }
+
+    public bool IsProjectEditorVisible
+    {
+        get => _isProjectEditorVisible;
+        private set
+        {
+            if (SetProperty(ref _isProjectEditorVisible, value))
+            {
+                RaiseProjectEditorCommandStates();
+            }
+        }
+    }
+
+    public bool IsEditingProject => _editingProject is not null;
+
+    public string ProjectEditorTitle
+    {
+        get => _projectEditorTitle;
+        private set => SetProperty(ref _projectEditorTitle, value);
+    }
 
     public ProjectConfigEntry? SelectedProject
     {
@@ -945,6 +985,12 @@ public sealed class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(FormulaDatabaseDirectoryDisplay));
         OnPropertyChanged(nameof(ProjectConfigPathDisplay));
         AppendLog($"Configuration loaded: projects={Projects.Count}, boot={BootConfigFiles.Count}");
+    }
+
+    private void RefreshProjectList()
+    {
+        Refresh();
+        CloseProjectEditor();
     }
 
     private void LoadAppSettings()
@@ -1573,6 +1619,146 @@ public sealed class MainViewModel : ObservableObject
         FunctionalChecks.Add(new FunctionalCheckRow(6, "通信状态检测", "12"));
     }
 
+    private void OpenNewProjectEditor()
+    {
+        var nextNo = Projects.Count == 0 ? 1 : Projects.Max(project => project.ProjectNo) + 1;
+        ProjectEditor.BeginNew(nextNo, BootConfigFiles.FirstOrDefault() ?? string.Empty);
+        SetProjectEditorMode(null, "新建项目");
+        IsProjectEditorVisible = true;
+    }
+
+    private void EditSelectedProject()
+    {
+        if (SelectedProject is null)
+        {
+            return;
+        }
+
+        ProjectEditor.Load(SelectedProject);
+        SetProjectEditorMode(SelectedProject, "编辑项目");
+        IsProjectEditorVisible = true;
+    }
+
+    private void SaveProjectEditor()
+    {
+        var project = ProjectEditor.CreateProject(out var editorValidation);
+        if (project is null)
+        {
+            SetStatus("项目保存失败", DiagnosticStatusKind.Error);
+            AppendLog(editorValidation);
+            return;
+        }
+
+        var projectsToSave = Projects.ToList();
+        var editedIndex = _editingProject is null ? -1 : projectsToSave.IndexOf(_editingProject);
+        if (_editingProject is not null && editedIndex < 0)
+        {
+            SetStatus("项目保存失败", DiagnosticStatusKind.Error);
+            AppendLog("项目已被刷新，请重新打开后再保存。");
+            return;
+        }
+
+        if (editedIndex >= 0)
+        {
+            projectsToSave[editedIndex] = project;
+        }
+        else
+        {
+            projectsToSave.Add(project);
+        }
+
+        var validation = ValidateProjects(projectsToSave);
+        if (!string.IsNullOrWhiteSpace(validation))
+        {
+            SetStatus("项目保存失败", DiagnosticStatusKind.Error);
+            AppendLog(validation);
+            return;
+        }
+
+        try
+        {
+            _projectRepository.SaveAll(projectsToSave);
+        }
+        catch (Exception ex)
+        {
+            SetStatus("项目保存失败", DiagnosticStatusKind.Error);
+            AppendLog($"项目保存失败: {ex.Message}");
+            return;
+        }
+
+        if (editedIndex >= 0)
+        {
+            Projects[editedIndex] = project;
+        }
+        else
+        {
+            Projects.Add(project);
+        }
+
+        SelectedProject = project;
+        SetStatus("项目已保存", DiagnosticStatusKind.Success);
+        AppendLog($"项目已保存: {project.ProjectName}");
+        CloseProjectEditor();
+    }
+
+    private void DeleteProjectEditor()
+    {
+        if (_editingProject is null)
+        {
+            return;
+        }
+
+        var index = Projects.IndexOf(_editingProject);
+        if (index < 0)
+        {
+            CloseProjectEditor();
+            return;
+        }
+
+        var projectName = _editingProject.ProjectName;
+        if (MessageBox.Show(
+                $"确定删除项目“{projectName}”？",
+                "删除项目",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning) != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        var projectsToSave = Projects.ToList();
+        projectsToSave.RemoveAt(index);
+        try
+        {
+            _projectRepository.SaveAll(projectsToSave);
+        }
+        catch (Exception ex)
+        {
+            SetStatus("项目删除失败", DiagnosticStatusKind.Error);
+            AppendLog($"项目删除失败: {ex.Message}");
+            return;
+        }
+
+        Projects.RemoveAt(index);
+        SelectedProject = Projects.ElementAtOrDefault(Math.Clamp(index, 0, Math.Max(0, Projects.Count - 1)));
+        SetStatus("项目已删除", DiagnosticStatusKind.Success);
+        AppendLog($"项目已删除: {projectName}");
+        CloseProjectEditor();
+    }
+
+    private void CloseProjectEditor()
+    {
+        SetProjectEditorMode(null, "新建项目");
+        IsProjectEditorVisible = false;
+    }
+
+    private void SetProjectEditorMode(ProjectConfigEntry? editingProject, string title)
+    {
+        _editingProject = editingProject;
+        ProjectEditorTitle = title;
+        OnPropertyChanged(nameof(IsEditingProject));
+        RaiseProjectEditorCommandStates();
+    }
+
     private void AddProject()
     {
         var nextNo = Projects.Count == 0 ? 1 : Projects.Max(project => project.ProjectNo) + 1;
@@ -1607,7 +1793,7 @@ public sealed class MainViewModel : ObservableObject
 
     private void SaveProjects()
     {
-        var validation = ValidateProjects();
+        var validation = ValidateProjects(Projects);
         if (!string.IsNullOrWhiteSpace(validation))
         {
             SetStatus("Project validation failed", DiagnosticStatusKind.Error);
@@ -1620,10 +1806,11 @@ public sealed class MainViewModel : ObservableObject
         AppendLog($"Projects saved: {Projects.Count}");
     }
 
-    private string ValidateProjects()
+    private static string ValidateProjects(IEnumerable<ProjectConfigEntry> projects)
     {
+        var projectList = projects.ToList();
         var issues = new List<string>();
-        foreach (var project in Projects)
+        foreach (var project in projectList)
         {
             if (string.IsNullOrWhiteSpace(project.ProjectName))
             {
@@ -1636,10 +1823,10 @@ public sealed class MainViewModel : ObservableObject
             }
         }
 
-        issues.AddRange(Projects.GroupBy(project => project.ProjectName, StringComparer.OrdinalIgnoreCase)
+        issues.AddRange(projectList.GroupBy(project => project.ProjectName, StringComparer.OrdinalIgnoreCase)
             .Where(group => !string.IsNullOrWhiteSpace(group.Key) && group.Count() > 1)
             .Select(group => $"Duplicate project name: {group.Key}"));
-        issues.AddRange(Projects.GroupBy(project => project.ProjectNo)
+        issues.AddRange(projectList.GroupBy(project => project.ProjectNo)
             .Where(group => group.Key > 0 && group.Count() > 1)
             .Select(group => $"Duplicate project number: {group.Key}"));
 
@@ -2335,6 +2522,7 @@ public sealed class MainViewModel : ObservableObject
         ToggleConnectionCommand.RaiseCanExecuteChanged();
         StartFlashCommand.RaiseCanExecuteChanged();
         DeleteProjectCommand.RaiseCanExecuteChanged();
+        RaiseProjectEditorCommandStates();
         LoadFlowCommand.RaiseCanExecuteChanged();
         SaveFlowCommand.RaiseCanExecuteChanged();
         DeleteFlowStepCommand.RaiseCanExecuteChanged();
@@ -2342,6 +2530,14 @@ public sealed class MainViewModel : ObservableObject
         MoveFlowStepDownCommand.RaiseCanExecuteChanged();
         SendManualFrameCommand.RaiseCanExecuteChanged();
         StartFunctionCheckCommand.RaiseCanExecuteChanged();
+    }
+
+    private void RaiseProjectEditorCommandStates()
+    {
+        EditProjectCommand.RaiseCanExecuteChanged();
+        SaveProjectEditorCommand.RaiseCanExecuteChanged();
+        CancelProjectEditorCommand.RaiseCanExecuteChanged();
+        DeleteProjectEditorCommand.RaiseCanExecuteChanged();
     }
 
     private void RaiseLogSummaryProperties()

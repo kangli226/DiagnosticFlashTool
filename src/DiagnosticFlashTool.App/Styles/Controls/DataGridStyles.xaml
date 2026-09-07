@@ -44,6 +44,7 @@
         <Setter Property="BorderThickness" Value="0,0,0,1" />
         <Setter Property="Foreground" Value="{StaticResource BodyTextBrush}" />
         <Setter Property="Padding" Value="10,0" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
         <Style.Triggers>
             <Trigger Property="IsSelected" Value="True">
                 <Setter Property="Background" Value="{StaticResource PrimarySoftBrush}" />
