@@ -286,7 +286,7 @@ public sealed class MainViewModel : ObservableObject
         OpenLogDirectoryCommand = new RelayCommand(() => OpenPathLocation(LogFilePath));
         ChooseLogFileCommand = new RelayCommand(ChooseLogFile);
         RestoreDefaultLogStorageCommand = new RelayCommand(RestoreDefaultLogStorage);
-        OpenRuntimeLogPageCommand = new RelayCommand(() => SelectedShellIndex = 9);
+        OpenRuntimeLogPageCommand = new RelayCommand(() => SelectedShellIndex = 8);
         ShowAdminPasswordCommand = new RelayCommand(ShowAdminPasswordPrompt);
         SubmitAdminPasswordCommand = new RelayCommand(SubmitAdminPassword);
         CancelAdminPasswordCommand = new RelayCommand(CancelAdminPasswordPrompt);
@@ -915,13 +915,12 @@ public sealed class MainViewModel : ObservableObject
         0 => "刷写中心 / 固件刷写",
         1 => "刷写中心 / 刷写监控",
         2 => "刷写中心 / 历史记录",
-        3 => "诊断测试 / 功能检测",
-        4 => "配置管理 / 项目配置",
-        5 => "配置管理 / 流程配置",
-        6 => "配置管理 / 算法配置",
-        7 => "系统 / 系统设置",
-        8 => "系统 / 开发者选项",
-        9 => "系统 / 日志",
+        3 => "配置管理 / 项目配置",
+        4 => "配置管理 / 流程配置",
+        5 => "配置管理 / 算法配置",
+        6 => "系统 / 系统设置",
+        7 => "系统 / 开发者选项",
+        8 => "系统 / 日志",
         _ => DatabaseStatusText
     };
 
@@ -2199,12 +2198,30 @@ public sealed class MainViewModel : ObservableObject
             return;
         }
 
-        FlowRows.Move(index, target);
+        MoveFlowStepToIndex(SelectedFlowStep, target);
+    }
+
+    public void MoveFlowStepToIndex(FlowStepEditorRow step, int targetIndex)
+    {
+        var sourceIndex = FlowRows.IndexOf(step);
+        if (sourceIndex < 0 || FlowRows.Count == 0)
+        {
+            return;
+        }
+
+        var boundedTargetIndex = Math.Clamp(targetIndex, 0, FlowRows.Count - 1);
+        if (sourceIndex == boundedTargetIndex)
+        {
+            return;
+        }
+
+        FlowRows.Move(sourceIndex, boundedTargetIndex);
         for (var i = 0; i < FlowRows.Count; i++)
         {
             FlowRows[i].Id = i + 1;
         }
 
+        SelectedFlowStep = step;
         ValidateFlowConfig();
     }
 

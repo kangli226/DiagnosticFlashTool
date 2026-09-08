@@ -228,7 +228,7 @@
                                 ToolTip="上移选中节点"
                                 Style="{StaticResource FlowConfigToolbarButtonStyle}">
                             <StackPanel Style="{StaticResource Button.InlineContent}">
-                                <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.ArrowUp}"
+                                <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.HandPointingUp}"
                                                          Style="{StaticResource Button.PackIcon.Current}" />
                                 <TextBlock Text="上移" Style="{StaticResource Button.IconLabel}" />
                             </StackPanel>
@@ -237,7 +237,7 @@
                                 ToolTip="下移选中节点"
                                 Style="{StaticResource FlowConfigToolbarButtonStyle}">
                             <StackPanel Style="{StaticResource Button.InlineContent}">
-                                <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.ArrowDown}"
+                                <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.HandPointingDown}"
                                                          Style="{StaticResource Button.PackIcon.Current}" />
                                 <TextBlock Text="下移" Style="{StaticResource Button.IconLabel}" />
                             </StackPanel>
@@ -246,11 +246,19 @@
                 </Grid>
                 <Border Grid.Row="1" Background="{StaticResource DividerBrush}" />
 
-                <DataGrid Grid.Row="2"
+                <DataGrid x:Name="FlowDataGrid"
+                          Grid.Row="2"
                           Margin="12,0,12,12"
                           ItemsSource="{Binding FlowRows}"
                           SelectedItem="{Binding SelectedFlowStep, Mode=TwoWay}"
                           AutoGenerateColumns="False"
+                          AllowDrop="True"
+                          PreviewMouseLeftButtonDown="FlowDataGrid_PreviewMouseLeftButtonDown"
+                          PreviewMouseLeftButtonUp="FlowDataGrid_PreviewMouseLeftButtonUp"
+                          PreviewMouseMove="FlowDataGrid_PreviewMouseMove"
+                          DragOver="FlowDataGrid_DragOver"
+                          DragLeave="FlowDataGrid_DragLeave"
+                          Drop="FlowDataGrid_Drop"
                           CellStyle="{StaticResource FlowConfigDataGridCellStyle}"
                           Style="{StaticResource FlowConfigDataGridStyle}">
                     <DataGrid.Columns>
@@ -264,6 +272,9 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0"
                                                    Text="⋮⋮"
+                                                   Tag="FlowDragHandle"
+                                                   Cursor="SizeNS"
+                                                   ToolTip="拖动调整顺序"
                                                    Foreground="{StaticResource IconMutedBrush}"
                                                    FontSize="16"
                                                    HorizontalAlignment="Center"
