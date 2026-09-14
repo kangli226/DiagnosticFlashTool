@@ -1,0 +1,48 @@
+{
+  "name": "ECU-X",
+  "schemaVersion": 1,
+  "scripts": [],
+  "flow": [
+    {
+      "id": 1,
+      "name": "进入扩展诊断会话",
+      "service": "0x10",
+      "subService": "0x03",
+      "addressing": "physical"
+    },
+    {
+      "id": 2,
+      "name": "请求 Seed",
+      "service": "0x27",
+      "subService": "0x01",
+      "addressing": "physical"
+    },
+    {
+      "id": 3,
+      "name": "发送 Key",
+      "service": "0x27",
+      "subService": "0x02",
+      "securityAlgorithm": "ECU_DLL",
+      "addressing": "physical"
+    },
+    {
+      "id": 4,
+      "name": "下载 Driver",
+      "stepType": "DownloadDriver",
+      "addressing": "physical"
+    },
+    {
+      "id": 5,
+      "name": "下载 Application",
+      "stepType": "DownloadApplication",
+      "addressing": "physical"
+    },
+    {
+      "id": 6,
+      "name": "ECU 复位",
+      "service": "0x11",
+      "subService": "0x01",
+      "addressing": "physical"
+    }
+  ]
+}

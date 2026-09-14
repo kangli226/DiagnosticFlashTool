@@ -18,9 +18,19 @@ public sealed class UdsResponse
 
     public void EnsurePositive()
     {
+        if (Payload.Length == 0)
+        {
+            throw new InvalidOperationException("UDS response payload is empty.");
+        }
+
         if (IsNegative)
         {
             throw new InvalidOperationException($"UDS negative response: SID=0x{Payload[1]:X2}, NRC=0x{Payload[2]:X2}.");
+        }
+
+        if (Request.Length > 0 && Payload[0] != unchecked((byte)(Request[0] + 0x40)))
+        {
+            throw new InvalidOperationException($"Unexpected UDS response SID 0x{Payload[0]:X2} for request 0x{Request[0]:X2}.");
         }
     }
 

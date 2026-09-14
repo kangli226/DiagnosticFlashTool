@@ -24,8 +24,11 @@ public sealed class FlashFlowExecutor
         FirmwareSet firmwareSet,
         IProgress<FlashProgress>? progress,
         Action<string>? log,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        UdsTimingOptions? timingOptions = null)
     {
+        var timing = timingOptions?.Validate();
+        _lastSeed = [];
         var logs = new List<string>();
         void WriteLog(string message)
         {
@@ -47,27 +50,67 @@ public sealed class FlashFlowExecutor
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var step = bootConfig.Flow[index];
-                var percent = (int)Math.Round(index * 100.0 / bootConfig.Flow.Count);
-                progress?.Report(new FlashProgress(percent, $"Step {step.Id}: {step.Name}"));
+                var stepStartPercent = index * 100.0 / bootConfig.Flow.Count;
+                var stepEndPercent = (index + 1) * 100.0 / bootConfig.Flow.Count;
+                void ReportStepProgress(int percentWithinStep, string message)
+                {
+                    var normalized = Math.Clamp(percentWithinStep, 0, 100) / 100.0;
+                    var overall = (int)Math.Round(stepStartPercent + ((stepEndPercent - stepStartPercent) * normalized));
+                    progress?.Report(new FlashProgress(Math.Clamp(overall, 0, 100), message));
+                }
+
+                ReportStepProgress(0, $"Step {step.Id}: {step.Name}");
                 WriteLog($"Step {step.Id}: {step.Name}");
 
                 if (string.Equals(step.StepType, "DownloadDriver", StringComparison.OrdinalIgnoreCase))
                 {
-                    await DownloadImageAsync(firmwareSet.Driver, step, FirmwareImageKind.Driver, WriteLog, progress, cancellationToken).ConfigureAwait(false);
+                    await DownloadImageAsync(firmwareSet.Driver, step, FirmwareImageKind.Driver, WriteLog, ReportStepProgress, cancellationToken, timing).ConfigureAwait(false);
                 }
                 else if (string.Equals(step.StepType, "DownloadApplication", StringComparison.OrdinalIgnoreCase))
                 {
-                    await DownloadImageAsync(firmwareSet.Application, step, FirmwareImageKind.Application, WriteLog, progress, cancellationToken).ConfigureAwait(false);
+                    var applications = firmwareSet.GetApplicationImages();
+                    if (applications.Count == 0)
+                    {
+                        await DownloadImageAsync(null, step, FirmwareImageKind.Application, WriteLog, ReportStepProgress, cancellationToken, timing).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        for (var applicationIndex = 0; applicationIndex < applications.Count; applicationIndex++)
+                        {
+                            var currentIndex = applicationIndex;
+                            void ReportApplicationProgress(int imagePercent, string message)
+                            {
+                                var allImagesPercent = (int)Math.Round((currentIndex + (Math.Clamp(imagePercent, 0, 100) / 100.0)) * 100 / applications.Count);
+                                ReportStepProgress(allImagesPercent, message);
+                            }
+
+                            await DownloadImageAsync(
+                                applications[applicationIndex],
+                                step,
+                                FirmwareImageKind.Application,
+                                WriteLog,
+                                ReportApplicationProgress,
+                                cancellationToken,
+                                timing).ConfigureAwait(false);
+                        }
+                    }
                 }
                 else
                 {
-                    await ExecuteUdsStepAsync(step, WriteLog, cancellationToken).ConfigureAwait(false);
+                    await ExecuteUdsStepAsync(step, WriteLog, cancellationToken, timing).ConfigureAwait(false);
                 }
+
+                ReportStepProgress(100, $"Step {step.Id} completed: {step.Name}");
             }
 
             progress?.Report(new FlashProgress(100, "Flash completed"));
             WriteLog("Flash completed.");
             return new FlashResult { Success = true, UserMessage = "刷写完成", LogMessages = logs };
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            WriteLog("Flash canceled.");
+            throw;
         }
         catch (Exception ex)
         {
@@ -76,7 +119,11 @@ public sealed class FlashFlowExecutor
         }
     }
 
-    private async Task ExecuteUdsStepAsync(FlashStepConfig step, Action<string> log, CancellationToken cancellationToken)
+    private async Task ExecuteUdsStepAsync(
+        FlashStepConfig step,
+        Action<string> log,
+        CancellationToken cancellationToken,
+        UdsTimingOptions? timing)
     {
         if (!HexUtil.TryParseByte(step.Service, out var serviceId))
         {
@@ -92,20 +139,26 @@ public sealed class FlashFlowExecutor
 
         parameters.AddRange(step.Extend.SelectMany(HexUtil.ParseBytes));
 
-        if (serviceId == 0x27 && subService % 2 == 0 && !string.IsNullOrWhiteSpace(step.SecurityAlgorithm))
+        if (serviceId == 0x27 && HexUtil.TryParseByte(step.SubService, out subService) && subService % 2 == 0 && !string.IsNullOrWhiteSpace(step.SecurityAlgorithm))
         {
             var algorithm = _seedKeyAlgorithms.Resolve(step.SecurityAlgorithm);
+            if (_lastSeed.Length == 0)
+            {
+                throw new InvalidOperationException("Security key requested before a seed was received.");
+            }
+
             var key = algorithm.ComputeKey(_lastSeed, step.AlgorithmParams.ToList());
             parameters.AddRange(key);
-            log($"Security key generated by {algorithm.Name}, seed={HexUtil.ToHex(_lastSeed)}, key={HexUtil.ToHex(key)}");
+            log($"Security key generated by {algorithm.Name}, length={key.Length} bytes.");
         }
+
+        var requestTiming = ResolveTiming(step, timing);
 
         var response = await _udsClient.SendAsync(
             serviceId,
             parameters,
             ParseAddressing(step.AddressingMode),
-            TimeSpan.FromMilliseconds(HexUtil.ParseInt(step.TimeoutMs, 1500)),
-            TimeSpan.FromMilliseconds(HexUtil.ParseInt(step.PendingTimeoutMs, 30_000)),
+            requestTiming,
             cancellationToken).ConfigureAwait(false);
 
         response.EnsurePositive();
@@ -122,20 +175,29 @@ public sealed class FlashFlowExecutor
         FlashStepConfig step,
         FirmwareImageKind kind,
         Action<string> log,
-        IProgress<FlashProgress>? progress,
-        CancellationToken cancellationToken)
+        Action<int, string>? reportProgress,
+        CancellationToken cancellationToken,
+        UdsTimingOptions? timing)
     {
         if (image is null || image.Length == 0)
         {
             log($"{kind} firmware not configured, skip download step.");
+            reportProgress?.Invoke(100, $"{kind} firmware skipped");
             return;
         }
 
+        var completedBytes = 0;
         foreach (var block in image.Blocks)
         {
-            await RequestDownloadAsync(block.Address, block.Data.Length, step, cancellationToken).ConfigureAwait(false);
+            var requestTiming = ResolveTiming(step, timing);
+            var ecuMaximumBlockLength = await RequestDownloadAsync(
+                block.Address,
+                block.Data.Length,
+                step,
+                requestTiming,
+                cancellationToken).ConfigureAwait(false);
 
-            const int payloadSize = 0xF0;
+            var payloadSize = ResolveTransferDataSize(step, ecuMaximumBlockLength);
             var blockCounter = 1;
             for (var offset = 0; offset < block.Data.Length; offset += payloadSize)
             {
@@ -148,28 +210,32 @@ public sealed class FlashFlowExecutor
                 var response = await _udsClient.SendRawAsync(
                     payload,
                     ParseAddressing(step.AddressingMode),
-                    TimeSpan.FromMilliseconds(HexUtil.ParseInt(step.TimeoutMs, 1500)),
-                    TimeSpan.FromMilliseconds(HexUtil.ParseInt(step.PendingTimeoutMs, 30_000)),
+                    requestTiming,
                     cancellationToken).ConfigureAwait(false);
                 response.EnsurePositive();
 
                 blockCounter = (blockCounter + 1) & 0xFF;
-                var percentWithinImage = (int)Math.Round((offset + count) * 100.0 / block.Data.Length);
-                progress?.Report(new FlashProgress(percentWithinImage, $"{kind} download {percentWithinImage}%"));
+                var percentWithinImage = (int)Math.Round((completedBytes + offset + count) * 100.0 / image.Length);
+                reportProgress?.Invoke(percentWithinImage, $"{kind} download {percentWithinImage}%");
             }
 
             var exitResponse = await _udsClient.SendRawAsync(
                 [0x37],
                 ParseAddressing(step.AddressingMode),
-                TimeSpan.FromMilliseconds(HexUtil.ParseInt(step.TimeoutMs, 1500)),
-                TimeSpan.FromMilliseconds(HexUtil.ParseInt(step.PendingTimeoutMs, 30_000)),
+                requestTiming,
                 cancellationToken).ConfigureAwait(false);
             exitResponse.EnsurePositive();
             log($"{kind} block downloaded: address=0x{block.Address:X8}, length={block.Data.Length}");
+            completedBytes += block.Data.Length;
         }
     }
 
-    private async Task RequestDownloadAsync(uint address, int length, FlashStepConfig step, CancellationToken cancellationToken)
+    private async Task<int?> RequestDownloadAsync(
+        uint address,
+        int length,
+        FlashStepConfig step,
+        UdsTimingOptions timing,
+        CancellationToken cancellationToken)
     {
         var request = new byte[11];
         request[0] = 0x34;
@@ -181,10 +247,70 @@ public sealed class FlashFlowExecutor
         var response = await _udsClient.SendRawAsync(
             request,
             ParseAddressing(step.AddressingMode),
-            TimeSpan.FromMilliseconds(HexUtil.ParseInt(step.TimeoutMs, 1500)),
-            TimeSpan.FromMilliseconds(HexUtil.ParseInt(step.PendingTimeoutMs, 30_000)),
+            timing,
             cancellationToken).ConfigureAwait(false);
         response.EnsurePositive();
+        return ParseMaximumBlockLength(response.Payload);
+    }
+
+    private static int ResolveTransferDataSize(FlashStepConfig step, int? ecuMaximumBlockLength)
+    {
+        var configuredSize = HexUtil.ParseInt(step.BlockSize, 0xF0);
+        if (configuredSize <= 0)
+        {
+            throw new InvalidOperationException("TransferData block size must be greater than zero.");
+        }
+
+        const int transferDataOverhead = 2;
+        const int isoTpMaximumPayload = 4095;
+        var maximumDataSize = isoTpMaximumPayload - transferDataOverhead;
+        if (ecuMaximumBlockLength is > transferDataOverhead)
+        {
+            maximumDataSize = Math.Min(maximumDataSize, ecuMaximumBlockLength.Value - transferDataOverhead);
+        }
+
+        return Math.Min(configuredSize, maximumDataSize);
+    }
+
+    private static int? ParseMaximumBlockLength(byte[] responsePayload)
+    {
+        if (responsePayload.Length < 3 || responsePayload[0] != 0x74)
+        {
+            return null;
+        }
+
+        var lengthByteCount = responsePayload[1] >> 4;
+        if (lengthByteCount <= 0 || lengthByteCount > 4 || responsePayload.Length < 2 + lengthByteCount)
+        {
+            return null;
+        }
+
+        uint value = 0;
+        for (var index = 0; index < lengthByteCount; index++)
+        {
+            value = (value << 8) | responsePayload[2 + index];
+        }
+
+        return value is > 0 and <= int.MaxValue ? (int)value : null;
+    }
+
+    private static UdsTimingOptions ResolveTiming(FlashStepConfig step, UdsTimingOptions? timing)
+    {
+        return new UdsTimingOptions
+        {
+            P2ClientMs = ParsePositiveMilliseconds(step.TimeoutMs, timing?.P2ClientMs ?? 1500),
+            P2StarClientMs = ParsePositiveMilliseconds(step.PendingTimeoutMs, timing?.P2StarClientMs ?? 30_000),
+            S3ClientMs = timing?.S3ClientMs ?? 0,
+            PendingOverallTimeoutMs = timing?.PendingOverallTimeoutMs ?? 30_000
+        }.Validate();
+    }
+
+    private static int ParsePositiveMilliseconds(string? value, int fallbackMs)
+    {
+        var milliseconds = HexUtil.ParseInt(value, fallbackMs);
+        return milliseconds > 0
+            ? milliseconds
+            : throw new InvalidOperationException("UDS timeout must be greater than zero.");
     }
 
     private static void WriteUInt32BigEndian(Span<byte> span, uint value)

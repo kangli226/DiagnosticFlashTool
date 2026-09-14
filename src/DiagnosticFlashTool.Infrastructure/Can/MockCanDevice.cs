@@ -1,4 +1,5 @@
 using DiagnosticFlashTool.Core.Can;
+using DiagnosticFlashTool.Core.Diagnostics;
 
 namespace DiagnosticFlashTool.Infrastructure.Can;
 
@@ -8,6 +9,7 @@ public sealed class MockCanDevice : ICanDevice
     private bool _isOpen;
     private uint _responseId = 0x18DA3555;
     private uint _channel;
+    private bool _extendedFrame = true;
     private int _expectedLength;
     private List<byte>? _rxBuffer;
     private byte _nextConsecutiveFrame = 1;
@@ -16,6 +18,14 @@ public sealed class MockCanDevice : ICanDevice
     public event EventHandler<CanFrame>? FrameSent;
 
     public bool IsOpen => _isOpen;
+
+    public void ConfigureTransport(DiagnosticTransportOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        _responseId = options.ResponseId;
+        _channel = options.Channel;
+        _extendedFrame = options.ExtendedFrame;
+    }
 
     public Task OpenAsync(CanDeviceOptions options, CancellationToken cancellationToken)
     {
@@ -116,9 +126,15 @@ public sealed class MockCanDevice : ICanDevice
         }
 
         var service = request[0];
+        if (service == 0x3E && request.Length > 1 && (request[1] & 0x80) != 0)
+        {
+            return;
+        }
+
         var response = service switch
         {
             0x10 or 0x11 or 0x28 or 0x31 or 0x85 => PositiveWithSubFunction(request),
+            0x3E => PositiveWithSubFunction(request),
             0x27 => SecurityResponse(request),
             0x34 => [0x74, 0x20, 0x0F, 0x00],
             0x36 => [0x76, request.Length > 1 ? request[1] : (byte)0],
@@ -183,6 +199,6 @@ public sealed class MockCanDevice : ICanDevice
 
     private void EmitFrame(byte[] data)
     {
-        FrameReceived?.Invoke(this, new CanFrame(_responseId, data, _channel));
+        FrameReceived?.Invoke(this, new CanFrame(_responseId, data, _channel, _extendedFrame));
     }
 }

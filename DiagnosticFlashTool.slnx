@@ -6,7 +6,13 @@
   </Configurations>
   <Folder Name="/src/">
     <Project Path="src/DiagnosticFlashTool.App/DiagnosticFlashTool.App.csproj" />
+    <Project Path="src/DiagnosticFlashTool.Application/DiagnosticFlashTool.Application.csproj" />
     <Project Path="src/DiagnosticFlashTool.Core/DiagnosticFlashTool.Core.csproj" />
     <Project Path="src/DiagnosticFlashTool.Infrastructure/DiagnosticFlashTool.Infrastructure.csproj" />
+    <Project Path="src/DiagnosticFlashTool.Product.EcuX/DiagnosticFlashTool.Product.EcuX.csproj" />
+    <Project Path="src/DiagnosticFlashTool.SeedKeyWorker/DiagnosticFlashTool.SeedKeyWorker.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DiagnosticFlashTool.Application.Tests/DiagnosticFlashTool.Application.Tests.csproj" />
   </Folder>
 </Solution>

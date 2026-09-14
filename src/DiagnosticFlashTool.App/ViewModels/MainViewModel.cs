@@ -1533,7 +1533,9 @@ public sealed class MainViewModel : ObservableObject
                 PhysicalRequestId = HexUtil.ParseUInt32(SelectedProject.PhysicalRequestId),
                 FunctionalRequestId = HexUtil.ParseUInt32(SelectedProject.FunctionalRequestId),
                 ResponseId = HexUtil.ParseUInt32(SelectedProject.ResponseAddressId),
-                Channel = 0
+                Channel = uint.TryParse(SelectedCanChannel, out var selectedChannel)
+                    ? selectedChannel
+                    : 0
             };
 
             using var transport = new IsoTpTransport(_canDevice, options);

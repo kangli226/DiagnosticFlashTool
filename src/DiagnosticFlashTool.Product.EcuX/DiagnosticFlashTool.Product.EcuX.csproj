@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>DiagnosticFlashTool.Product.EcuX</AssemblyName>
+    <RootNamespace>DiagnosticFlashTool.Product.EcuX</RootNamespace>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DiagnosticFlashTool.Core\DiagnosticFlashTool.Core.csproj" />
+    <ProjectReference Include="..\DiagnosticFlashTool.Infrastructure\DiagnosticFlashTool.Infrastructure.csproj" />
+    <ProjectReference Include="..\DiagnosticFlashTool.Application\DiagnosticFlashTool.Application.csproj" />
+    <ProjectReference Include="..\DiagnosticFlashTool.SeedKeyWorker\DiagnosticFlashTool.SeedKeyWorker.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="resources\product\**\*.*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\DiagnosticFlashTool.App\resources\native\**\*.*">
+      <Link>resources\native\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <Target Name="CopySeedKeyWorker" AfterTargets="Build">
+    <ItemGroup>
+      <WorkerFiles Include="..\DiagnosticFlashTool.SeedKeyWorker\bin\$(Configuration)\net8.0\win-x86\DiagnosticFlashTool.SeedKeyWorker.exe" />
+      <WorkerFiles Include="..\DiagnosticFlashTool.SeedKeyWorker\bin\$(Configuration)\net8.0\win-x86\DiagnosticFlashTool.SeedKeyWorker.dll" />
+      <WorkerFiles Include="..\DiagnosticFlashTool.SeedKeyWorker\bin\$(Configuration)\net8.0\win-x86\DiagnosticFlashTool.SeedKeyWorker.deps.json" />
+      <WorkerFiles Include="..\DiagnosticFlashTool.SeedKeyWorker\bin\$(Configuration)\net8.0\win-x86\DiagnosticFlashTool.SeedKeyWorker.runtimeconfig.json" />
+    </ItemGroup>
+    <Copy SourceFiles="@(WorkerFiles)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" Condition="Exists('%(WorkerFiles.Identity)')" />
+  </Target>
+
+  <Target Name="CopySeedKeyWorkerToPublish" AfterTargets="Publish">
+    <ItemGroup>
+      <WorkerPublishFiles Include="..\DiagnosticFlashTool.SeedKeyWorker\bin\$(Configuration)\net8.0\win-x86\DiagnosticFlashTool.SeedKeyWorker.exe" />
+      <WorkerPublishFiles Include="..\DiagnosticFlashTool.SeedKeyWorker\bin\$(Configuration)\net8.0\win-x86\DiagnosticFlashTool.SeedKeyWorker.dll" />
+      <WorkerPublishFiles Include="..\DiagnosticFlashTool.SeedKeyWorker\bin\$(Configuration)\net8.0\win-x86\DiagnosticFlashTool.SeedKeyWorker.deps.json" />
+      <WorkerPublishFiles Include="..\DiagnosticFlashTool.SeedKeyWorker\bin\$(Configuration)\net8.0\win-x86\DiagnosticFlashTool.SeedKeyWorker.runtimeconfig.json" />
+    </ItemGroup>
+    <Copy SourceFiles="@(WorkerPublishFiles)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" Condition="Exists('%(WorkerPublishFiles.Identity)')" />
+  </Target>
+</Project>

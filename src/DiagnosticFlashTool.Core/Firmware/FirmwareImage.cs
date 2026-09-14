@@ -41,4 +41,20 @@ public sealed class FirmwareSet
 {
     public FirmwareImage? Driver { get; init; }
     public FirmwareImage? Application { get; init; }
+
+    /// <summary>
+    /// Optional ordered application images. The legacy Application property is
+    /// kept for existing projects and is included when this collection is empty.
+    /// </summary>
+    public IReadOnlyList<FirmwareImage> Applications { get; init; } = [];
+
+    public IReadOnlyList<FirmwareImage> GetApplicationImages()
+    {
+        if (Applications.Count > 0)
+        {
+            return Applications;
+        }
+
+        return Application is null ? [] : [Application];
+    }
 }

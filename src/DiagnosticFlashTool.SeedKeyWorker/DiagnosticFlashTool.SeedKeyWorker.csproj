@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>DiagnosticFlashTool.SeedKeyWorker</AssemblyName>
+    <RootNamespace>DiagnosticFlashTool.SeedKeyWorker</RootNamespace>
+    <PlatformTarget>x86</PlatformTarget>
+    <RuntimeIdentifier>win-x86</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DiagnosticFlashTool.Infrastructure\DiagnosticFlashTool.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

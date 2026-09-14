@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "productId": "ECU-X",
+  "displayName": "ECU-X 控制器",
+  "integrationNote": "以下 CAN 地址、帧格式与波特率为示例值，量产前必须按目标 ECU 通信矩阵确认。",
+  "transport": {
+    "bus": "CAN",
+    "extendedFrame": true,
+    "physicalRequestId": "0x18DA5535",
+    "functionalRequestId": "0x18DA55FF",
+    "responseId": "0x18DA3555",
+    "baudRate": 500000,
+    "channel": 0,
+    "deviceType": "Mock",
+    "deviceIndex": 0,
+    "flowControlBlockSize": 10,
+    "flowControlStMinMs": 10
+  },
+  "timing": {
+    "p2ClientMs": 5000,
+    "p2StarClientMs": 5100,
+    "s3ClientMs": 5000,
+    "pendingOverallTimeoutMs": 30000
+  },
+  "security": {
+    "provider": "dll",
+    "algorithmName": "ECU_DLL",
+    "entryPoint": "GenerateKeyEx",
+    "callingConvention": "cdecl",
+    "securityLevel": "0x01",
+    "variant": "ECU-X",
+    "options": "",
+    "workerFile": "DiagnosticFlashTool.SeedKeyWorker.exe"
+  },
+  "flowFile": "BOOT/ECU-X.json",
+  "firmware": [
+    {
+      "id": "driver",
+      "kind": "Driver",
+      "displayName": "Driver",
+      "required": false,
+      "fallbackAddress": "0x00000000"
+    },
+    {
+      "id": "application",
+      "kind": "Application",
+      "displayName": "Application",
+      "required": true,
+      "fallbackAddress": "0x00400000"
+    }
+  ]
+}

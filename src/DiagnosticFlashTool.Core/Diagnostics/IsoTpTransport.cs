@@ -8,6 +8,7 @@ public sealed class IsoTpTransport : IDisposable
     private readonly DiagnosticTransportOptions _options;
     private readonly SemaphoreSlim _transactionGate = new(1, 1);
     private readonly object _sync = new();
+    private readonly Queue<byte[]> _pendingPayloads = new();
     private TaskCompletionSource<byte[]>? _receiveWaiter;
     private int _expectedLength;
     private List<byte>? _rxBuffer;
@@ -40,12 +41,42 @@ public sealed class IsoTpTransport : IDisposable
         }
     }
 
+    /// <summary>
+    /// Sends an ISO-TP payload without waiting for a diagnostic response.
+    /// The same transaction gate used by request/response operations prevents
+    /// Tester Present traffic from interleaving with a flash request.
+    /// </summary>
+    public async Task SendOnlyAsync(
+        byte[] payload,
+        UdsAddressing addressing,
+        CancellationToken cancellationToken)
+    {
+        await _transactionGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await SendPayloadAsync(payload, addressing, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            _transactionGate.Release();
+        }
+    }
+
     public async Task<byte[]> WaitForPayloadAsync(TimeSpan timeout, CancellationToken cancellationToken)
     {
         Task<byte[]> task;
         lock (_sync)
         {
-            _receiveWaiter ??= NewWaiter();
+            if (_pendingPayloads.Count > 0)
+            {
+                return _pendingPayloads.Dequeue();
+            }
+
+            if (_receiveWaiter is null || _receiveWaiter.Task.IsCompleted)
+            {
+                _receiveWaiter = NewWaiter();
+            }
+
             task = _receiveWaiter.Task;
         }
 
@@ -58,6 +89,7 @@ public sealed class IsoTpTransport : IDisposable
             return await task.ConfigureAwait(false);
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
         throw new TimeoutException($"UDS response timeout after {timeout.TotalMilliseconds:0} ms.");
     }
 
@@ -221,6 +253,7 @@ public sealed class IsoTpTransport : IDisposable
         lock (_sync)
         {
             _receiveWaiter = NewWaiter();
+            _pendingPayloads.Clear();
             _expectedLength = 0;
             _rxBuffer = null;
             _nextConsecutiveFrame = 1;
@@ -232,8 +265,6 @@ public sealed class IsoTpTransport : IDisposable
         lock (_sync)
         {
             _receiveWaiter = null;
-            _expectedLength = 0;
-            _rxBuffer = null;
         }
     }
 
@@ -249,7 +280,14 @@ public sealed class IsoTpTransport : IDisposable
     {
         _rxBuffer = null;
         _expectedLength = 0;
-        _receiveWaiter?.TrySetResult(payload);
+        if (_receiveWaiter is { Task.IsCompleted: false } waiter)
+        {
+            waiter.TrySetResult(payload);
+        }
+        else
+        {
+            _pendingPayloads.Enqueue(payload);
+        }
     }
 
     private static TaskCompletionSource<byte[]> NewWaiter()
