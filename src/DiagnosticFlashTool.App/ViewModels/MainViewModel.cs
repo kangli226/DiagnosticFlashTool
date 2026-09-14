@@ -2,8 +2,6 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
-using System.Windows;
-using System.Windows.Media;
 using DiagnosticFlashTool.Core.Can;
 using DiagnosticFlashTool.Core.Configuration;
 using DiagnosticFlashTool.Core.Diagnostics;
@@ -40,140 +38,6 @@ public sealed class MainViewModel : ObservableObject
     private const int MaxDownloadInfoEntries = 30;
     private const int MaxFrameHistoryEntries = 5000;
 
-    private static readonly IReadOnlyDictionary<string, string> LightThemeBrushes = new Dictionary<string, string>
-    {
-        ["AppBackgroundBrush"] = "#F6F8FB",
-        ["PanelBrush"] = "#FFFFFF",
-        ["SurfaceBrush"] = "#F8FAFC",
-        ["CardBorderBrush"] = "#E5EAF1",
-        ["DividerBrush"] = "#E5EAF1",
-        ["InputBackgroundBrush"] = "#FFFFFF",
-        ["InputBorderBrush"] = "#D7DEE8",
-        ["PrimarySoftBorderBrush"] = "#B8CAE5",
-        ["PrimaryBrush"] = "#3568B8",
-        ["PrimaryActiveBrush"] = "#2E5B9E",
-        ["PrimaryStrongBrush"] = "#274D86",
-        ["PrimarySoftBrush"] = "#EDF3FC",
-        ["PrimaryPressedBrush"] = "#DCE7F6",
-        ["BrandNavigationBrush"] = "#3F67A3",
-        ["TextBrush"] = "#334155",
-        ["CardTitleTextBrush"] = "#3B4A5F",
-        ["BodyTextBrush"] = "#475569",
-        ["LabelTextBrush"] = "#64748B",
-        ["SubtleTextBrush"] = "#8A97A8",
-        ["DisabledTextBrush"] = "#B6C0CC",
-        ["InverseTextBrush"] = "#FFFFFF",
-        ["IconDefaultBrush"] = "#64748B",
-        ["IconPrimaryBrush"] = "#3568B8",
-        ["IconSuccessBrush"] = "#16A34A",
-        ["IconWarningBrush"] = "#D97706",
-        ["IconErrorBrush"] = "#DC2626",
-        ["IconMutedBrush"] = "#94A3B8",
-        ["SidebarBrush"] = "#182335",
-        ["SidebarHoverBrush"] = "#202D42",
-        ["SidebarActiveBrush"] = "#4D3F67A3",
-        ["SidebarActiveRailBrush"] = "#6F95C8",
-        ["SidebarActiveIconBrush"] = "#C6D5E8",
-        ["SidebarTextBrush"] = "#A8B3C4",
-        ["SidebarMutedTextBrush"] = "#7F8CA1",
-        ["TableHeaderBrush"] = "#F8FAFC",
-        ["TableAltRowBrush"] = "#F8FAFC",
-        ["ProgressTrackBrush"] = "#E5EAF1",
-        ["LogPanelBrush"] = "#0F172A",
-        ["LogHoverBrush"] = "#111827",
-        ["LogSelectedBrush"] = "#1E293B",
-        ["LogTextBrush"] = "#CBD5E1",
-        ["SuccessBrush"] = "#16A34A",
-        ["StatusSuccessBrush"] = "#16A34A",
-        ["StatusSuccessSoftBrush"] = "#DCFCE7",
-        ["StatusSuccessBorderBrush"] = "#86EFAC",
-        ["StatusRunningBrush"] = "#3568B8",
-        ["StatusRunningSoftBrush"] = "#EDF3FC",
-        ["StatusRunningBorderBrush"] = "#6F95C8",
-        ["StatusWarningBrush"] = "#D97706",
-        ["StatusWarningSoftBrush"] = "#FEF3C7",
-        ["StatusWarningBorderBrush"] = "#FCD34D",
-        ["StatusErrorBrush"] = "#DC2626",
-        ["StatusErrorSoftBrush"] = "#FEE2E2",
-        ["StatusErrorBorderBrush"] = "#FCA5A5",
-        ["StatusNeutralBrush"] = "#94A3B8",
-        ["StatusNeutralSoftBrush"] = "#F6F8FB",
-        ["StatusNeutralBorderBrush"] = "#D7DEE8",
-        ["DangerBrush"] = "#D97706",
-        ["DangerActiveBrush"] = "#B45309",
-        ["DangerPressedBrush"] = "#92400E",
-        ["DangerBorderBrush"] = "#FCD34D",
-        ["DangerTextBrush"] = "#1E293B",
-        ["NeutralSoftBrush"] = "#F6F8FB"
-    };
-
-    private static readonly IReadOnlyDictionary<string, string> DarkThemeBrushes = new Dictionary<string, string>
-    {
-        ["AppBackgroundBrush"] = "#0F172A",
-        ["PanelBrush"] = "#111827",
-        ["SurfaceBrush"] = "#1F2937",
-        ["CardBorderBrush"] = "#334155",
-        ["DividerBrush"] = "#334155",
-        ["InputBackgroundBrush"] = "#111827",
-        ["InputBorderBrush"] = "#475569",
-        ["PrimarySoftBorderBrush"] = "#2563EB",
-        ["PrimaryBrush"] = "#3B82F6",
-        ["PrimaryActiveBrush"] = "#60A5FA",
-        ["PrimaryStrongBrush"] = "#2563EB",
-        ["PrimarySoftBrush"] = "#1E3A5F",
-        ["PrimaryPressedBrush"] = "#1D4ED8",
-        ["BrandNavigationBrush"] = "#2563EB",
-        ["TextBrush"] = "#E5E7EB",
-        ["CardTitleTextBrush"] = "#F1F5F9",
-        ["BodyTextBrush"] = "#CBD5E1",
-        ["LabelTextBrush"] = "#94A3B8",
-        ["SubtleTextBrush"] = "#94A3B8",
-        ["DisabledTextBrush"] = "#64748B",
-        ["InverseTextBrush"] = "#FFFFFF",
-        ["IconDefaultBrush"] = "#94A3B8",
-        ["IconPrimaryBrush"] = "#93C5FD",
-        ["IconSuccessBrush"] = "#22C55E",
-        ["IconWarningBrush"] = "#F59E0B",
-        ["IconErrorBrush"] = "#F87171",
-        ["IconMutedBrush"] = "#64748B",
-        ["SidebarBrush"] = "#0B1220",
-        ["SidebarHoverBrush"] = "#1E293B",
-        ["SidebarActiveBrush"] = "#334155",
-        ["SidebarActiveRailBrush"] = "#60A5FA",
-        ["SidebarActiveIconBrush"] = "#BFDBFE",
-        ["SidebarTextBrush"] = "#CBD5E1",
-        ["SidebarMutedTextBrush"] = "#94A3B8",
-        ["TableHeaderBrush"] = "#1F2937",
-        ["TableAltRowBrush"] = "#111827",
-        ["ProgressTrackBrush"] = "#334155",
-        ["LogPanelBrush"] = "#020617",
-        ["LogHoverBrush"] = "#0F172A",
-        ["LogSelectedBrush"] = "#1E293B",
-        ["LogTextBrush"] = "#CBD5E1",
-        ["SuccessBrush"] = "#22C55E",
-        ["StatusSuccessBrush"] = "#22C55E",
-        ["StatusSuccessSoftBrush"] = "#052E16",
-        ["StatusSuccessBorderBrush"] = "#15803D",
-        ["StatusRunningBrush"] = "#60A5FA",
-        ["StatusRunningSoftBrush"] = "#172554",
-        ["StatusRunningBorderBrush"] = "#2563EB",
-        ["StatusWarningBrush"] = "#F59E0B",
-        ["StatusWarningSoftBrush"] = "#451A03",
-        ["StatusWarningBorderBrush"] = "#D97706",
-        ["StatusErrorBrush"] = "#F87171",
-        ["StatusErrorSoftBrush"] = "#450A0A",
-        ["StatusErrorBorderBrush"] = "#B91C1C",
-        ["StatusNeutralBrush"] = "#94A3B8",
-        ["StatusNeutralSoftBrush"] = "#1F2937",
-        ["StatusNeutralBorderBrush"] = "#334155",
-        ["DangerBrush"] = "#F59E0B",
-        ["DangerActiveBrush"] = "#D97706",
-        ["DangerPressedBrush"] = "#B45309",
-        ["DangerBorderBrush"] = "#FCD34D",
-        ["DangerTextBrush"] = "#111827",
-        ["NeutralSoftBrush"] = "#1F2937"
-    };
-
     private readonly AppConfigurationPaths _paths = new();
     private readonly JsonProjectConfigRepository _projectRepository;
     private readonly JsonBootConfigRepository _bootConfigRepository;
@@ -198,7 +62,6 @@ public sealed class MainViewModel : ObservableObject
     private string _selectedLogLevelFilter = "全部";
     private string _selectedLogTimeRangeFilter = "全部";
     private string _logSearchText = string.Empty;
-    private bool _nightModeEnabled;
     private bool _keepRunningInTray;
     private bool _autoFlashEnabled;
     private bool _autoSearchBaudRate = true;
@@ -223,14 +86,13 @@ public sealed class MainViewModel : ObservableObject
     private string _flowValidationText = "未加载流程配置。";
     private string _projectEditorTitle = "新建项目";
     private string _adminPassword = string.Empty;
-    private string _adminPasswordMessage = "请输入管理员密码，本次启动内有效。";
+    private string _adminPasswordMessage = "请输入密码，本次启动内有效。";
     private SystemLogEntry? _latestLogEntry;
     private readonly List<CanFrameRow> _frameHistory = [];
 
     public MainViewModel()
     {
         LoadAppSettings();
-        ApplyNightMode(NightModeEnabled);
         _projectRepository = new JsonProjectConfigRepository(_paths);
         _bootConfigRepository = new JsonBootConfigRepository(_paths);
 
@@ -287,7 +149,7 @@ public sealed class MainViewModel : ObservableObject
         ChooseLogFileCommand = new RelayCommand(ChooseLogFile);
         RestoreDefaultLogStorageCommand = new RelayCommand(RestoreDefaultLogStorage);
         OpenRuntimeLogPageCommand = new RelayCommand(() => SelectedShellIndex = 8);
-        ShowAdminPasswordCommand = new RelayCommand(ShowAdminPasswordPrompt);
+        ToggleAdminModeCommand = new RelayCommand(ToggleAdminMode);
         SubmitAdminPasswordCommand = new RelayCommand(SubmitAdminPassword);
         CancelAdminPasswordCommand = new RelayCommand(CancelAdminPasswordPrompt);
 
@@ -367,7 +229,7 @@ public sealed class MainViewModel : ObservableObject
     public RelayCommand ChooseLogFileCommand { get; }
     public RelayCommand RestoreDefaultLogStorageCommand { get; }
     public RelayCommand OpenRuntimeLogPageCommand { get; }
-    public RelayCommand ShowAdminPasswordCommand { get; }
+    public RelayCommand ToggleAdminModeCommand { get; }
     public RelayCommand SubmitAdminPasswordCommand { get; }
     public RelayCommand CancelAdminPasswordCommand { get; }
 
@@ -523,23 +385,6 @@ public sealed class MainViewModel : ObservableObject
             }
         }
     }
-
-    public bool NightModeEnabled
-    {
-        get => _nightModeEnabled;
-        set
-        {
-            if (SetProperty(ref _nightModeEnabled, value))
-            {
-                ApplyNightMode(value);
-                OnPropertyChanged(nameof(PageModeStatusText));
-                SaveAppSettings();
-                AppendLog($"Night mode {(value ? "enabled" : "disabled")}.");
-            }
-        }
-    }
-
-    public string PageModeStatusText => NightModeEnabled ? "深色页面已启用" : "浅色页面已启用";
 
     public bool KeepRunningInTray
     {
@@ -966,13 +811,24 @@ public sealed class MainViewModel : ObservableObject
         return false;
     }
 
-    private void ShowAdminPasswordPrompt()
+    private void ToggleAdminMode()
     {
         if (AdminModeEnabled)
         {
+            AdminModeEnabled = false;
+            AdminPassword = string.Empty;
+            AdminPasswordPromptVisible = false;
+            SetStatus("管理员模式已退出", DiagnosticStatusKind.Success);
+            AppendLog("Admin mode disabled.");
             return;
         }
 
+        ShowAdminPasswordPrompt();
+    }
+
+    private void ShowAdminPasswordPrompt()
+    {
+        OnPropertyChanged(nameof(AdminModeEnabled));
         AdminPassword = string.Empty;
         AdminPasswordMessage = "请输入管理员密码，本次启动内有效。";
         AdminPasswordPromptVisible = true;
@@ -1052,7 +908,6 @@ public sealed class MainViewModel : ObservableObject
                 return;
             }
 
-            _nightModeEnabled = settings.NightModeEnabled;
             _keepRunningInTray = settings.KeepRunningInTray;
             _autoFlashEnabled = settings.AutoFlashEnabled;
             _autoSearchBaudRate = settings.AutoSearchBaudRate;
@@ -1089,7 +944,6 @@ public sealed class MainViewModel : ObservableObject
             Directory.CreateDirectory(Path.GetDirectoryName(AppSettingsFilePath)!);
             var settings = new AppSettingsSnapshot
             {
-                NightModeEnabled = NightModeEnabled,
                 KeepRunningInTray = KeepRunningInTray,
                 AutoFlashEnabled = AutoFlashEnabled,
                 AutoSearchBaudRate = AutoSearchBaudRate,
@@ -1345,64 +1199,6 @@ public sealed class MainViewModel : ObservableObject
             SetStatus("打开路径失败", DiagnosticStatusKind.Error);
             AppendLog($"Open path failed: {ex.Message}");
         }
-    }
-
-    private static void ApplyNightMode(bool enabled)
-    {
-        if (Application.Current is null)
-        {
-            return;
-        }
-
-        var palette = enabled ? DarkThemeBrushes : LightThemeBrushes;
-
-        foreach (var (key, value) in palette)
-        {
-            var color = ToColor(value);
-            if (!TryUpdateBrushResource(Application.Current.Resources, key, color))
-            {
-                Application.Current.Resources[key] = new SolidColorBrush(color);
-            }
-        }
-
-        foreach (Window window in Application.Current.Windows)
-        {
-            window.InvalidateVisual();
-        }
-    }
-
-    private static bool TryUpdateBrushResource(ResourceDictionary dictionary, string key, Color color)
-    {
-        var updated = false;
-
-        if (dictionary.Contains(key))
-        {
-            if (dictionary[key] is SolidColorBrush brush && !brush.IsFrozen)
-            {
-                brush.Color = color;
-            }
-            else
-            {
-                dictionary[key] = new SolidColorBrush(color);
-            }
-
-            updated = true;
-        }
-
-        foreach (var mergedDictionary in dictionary.MergedDictionaries)
-        {
-            if (TryUpdateBrushResource(mergedDictionary, key, color))
-            {
-                updated = true;
-            }
-        }
-
-        return updated;
-    }
-
-    private static Color ToColor(string value)
-    {
-        return (Color?)ColorConverter.ConvertFromString(value) ?? Colors.Transparent;
     }
 
     private void LoadAlgorithmCatalog()
@@ -2806,7 +2602,6 @@ public sealed class MainViewModel : ObservableObject
 
     private sealed class AppSettingsSnapshot
     {
-        public bool NightModeEnabled { get; set; }
         public bool KeepRunningInTray { get; set; }
         public bool AutoFlashEnabled { get; set; }
         public bool AutoSearchBaudRate { get; set; } = true;

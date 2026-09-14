@@ -40,13 +40,24 @@
                                     <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="夜间模式" Style="{StaticResource FieldLabelStyle}" />
+                                <TextBlock Grid.Column="0" Text="管理模式" Style="{StaticResource FieldLabelStyle}" />
                                 <ToggleButton Grid.Column="1"
-                                              IsChecked="{Binding NightModeEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              IsChecked="{Binding AdminModeEnabled, Mode=OneWay}"
+                                              Command="{Binding ToggleAdminModeCommand}"
                                               Style="{StaticResource SoftSwitchStyle}" />
                                 <TextBlock Grid.Column="3"
-                                           Text="{Binding PageModeStatusText}"
-                                           Style="{StaticResource SettingAssistTextStyle}" />
+                                           Text="{Binding AdminModeStatusText}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource SettingAssistTextStyle}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding AdminModeEnabled}" Value="True">
+                                                    <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                                                    <Setter Property="FontWeight" Value="Medium" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
                             </Grid>
 
                             <Grid Grid.Column="2">
@@ -258,7 +269,7 @@
                     </controls:CardContentPanel>
                 </Border>
 
-                <Border Style="{StaticResource PageLeadStandardCardStyle}">
+                <Border Style="{StaticResource PageTrailingStandardCardStyle}">
                     <controls:CardContentPanel Style="{StaticResource Card.FormContent}">
                         <TextBlock Text="日志存储" Style="{StaticResource CardContentPanelTitleTextStyle}" />
 
@@ -358,45 +369,6 @@
                     </controls:CardContentPanel>
                 </Border>
 
-                <Border Style="{StaticResource PageTrailingStandardCardStyle}">
-                    <controls:CardContentPanel Style="{StaticResource Card.FormContent}">
-                        <TextBlock Text="管理员模式" Style="{StaticResource CardContentPanelTitleTextStyle}" />
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="状态" Style="{StaticResource FieldLabelStyle}" />
-                            <ToggleButton Grid.Column="1"
-                                          IsChecked="{Binding AdminModeEnabled, Mode=OneWay}"
-                                          Command="{Binding ShowAdminPasswordCommand}"
-                                          Style="{StaticResource SoftSwitchStyle}" />
-                            <TextBlock Grid.Column="3"
-                                       Text="{Binding AdminModeStatusText}">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock" BasedOn="{StaticResource ConfigValueTextStyle}">
-                                        <Setter Property="FontWeight" Value="Normal" />
-                                        <Setter Property="Foreground" Value="{StaticResource LabelTextBrush}" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding AdminModeEnabled}" Value="True">
-                                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
-                                                <Setter Property="FontWeight" Value="Medium" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                            <TextBlock Grid.Column="5"
-                                       Text="开启后显示配方配置、开发者选项、流程配置、项目配置。"
-                                       Style="{StaticResource HintTextStyle}" />
-                        </Grid>
-                    </controls:CardContentPanel>
-                </Border>
             </StackPanel>
         </ScrollViewer>
 
@@ -410,18 +382,20 @@
                     </Style.Triggers>
                 </Style>
             </Border.Style>
-            <Border Width="380"
+            <Border Width="280"
+                    Padding="20"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     Style="{StaticResource DialogPanelStyle}">
                 <StackPanel>
                     <TextBlock Text="启动管理员模式"
                                Style="{StaticResource CardHeaderTextStyle}"
-                               Margin="0,0,0,10" />
+                               Margin="0,0,0,8" />
                     <TextBlock Text="{Binding AdminPasswordMessage}"
                                Style="{StaticResource HintTextStyle}"
-                               Margin="0,0,0,12" />
+                               Margin="0,0,0,8" />
                     <PasswordBox Style="{StaticResource DialogPasswordBoxStyle}"
+                                 Margin="0,0,0,12"
                                  controls:PasswordBoxBinding.BoundPassword="{Binding AdminPassword, Mode=TwoWay}">
                         <PasswordBox.InputBindings>
                             <KeyBinding Key="Enter" Command="{Binding SubmitAdminPasswordCommand}" />
@@ -429,15 +403,24 @@
                         </PasswordBox.InputBindings>
                     </PasswordBox>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="取消"
-                                Command="{Binding CancelAdminPasswordCommand}"
-                                Style="{StaticResource Button.DialogSecondary}" />
                         <Button Command="{Binding SubmitAdminPasswordCommand}"
-                                Style="{StaticResource Button.DialogPrimary}">
+                                Style="{StaticResource Button.DialogPrimary}"
+                                Width="88"
+                                Margin="0,0,8,0">
                             <StackPanel Style="{StaticResource Button.InlineContent}">
                                 <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.ShieldAccountOutline}"
                                                          Style="{StaticResource Button.PackIcon.Current}" />
-                                <TextBlock Text="启动管理员模式" Style="{StaticResource Button.IconLabel}" />
+                                <TextBlock Text="启动" Style="{StaticResource Button.IconLabel}" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding CancelAdminPasswordCommand}"
+                                Style="{StaticResource Button.DialogSecondary}"
+                                Width="88"
+                                Margin="0">
+                            <StackPanel Style="{StaticResource Button.InlineContent}">
+                                <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.CloseCircleOutline}"
+                                                         Style="{StaticResource Button.PackIcon.Current}" />
+                                <TextBlock Text="取消" Style="{StaticResource Button.IconLabel}" />
                             </StackPanel>
                         </Button>
                     </StackPanel>

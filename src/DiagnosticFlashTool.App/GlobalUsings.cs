@@ -1,6 +1,4 @@
 global using Application = System.Windows.Application;
-global using Color = System.Windows.Media.Color;
-global using ColorConverter = System.Windows.Media.ColorConverter;
 global using Key = System.Windows.Input.Key;
 global using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 global using MessageBox = System.Windows.MessageBox;
