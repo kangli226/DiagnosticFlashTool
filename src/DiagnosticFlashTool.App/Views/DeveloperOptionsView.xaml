@@ -49,18 +49,30 @@
                                   DisplayMemberPath="ProjectName"
                                   SelectedItem="{Binding SelectedProject, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                   Style="{StaticResource StandardComboBoxStyle}" />
-                        <Button Grid.Column="4"
-                                Width="118"
-                                Command="{Binding StartFlashCommand}"
-                                Margin="0"
-                                Style="{StaticResource Button.Primary}"
-                                ToolTip="连接 CAN 设备后开始刷写">
-                            <StackPanel Style="{StaticResource Button.InlineContent}">
-                                <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.CloudDownloadOutline}"
-                                                         Style="{StaticResource Button.PackIcon.Current}" />
-                                <TextBlock Text="开始刷写" Style="{StaticResource Button.IconLabel}" />
-                            </StackPanel>
-                        </Button>
+                        <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Width="118"
+                                    Command="{Binding StartFlashCommand}"
+                                    Margin="0"
+                                    Style="{StaticResource Button.Primary}"
+                                    ToolTip="连接 CAN 设备后开始刷写">
+                                <StackPanel Style="{StaticResource Button.InlineContent}">
+                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.CloudDownloadOutline}"
+                                                             Style="{StaticResource Button.PackIcon.Current}" />
+                                    <TextBlock Text="开始刷写" Style="{StaticResource Button.IconLabel}" />
+                                </StackPanel>
+                            </Button>
+                            <Button Width="96"
+                                    Margin="8,0,0,0"
+                                    Command="{Binding CancelFlashCommand}"
+                                    Style="{StaticResource Button.Danger}"
+                                    ToolTip="中止正在进行的刷写，并让 ECU 退出编程会话">
+                                <StackPanel Style="{StaticResource Button.InlineContent}">
+                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.CloseCircleOutline}"
+                                                             Style="{StaticResource Button.PackIcon.Current}" />
+                                    <TextBlock Text="取消" Style="{StaticResource Button.IconLabel}" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
                     </Grid>
                 </controls:CardContentPanel>
             </Border>

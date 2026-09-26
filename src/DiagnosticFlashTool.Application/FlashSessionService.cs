@@ -127,21 +127,7 @@ public sealed class FlashSessionService : IAsyncDisposable
                 cancellationToken).ConfigureAwait(false);
             using var transport = new IsoTpTransport(device, options.Transport);
             var udsClient = new UdsClient(transport);
-            var algorithms = new SeedKeyAlgorithmRegistry();
-            if (options.SeedKeyDll is not null)
-            {
-                algorithms.Register(new DllSeedKeyAlgorithm(options.SeedKeyDll));
-            }
-            else if (string.Equals(options.Device.DeviceType, "Mock", StringComparison.OrdinalIgnoreCase))
-            {
-                foreach (var name in options.BootConfig.Flow
-                             .Select(step => step.SecurityAlgorithm)
-                             .Where(name => !string.IsNullOrWhiteSpace(name))
-                             .Distinct(StringComparer.OrdinalIgnoreCase))
-                {
-                    algorithms.Register(new MockSeedKeyAlgorithm(name!));
-                }
-            }
+            var algorithms = options.CreateAlgorithmRegistry();
 
             var testerPresent = CreateTesterPresentScheduler(udsClient, options.Timing);
             testerPresent?.Start();
@@ -274,16 +260,5 @@ public sealed class FlashSessionService : IAsyncDisposable
             && current.DeviceIndex == connected.DeviceIndex
             && current.Channel == connected.Channel
             && current.BaudRate == connected.BaudRate;
-    }
-
-    private sealed class MockSeedKeyAlgorithm(string name) : ISeedKeyAlgorithm
-    {
-        public string Name { get; } = name;
-
-        public byte[] ComputeKey(byte[] seed, IReadOnlyList<string> parameters)
-        {
-            ArgumentNullException.ThrowIfNull(seed);
-            return [.. seed];
-        }
     }
 }

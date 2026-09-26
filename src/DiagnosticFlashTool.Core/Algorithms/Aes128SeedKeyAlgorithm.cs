@@ -4,6 +4,8 @@ namespace DiagnosticFlashTool.Core.Algorithms;
 
 public sealed class Aes128SeedKeyAlgorithm : ISeedKeyAlgorithm
 {
+    public const string AlgorithmName = "AES128_OneFunc";
+
     private static readonly byte[] DefaultKey =
     [
         0x00, 0x01, 0x02, 0x03,
@@ -12,10 +14,16 @@ public sealed class Aes128SeedKeyAlgorithm : ISeedKeyAlgorithm
         0x0C, 0x0D, 0x0E, 0x0F
     ];
 
-    public string Name => "AES128_OneFunc";
+    public string Name => AlgorithmName;
 
-    public byte[] ComputeKey(byte[] seed, IReadOnlyList<string> parameters)
+    public ValueTask<byte[]> ComputeKeyAsync(
+        byte[] seed,
+        IReadOnlyList<string> parameters,
+        CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(seed);
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (seed.Length == 0 || seed.Length % 16 != 0)
         {
             throw new ArgumentException("AES128 seed length must be a non-zero multiple of 16 bytes.", nameof(seed));
@@ -27,6 +35,6 @@ public sealed class Aes128SeedKeyAlgorithm : ISeedKeyAlgorithm
         aes.Key = DefaultKey;
 
         using var encryptor = aes.CreateEncryptor();
-        return encryptor.TransformFinalBlock(seed, 0, seed.Length);
+        return new ValueTask<byte[]>(encryptor.TransformFinalBlock(seed, 0, seed.Length));
     }
 }

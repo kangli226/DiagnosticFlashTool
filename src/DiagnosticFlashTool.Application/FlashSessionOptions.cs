@@ -1,7 +1,8 @@
+using DiagnosticFlashTool.Core.Algorithms;
 using DiagnosticFlashTool.Core.Can;
 using DiagnosticFlashTool.Core.Configuration;
 using DiagnosticFlashTool.Core.Diagnostics;
-using DiagnosticFlashTool.Core.Util;
+using DiagnosticFlashTool.Core.Flashing;
 using DiagnosticFlashTool.Infrastructure.Security;
 
 namespace DiagnosticFlashTool.Application;
@@ -39,7 +40,6 @@ public sealed class FlashSessionOptions
         }
 
         Timing.Validate();
-        ValidateFlow();
         if (Device.BaudRate == 0)
         {
             throw new ArgumentOutOfRangeException(nameof(Device), "CAN baud rate must be greater than zero.");
@@ -89,27 +89,81 @@ public sealed class FlashSessionOptions
         {
             throw new InvalidOperationException("The Seed&Key DLL algorithm name does not match the selected BOOT flow.");
         }
+
+        // The flow is the specification: a download step means that firmware has to
+        // exist. Without this a flow could declare a download, supply no file, and still
+        // report success.
+        if (RequiresDownload("DownloadDriver") && string.IsNullOrWhiteSpace(DriverFilePath))
+        {
+            throw new InvalidOperationException(
+                "BOOT 流程包含 DownloadDriver 步骤，但没有配置 Driver 固件文件。");
+        }
+
+        if (RequiresDownload("DownloadApplication")
+            && !ApplicationFilePaths.Any(path => !string.IsNullOrWhiteSpace(path)))
+        {
+            throw new InvalidOperationException(
+                "BOOT 流程包含 DownloadApplication 步骤，但没有配置 Application 固件文件。");
+        }
+
+        // Runs last so the targeted messages above win over the generic flow validation.
+        ValidateFlow();
+    }
+
+    private bool RequiresDownload(string stepType)
+    {
+        return BootConfig.Flow.Any(step =>
+            string.Equals(step.StepType, stepType, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private bool IsMockDevice =>
+        string.Equals(Device.DeviceType, "Mock", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Algorithms the session can resolve for this flow. Mirrors what
+    /// <see cref="FlashSessionService"/> registers at flash time, so validation and
+    /// execution cannot disagree about whether an algorithm is available.
+    /// </summary>
+    public SeedKeyAlgorithmRegistry CreateAlgorithmRegistry()
+    {
+        var algorithms = new SeedKeyAlgorithmRegistry();
+        if (SeedKeyDll is not null)
+        {
+            algorithms.Register(new DllSeedKeyAlgorithm(SeedKeyDll));
+            return algorithms;
+        }
+
+        if (!IsMockDevice)
+        {
+            return algorithms;
+        }
+
+        // Offline runs have no vendor DLL, so every algorithm the flow names is stubbed.
+        var declared = BootConfig.Flow
+            .Select(step => step.SecurityAlgorithm)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Cast<string>();
+
+        foreach (var name in declared)
+        {
+            algorithms.Register(new MockSeedKeyAlgorithm(name));
+        }
+
+        return algorithms;
     }
 
     private void ValidateFlow()
     {
-        foreach (var step in BootConfig.Flow)
+        var issues = FlashFlowValidator.Validate(BootConfig, CreateAlgorithmRegistry());
+        var errors = issues.Where(issue => issue.Kind == FlashFlowIssueKind.Error).ToList();
+        if (errors.Count == 0)
         {
-            var isDownload = string.Equals(step.StepType, "DownloadDriver", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(step.StepType, "DownloadApplication", StringComparison.OrdinalIgnoreCase);
-            if (!isDownload && !HexUtil.TryParseByte(step.Service, out _))
-            {
-                throw new InvalidOperationException($"Flash step {step.Id} has neither a supported download type nor a valid UDS service.");
-            }
-
-            if (!string.IsNullOrWhiteSpace(step.EraseRoutine)
-                || !string.IsNullOrWhiteSpace(step.CrcAlgorithm)
-                || step.Receive.Count > 0
-                || step.Verify.Count > 0)
-            {
-                throw new NotSupportedException(
-                    $"Flash step {step.Id} uses erase/CRC/receive verification metadata that is not implemented by the dedicated session. Define explicit UDS routine steps before production use.");
-            }
+            return;
         }
+
+        throw new InvalidOperationException(
+            "BOOT 流程校验未通过：" + Environment.NewLine +
+            string.Join(Environment.NewLine, errors.Select(issue => "  - " + issue)));
     }
 }

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
+using DiagnosticFlashTool.Core.Algorithms;
 using DiagnosticFlashTool.Core.Can;
 using DiagnosticFlashTool.Core.Configuration;
 using DiagnosticFlashTool.Core.Diagnostics;
@@ -43,6 +44,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private readonly JsonBootConfigRepository _bootConfigRepository;
     private readonly FirmwareLoader _firmwareLoader = new();
     private readonly CanDeviceFactory _canDeviceFactory = new();
+
+    /// <summary>
+    /// Algorithms the flash executor may resolve. Matches what the flow editor validates
+    /// against, so the editor cannot accept a flow the executor would refuse.
+    /// </summary>
+    private readonly SeedKeyAlgorithmRegistry _seedKeyAlgorithmRegistry = new();
     private ICanDevice? _canDevice;
     private BootConfig? _loadedFlowConfig;
     private ProjectConfigEntry? _selectedProject;
@@ -105,6 +112,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         BrowseDriverCommand = new RelayCommand(() => BrowseFirmware(path => DriverFilePath = path));
         BrowseApplicationCommand = new RelayCommand(() => BrowseFirmware(path => ApplicationFilePath = path));
         StartFlashCommand = new AsyncRelayCommand(StartFlashAsync, () => IsConnected && SelectedProject is not null && !IsBusy);
+        CancelFlashCommand = new RelayCommand(() => StartFlashCommand.Cancel(), () => StartFlashCommand.IsRunning);
         RefreshLogCommand = new RelayCommand(ApplyLogFilters);
         ClearLogCommand = new RelayCommand(ClearLogs);
         OpenLogFileCommand = new RelayCommand(OpenLogFile);
@@ -185,6 +193,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public RelayCommand BrowseDriverCommand { get; }
     public RelayCommand BrowseApplicationCommand { get; }
     public AsyncRelayCommand StartFlashCommand { get; }
+    public RelayCommand CancelFlashCommand { get; }
     public RelayCommand RefreshLogCommand { get; }
     public RelayCommand ClearLogCommand { get; }
     public RelayCommand OpenLogFileCommand { get; }
@@ -1365,7 +1374,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
             var bootFile = SelectedBootConfig ?? SelectedProject.BootConfigFile;
             var bootConfig = _bootConfigRepository.Load(bootFile);
-            var firmwareSet = LoadFirmwareSet(SelectedProject);
+            var firmwareSet = LoadFirmwareSet(SelectedProject, bootConfig);
 
             var options = new DiagnosticTransportOptions
             {
@@ -1379,7 +1388,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
             using var transport = new IsoTpTransport(_canDevice, options);
             var udsClient = new UdsClient(transport);
-            var executor = new FlashFlowExecutor(udsClient);
+            var executor = new FlashFlowExecutor(udsClient, _seedKeyAlgorithmRegistry);
             var progress = new Progress<FlashProgress>(item =>
             {
                 Progress = Math.Clamp(item.Percent, 0, 100);
@@ -1405,7 +1414,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         catch (OperationCanceledException)
         {
             DownloadStatusKind = DiagnosticStatusKind.Warning;
-            SetStatus("Flash canceled", DiagnosticStatusKind.Warning);
+            SetStatus("刷写已取消", DiagnosticStatusKind.Warning);
             AppendLog("Flash canceled.");
         }
         catch (Exception ex)
@@ -1487,27 +1496,68 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
-    private FirmwareSet LoadFirmwareSet(ProjectConfigEntry project)
+    private FirmwareSet LoadFirmwareSet(ProjectConfigEntry project, BootConfig bootConfig)
     {
-        FirmwareImage? driver = null;
-        FirmwareImage? application = null;
+        // The flow is the specification: a download step means the file has to exist.
+        // Silently skipping a missing file is what allowed a flow to report success
+        // without having downloaded anything.
+        var driverPath = FirstConfiguredPath(DriverFilePath, project.DriveFilePath);
+        var applicationPath = FirstConfiguredPath(ApplicationFilePath, project.FlashFilePath);
 
-        var driverPath = string.IsNullOrWhiteSpace(DriverFilePath) ? project.DriveFilePath : DriverFilePath;
-        if (!string.IsNullOrWhiteSpace(driverPath) && File.Exists(driverPath))
-        {
-            driver = _firmwareLoader.Load(driverPath, FirmwareImageKind.Driver);
-            AppendLog($"Driver image loaded: {Path.GetFileName(driverPath)}, {driver.Length} bytes");
-        }
+        var driver = LoadFirmwareImage(
+            driverPath,
+            FirmwareImageKind.Driver,
+            "Driver",
+            RequiresDownloadStep(bootConfig, "DownloadDriver"),
+            0);
 
-        var appPath = string.IsNullOrWhiteSpace(ApplicationFilePath) ? project.FlashFilePath : ApplicationFilePath;
-        if (!string.IsNullOrWhiteSpace(appPath) && File.Exists(appPath))
-        {
-            var fallbackAddress = HexUtil.ParseUInt32(project.AppStartAddress, 0);
-            application = _firmwareLoader.Load(appPath, FirmwareImageKind.Application, fallbackAddress);
-            AppendLog($"Application image loaded: {Path.GetFileName(appPath)}, {application.Length} bytes");
-        }
+        var application = LoadFirmwareImage(
+            applicationPath,
+            FirmwareImageKind.Application,
+            "Application",
+            RequiresDownloadStep(bootConfig, "DownloadApplication"),
+            HexUtil.ParseUInt32(project.AppStartAddress, 0));
 
         return new FirmwareSet { Driver = driver, Application = application };
+    }
+
+    private static string FirstConfiguredPath(string preferred, string? fallback)
+    {
+        return string.IsNullOrWhiteSpace(preferred) ? fallback ?? string.Empty : preferred;
+    }
+
+    private static bool RequiresDownloadStep(BootConfig bootConfig, string stepType)
+    {
+        return bootConfig.Flow.Any(step =>
+            string.Equals(step.StepType, stepType, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private FirmwareImage? LoadFirmwareImage(
+        string path,
+        FirmwareImageKind kind,
+        string label,
+        bool requiresDownload,
+        uint fallbackAddress)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            if (requiresDownload)
+            {
+                throw new InvalidOperationException(
+                    $"BOOT 流程包含 {label} 下载步骤，但没有选择 {label} 固件文件。");
+            }
+
+            return null;
+        }
+
+        if (!File.Exists(path))
+        {
+            throw new FileNotFoundException($"{label} 固件文件不存在：{path}", path);
+        }
+
+        var image = _firmwareLoader.Load(path, kind, fallbackAddress);
+        AppendLog($"{label} image loaded: {Path.GetFileName(path)}, {image.Length} bytes");
+        return image;
     }
 
     private void LoadDefaultFunctionChecks()
@@ -1945,6 +1995,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private bool ValidateFlowConfig()
     {
         var issues = new List<string>();
+        var warnings = new List<string>();
         if (FlowRows.Count == 0)
         {
             issues.Add("流程中未配置节点。");
@@ -1987,9 +2038,38 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             .Where(group => !string.IsNullOrWhiteSpace(group.Key) && group.Count() > 1)
             .Select(group => $"流程脚本 ID 重复：{group.Key}"));
 
-        FlowValidationText = issues.Count == 0
+        // Flow-level semantics, shared with the flash executor, so the editor cannot
+        // accept a flow that the executor would refuse - or worse, would only partly
+        // execute while still reporting success.
+        if (FlowRows.Count > 0)
+        {
+            var draft = new BootConfig
+            {
+                Name = SelectedBootConfig ?? string.Empty,
+                Flow = FlowRows.OrderBy(row => row.Id).Select(row => row.ToConfig()).ToList()
+            };
+
+            foreach (var issue in FlashFlowValidator.Validate(draft, _seedKeyAlgorithmRegistry))
+            {
+                if (issue.Kind == FlashFlowIssueKind.Error)
+                {
+                    issues.Add(issue.ToString());
+                }
+                else
+                {
+                    warnings.Add(issue.ToString());
+                }
+            }
+        }
+
+        FlowValidationText = issues.Count == 0 && warnings.Count == 0
             ? $"校验通过：共 {FlowRows.Count} 个流程节点。"
-            : string.Join(Environment.NewLine, issues);
+            : string.Join(
+                Environment.NewLine,
+                issues.Select(text => $"错误：{text}").Concat(warnings.Select(text => $"提示：{text}")));
+
+        // Warnings must not block saving: a declaration the executor does not honour yet
+        // is reported, but it does not stop the operator from editing the flow.
         return issues.Count == 0;
     }
 
@@ -2632,6 +2712,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         DisconnectCommand.RaiseCanExecuteChanged();
         ToggleConnectionCommand.RaiseCanExecuteChanged();
         StartFlashCommand.RaiseCanExecuteChanged();
+        CancelFlashCommand.RaiseCanExecuteChanged();
         DeleteProjectCommand.RaiseCanExecuteChanged();
         RaiseProjectEditorCommandStates();
         LoadFlowCommand.RaiseCanExecuteChanged();
