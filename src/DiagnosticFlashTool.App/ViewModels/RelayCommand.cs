@@ -17,7 +17,17 @@ public sealed class RelayCommand : ICommand
 
     public bool CanExecute(object? parameter) => _canExecute?.Invoke() ?? true;
 
-    public void Execute(object? parameter) => _execute();
+    public void Execute(object? parameter)
+    {
+        try
+        {
+            _execute();
+        }
+        catch (Exception ex)
+        {
+            CommandErrorHandler.Report(ex);
+        }
+    }
 
     public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
 }

@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -81,6 +82,22 @@ public partial class MainWindow : Window
         if (DataContext is MainViewModel viewModel)
         {
             viewModel.PropertyChanged -= MainViewModel_PropertyChanged;
+
+            // The CAN device has to be released before the process exits, otherwise the
+            // native driver handle stays open. DisposeAsync is UI-free and every device
+            // implementation completes synchronously, so waiting here cannot deadlock.
+            // The wait is still bounded so a misbehaving driver can never hang the exit.
+            try
+            {
+                if (!viewModel.DisposeAsync().AsTask().Wait(TimeSpan.FromSeconds(5)))
+                {
+                    Debug.WriteLine("Timed out while releasing the CAN device.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to release the CAN device: {ex}");
+            }
         }
 
         _notifyIcon?.Dispose();

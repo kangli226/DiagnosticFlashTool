@@ -31,6 +31,14 @@ public sealed class AsyncRelayCommand : ICommand
         {
             await _execute(CancellationToken.None);
         }
+        catch (OperationCanceledException)
+        {
+            // A cancelled operation is reported by the handler itself, not an error.
+        }
+        catch (Exception ex)
+        {
+            CommandErrorHandler.Report(ex);
+        }
         finally
         {
             _isRunning = false;

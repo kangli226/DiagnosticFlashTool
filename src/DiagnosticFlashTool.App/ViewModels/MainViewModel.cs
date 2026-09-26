@@ -14,7 +14,7 @@ using Microsoft.Win32;
 
 namespace DiagnosticFlashTool.App.ViewModels;
 
-public sealed class MainViewModel : ObservableObject
+public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 {
     private static readonly JsonSerializerOptions SettingsJsonOptions = new()
     {
@@ -76,6 +76,7 @@ public sealed class MainViewModel : ObservableObject
     private bool _flowScriptsDirty;
     private bool _isConnected;
     private bool _isBusy;
+    private bool _disposed;
     private int _selectedShellIndex;
     private int _progress;
     private int _logRetentionDays = DefaultLogRetentionDays;
@@ -92,6 +93,7 @@ public sealed class MainViewModel : ObservableObject
 
     public MainViewModel()
     {
+        CommandErrorHandler.Current = HandleCommandException;
         LoadAppSettings();
         _projectRepository = new JsonProjectConfigRepository(_paths);
         _bootConfigRepository = new JsonBootConfigRepository(_paths);
@@ -1306,6 +1308,47 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Releases the CAN device when the hosting window shuts down. Without this the
+    /// native driver handle (for example ZLG ControlCAN) stays open until the OS
+    /// reclaims the process, which can block the next launch from opening the device.
+    /// </summary>
+    /// <remarks>
+    /// Intentionally avoids touching view-model state so it can be awaited while the
+    /// window is closing.
+    /// </remarks>
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        var device = _canDevice;
+        _canDevice = null;
+        if (device is null)
+        {
+            return;
+        }
+
+        device.FrameReceived -= OnFrameReceived;
+        device.FrameSent -= OnFrameSent;
+        try
+        {
+            await device.CloseAsync(CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            WriteLogLine($"--- 释放 CAN 设备失败 ---{Environment.NewLine}{ex}");
+        }
+        finally
+        {
+            await device.DisposeAsync().ConfigureAwait(false);
+        }
+    }
+
     private async Task StartFlashAsync(CancellationToken cancellationToken)
     {
         if (_canDevice is null || SelectedProject is null)
@@ -2307,6 +2350,24 @@ public sealed class MainViewModel : ObservableObject
         StatusKind = kind;
     }
 
+    /// <summary>
+    /// Reports an exception raised by a command handler. The handler is invoked from
+    /// <see cref="CommandErrorHandler"/> so a failing command surfaces in the status
+    /// bar and log instead of terminating the process.
+    /// </summary>
+    private void HandleCommandException(Exception exception)
+    {
+        var summary = $"{exception.GetType().Name}: {exception.Message}";
+        RunOnUi(() =>
+        {
+            SetStatus("操作失败", DiagnosticStatusKind.Error);
+            AppendLog($"命令执行失败 - {summary}");
+        });
+
+        // The in-memory entry stays readable; the full stack goes to the file log only.
+        WriteLogLine($"--- 命令异常 ---{Environment.NewLine}{exception}");
+    }
+
     private static DiagnosticStatusKind ClassifyStatusText(string text)
     {
         if (string.IsNullOrWhiteSpace(text) || ContainsAny(text, "ready", "idle", "disconnected", "未开始", "断开"))
@@ -2352,14 +2413,24 @@ public sealed class MainViewModel : ObservableObject
 
     private static void RunOnUi(Action action)
     {
-        var dispatcher = Application.Current.Dispatcher;
-        if (dispatcher.CheckAccess())
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher is null || dispatcher.CheckAccess())
         {
             action();
+            return;
         }
-        else
+
+        // Queued rather than blocking: the CAN receive loop and flash callbacks run on
+        // background threads, and they must never wait for the UI thread. A blocking
+        // Invoke deadlocks as soon as the UI thread is busy or shutting down.
+        // Callers on the UI thread still take the synchronous fast path above.
+        try
         {
-            dispatcher.Invoke(action);
+            dispatcher.BeginInvoke(action);
+        }
+        catch (Exception ex) when (ex is TaskCanceledException or InvalidOperationException)
+        {
+            // The dispatcher is shutting down, so UI updates are no longer possible.
         }
     }
 

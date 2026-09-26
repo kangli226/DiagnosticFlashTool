@@ -21,6 +21,8 @@ artifacts/
 # Local build / verification output
 .build-check/
 .build-validation/
+.buildverify/
+.codex-build/
 build-validation/
 .reference/
 *.wpftmp/
