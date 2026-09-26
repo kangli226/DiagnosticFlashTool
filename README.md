@@ -39,5 +39,5 @@ src/DiagnosticFlashTool.App/bin/Debug/net8.0-windows/DiagnosticFlashTool.exe
 
 - Device type `Mock` is intended for offline UI and protocol-flow checks.
 - Device type `ZLG USBCAN-2A (4)` maps to ZLG device type `4`.
-- BOOT JSON saving preserves scripts, transport and non-edited fields, and rewrites the `flow` array from the Flow page.
+- BOOT JSON saving preserves scripts and non-edited fields, and rewrites the `flow` array from the Flow page.
 - Firmware formats supported in this version: S19/SREC/MOT, Intel HEX and BIN.

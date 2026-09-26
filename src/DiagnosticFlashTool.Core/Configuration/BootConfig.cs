@@ -10,9 +10,6 @@ public sealed class BootConfig
     [JsonPropertyName("schemaVersion")]
     public int SchemaVersion { get; set; } = 1;
 
-    [JsonPropertyName("transport")]
-    public BootTransportConfig? Transport { get; set; }
-
     [JsonPropertyName("scripts")]
     public List<FlowScriptConfig> Scripts { get; set; } = [];
 
@@ -21,21 +18,6 @@ public sealed class BootConfig
 
     [JsonIgnore]
     public string SourcePath { get; set; } = string.Empty;
-}
-
-public sealed class BootTransportConfig
-{
-    [JsonPropertyName("physicalRequestId")]
-    public string? PhysicalRequestId { get; set; }
-
-    [JsonPropertyName("functionalRequestId")]
-    public string? FunctionalRequestId { get; set; }
-
-    [JsonPropertyName("responseAddressId")]
-    public string? ResponseAddressId { get; set; }
-
-    [JsonPropertyName("baudRate")]
-    public string? BaudRate { get; set; }
 }
 
 public sealed class FlowScriptConfig
