@@ -92,7 +92,6 @@
 | `DataGrid.Base` | 行高 40；表头高 38；行头宽 0；字号 13；单行选择；使用 `CornerRadius.Control=6` 裁剪外边界 |
 | DataGrid 表头 | 左内边距 10；下/右边框 1 |
 | DataGrid 单元格 | 左右内边距 10；底边框 1 |
-| `FunctionCheckDataGridStyle` | 继承表格基线，网格线改为 All，只读 |
 | `LogListBoxStyle` | `Padding=12,10`；列表项 `Padding=0,4`；横向内容拉伸；圆角裁剪 6 |
 | `LogTextBoxStyle` | `Padding=12,10`；等宽 Consolas；自动换行/滚动；圆角裁剪 6 |
 
@@ -173,14 +172,10 @@
 - 空状态 Border 页面显式：内边距 20、边框 1、圆角 8，填充 Surface；居中 StackPanel。
 - 空状态标题 `EmptyStateTitleTextStyle`（字号 22）；说明文字上边距 8，水平居中。
 
-### 3.4 `FunctionCheckView.xaml` 功能检测
+### 3.4 `FunctionCheckView.xaml` 功能检测（已删除）
 
-- 根：外边距 24；页头 52 + 16；配方卡按内容自适应高度；间距 12；检测卡占余量。
-- 页头动作区含主题按钮（高 36、右边距 12）及三个窗口控制按钮 `46 x 46`，均为页面专用组合。
-- 配方选择卡：采用 `Card.Form` + `CardContentPanel`，按标题后 10、内容行间 12 的通用节奏自适应高度；标签列 90，选择列显式宽 300，ComboBox 显式宽 270（左对齐），剩余列 `*`。检测表格仍保留专用布局。
-- 检测卡：标题行 50；内容边距 22/12；内部行 `Auto / * / 44`，底部操作区高 44。
-- DataGrid 使用 `FunctionCheckDataGridStyle`（行 40、表头 38、全网格、只读）；列宽 `序号=100, 检测项=300, 期望值=130, 当前值=130, 检测日期=200, 检测结果=*`；单元格文字样式左右外边距 10。
-- “开始检测”按钮页面显式 `130 x 36`，右下对齐，样式 `Button.Primary`。
+- 该页面及其样式字典（`Domain/FunctionCheckStyles.xaml`）、数据模型（`FunctionalCheckRow.cs`）、`FunctionCheckDataGridStyle` 与 `MainViewModel` 中的检测成员（命令、集合、文案）已于 2026-09 随死代码清理移除，当前不存在对应 XAML。
+- 保留本节编号以避免后续小节错位；不再对已删除页面作间距统计。
 
 ### 3.5 `ProjectConfigView.xaml` 项目配置
 
@@ -269,7 +264,7 @@
 | 卡片与面板 | `CardStyle`、`Card.Compact`、`Card.Standard`、`Card.Form`、`Card.FormContent`、`CardContentPanel`、`Card.Elevated`、`DialogPanelStyle`、`SettingGroupPanelStyle`、`PanelHeaderStyle`、`PanelContentGridStyle`、`PanelContentGroupStyle`、`CardContentPanelTitleTextStyle` |
 | 按钮 | `Button.Base`、`Button.Normal`、`Button.Primary`、`Button.Danger`、`Button.ToolBar`、`Button.Compact`、`Button.PathAction`、`Button.ConnectionAction`、`Button.ConnectionPrimaryAction`、`Button.HelpDocument`、`Button.Icon`、对话框/窗口按钮样式 |
 | 输入与反馈 | `SoftTextBoxStyle`、`PathTextBoxStyle`、`PathDisplayBorderStyle`、`StandardComboBoxStyle`、ComboBoxItem 模板、`SoftSwitchStyle`、`SoftProgressBarStyle`、`InlineStatusValueBorderStyle` |
-| 数据展示 | `DataGrid.Base`、隐式 DataGrid/Header/Cell 样式、`FunctionCheckDataGridStyle`、`LogListBoxStyle`、`LogTextBoxStyle` |
+| 数据展示 | `DataGrid.Base`、隐式 DataGrid/Header/Cell 样式、`LogListBoxStyle`、`LogTextBoxStyle` |
 | 状态与文字 | `Status*Style`、`Typography.xaml` 的隐式 TextBlock、页标题/卡片标题/字段标签/配置值样式 |
 | 色彩令牌 | `Colors.xaml` 定义的角色色及 `Brushes.xaml` 对应画刷，页面通过 `StaticResource` 使用 |
 | 壳层 | `ShellContentTabControlStyle`、`ShellNavGroupTextStyle`、`ShellNavRadioButtonStyle` 及导航模板 |
@@ -280,8 +275,7 @@
 
 - 每个页面的标题、副标题、字段文案、绑定命令、状态文案和业务数据列。
 - 页面显式行高/列宽/比例：例如固件页状态卡 `144 x 74`、开发者页 `7*:12:13*`、系统设置两列间距 24、流程验证卡高 110；表单卡片的垂直节奏由 `CardContentPanel` 统一提供。
-- 专用 DataGrid 列及列宽：项目/配方、流程、算法、功能检测、刷写监控、开发者报文接收。
-- `FunctionCheckView` 页头主题按钮与窗口控制按钮组合，以及开始检测按钮 `130 x 36`。
+- 专用 DataGrid 列及列宽：项目/配方、流程、算法、刷写监控、开发者报文接收。
 - `DeveloperOptionsView` 报文发送/接收区域、104 宽输入/下拉列、90 宽发送按钮、接收区三按钮及自定义全网格表格。
 - `SystemSettingsView` 的五张设置卡、设置组内容、路径操作行、管理员状态绑定、密码遮罩和 380 宽弹窗。
 - `FlashHistoryView` 的空状态内嵌 Border（Padding 20）及空态文案间距 8。
@@ -293,18 +287,18 @@
 
 | 统一资源 | 显式引用次数 | 覆盖范围 |
 |---|---:|---|
-| `PageRootGridStyle`、`PageHeaderRowStyle`、`PageHeaderGapRowStyle` | 各 11 | 全部 11 个业务页面 |
+| `PageRootGridStyle`、`PageHeaderRowStyle`、`PageHeaderGapRowStyle` | 各 8 | 当前 8 个业务页面 |
 | `Button.ToolBar` | 17 | 7 个页面/壳层 |
 | `FieldLabelStyle` | 27 | 5 个表单型页面 |
 | `FormLabelColumnStyle` | 19 | 4 个复杂表单页面 |
-| `Card.Form` / `Card.FormContent` | 8 / 7 | 系统设置、功能检测、开发者刷写配置 |
-| `CardStyle`（直接引用） | 7 | 固件、功能检测表格；衍生卡片另行统计 |
+| `Card.Form` / `Card.FormContent` | 8 / 7 | 系统设置、开发者刷写配置 |
+| `CardStyle`（直接引用） | 7 | 固件表格；衍生卡片另行统计 |
 | `Card.Compact`（直接引用） | 5 | 算法、监控、流程、项目、配方 |
 | `PageLeadStandardCardStyle` | 12 | 流程、系统设置、系统日志、开发者页 |
-| `PanelHeaderRowStyle` / `PanelHeaderStyle` | 各 4 | 固件、功能检测表格 |
+| `PanelHeaderRowStyle` / `PanelHeaderStyle` | 各 4 | 固件表格 |
 | `StandardComboBoxStyle` | 10 | 5 个页面 |
 | `SoftSwitchStyle` | 7 | 系统设置、系统日志 |
-| `PageHeader` 控件 | 11 | 全部业务页面 |
+| `PageHeader` 控件 | 8 | 当前 8 个业务页面 |
 | `ShellNavRadioButtonStyle` | 10 | 主窗口 10 个导航入口 |
 
 - 所有页面全部复用 `PageRootGridStyle`、页头行、页头间距和 `PageHeader`（单行上下文栏，不重复左导航页面名），页面外框一致。
@@ -320,7 +314,7 @@
 | `src/DiagnosticFlashTool.App/Views/Controls/PageHeader.xaml` | 页头复用控件 |
 | `src/DiagnosticFlashTool.App/Styles/Controls/PageHeaderStyles.xaml` | 页头独立样式字典（行高、卡片、文本、隐式样式） |
 | `src/DiagnosticFlashTool.App/Views/Controls/PageHelpDocumentButton.xaml` | 帮助按钮复用控件 |
-| `src/DiagnosticFlashTool.App/Views/*.xaml` | 11 个业务页面，详见第 3 节；其中 `RecipeConfigView.xaml` 当前未在 `MainWindow` 的 TabControl 中实例化，但仍已纳入审计 |
+| `src/DiagnosticFlashTool.App/Views/*.xaml` | 当前 8 个已挂载业务页面，详见第 3 节；`FunctionCheckView.xaml` 与 `RecipeConfigView.xaml` 已从代码删除，对应小节保留为历史记录 |
 | `src/DiagnosticFlashTool.App/Styles/AppStyles.xaml` | 统一资源字典合并入口 |
 | `src/DiagnosticFlashTool.App/Styles/Colors.xaml` | 颜色值令牌 |
 | `src/DiagnosticFlashTool.App/Styles/Brushes.xaml` | 角色画刷 |
@@ -332,8 +326,7 @@
 | `src/DiagnosticFlashTool.App/Styles/Layout/PanelStyles.xaml` | 面板标题和内容间距 |
 | `src/DiagnosticFlashTool.App/Styles/Layout/PageStyles.xaml` | 页面令牌和骨架 |
 | `src/DiagnosticFlashTool.App/Styles/Shell/ShellStyles.xaml` | 导航与 Tab 壳 |
-| `src/DiagnosticFlashTool.App/Styles/Domain/FunctionCheckStyles.xaml` | 功能检测单元格 |
 | `src/DiagnosticFlashTool.App/Styles/Domain/StatusStyles.xaml` | 状态卡、徽章、状态点 |
 | `src/DiagnosticFlashTool.App/Styles/Domain/LogStyles.xaml` | 日志列表与日志文本框 |
 
-共核对 29 个 XAML 文件；所有 XAML 文件均已通过 XML 解析校验。除 `MainWindow.xaml.cs` 动态创建的 Windows Forms 托盘图标、右键菜单及其两个菜单项外，未发现 C# 动态创建的 WPF 控件；该托盘菜单没有定义可统计的 `Width`、`Height`、`Margin`、`Padding` 或 WPF 样式。本文件的间距统计覆盖当前静态 WPF UI 定义及全部可追溯的 XAML 样式。
+共核对 26 个 XAML 文件；所有 XAML 文件均已通过 XML 解析校验。除 `MainWindow.xaml.cs` 动态创建的 Windows Forms 托盘图标、右键菜单及其两个菜单项外，未发现 C# 动态创建的 WPF 控件；该托盘菜单没有定义可统计的 `Width`、`Height`、`Margin`、`Padding` 或 WPF 样式。本文件的间距统计覆盖当前静态 WPF UI 定义及全部可追溯的 XAML 样式。

@@ -11,7 +11,6 @@
         <ResourceDictionary Source="Layout/PageStyles.xaml" />
         <ResourceDictionary Source="Controls/PageHeaderStyles.xaml" />
         <ResourceDictionary Source="Shell/ShellStyles.xaml" />
-        <ResourceDictionary Source="Domain/FunctionCheckStyles.xaml" />
         <ResourceDictionary Source="Domain/StatusStyles.xaml" />
         <ResourceDictionary Source="Domain/LogStyles.xaml" />
     </ResourceDictionary.MergedDictionaries>

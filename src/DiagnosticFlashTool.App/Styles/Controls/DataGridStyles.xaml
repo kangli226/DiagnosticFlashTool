@@ -54,11 +54,4 @@
     </Style>
 
     <Style TargetType="DataGrid" BasedOn="{StaticResource DataGrid.Base}" />
-
-    <Style x:Key="FunctionCheckDataGridStyle" TargetType="DataGrid" BasedOn="{StaticResource DataGrid.Base}">
-        <Setter Property="GridLinesVisibility" Value="All" />
-        <Setter Property="RowHeight" Value="40" />
-        <Setter Property="ColumnHeaderHeight" Value="38" />
-        <Setter Property="IsReadOnly" Value="True" />
-    </Style>
 </ResourceDictionary>
