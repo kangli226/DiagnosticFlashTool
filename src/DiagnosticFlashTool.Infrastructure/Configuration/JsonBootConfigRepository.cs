@@ -45,7 +45,6 @@ public sealed class JsonBootConfigRepository
 
         var config = JsonSerializer.Deserialize<BootConfig>(File.ReadAllText(path), JsonOptions)
             ?? throw new InvalidDataException($"Invalid BOOT config: {path}");
-        config.SourcePath = path;
 
         if (string.IsNullOrWhiteSpace(config.Name))
         {
@@ -59,7 +58,6 @@ public sealed class JsonBootConfigRepository
     {
         var path = Path.IsPathRooted(fileName) ? fileName : Path.Combine(_paths.BootConfigDirectory, fileName);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        config.SourcePath = path;
         File.WriteAllText(path, JsonSerializer.Serialize(config, JsonOptions));
     }
 }

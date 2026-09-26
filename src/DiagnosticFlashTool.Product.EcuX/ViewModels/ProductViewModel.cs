@@ -587,7 +587,6 @@ public sealed class ProductViewModel : ObservableObject, IAsyncDisposable
 
         var config = JsonSerializer.Deserialize<BootConfig>(File.ReadAllText(path), JsonOptions)
             ?? throw new InvalidDataException("BOOT 流程配置为空。");
-        config.SourcePath = path;
         return config;
     }
 

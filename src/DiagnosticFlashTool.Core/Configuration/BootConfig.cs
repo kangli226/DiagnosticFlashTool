@@ -12,9 +12,6 @@ public sealed class BootConfig
 
     [JsonPropertyName("flow")]
     public List<FlashStepConfig> Flow { get; set; } = [];
-
-    [JsonIgnore]
-    public string SourcePath { get; set; } = string.Empty;
 }
 
 public sealed class FlowScriptConfig
