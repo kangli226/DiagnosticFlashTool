@@ -158,7 +158,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         OpenLogDirectoryCommand = new RelayCommand(() => OpenPathLocation(LogFilePath));
         ChooseLogFileCommand = new RelayCommand(ChooseLogFile);
         RestoreDefaultLogStorageCommand = new RelayCommand(RestoreDefaultLogStorage);
-        OpenRuntimeLogPageCommand = new RelayCommand(() => SelectedShellIndex = 8);
+        OpenRuntimeLogPageCommand = new RelayCommand(() => SelectedShellIndex = 7);
         ToggleAdminModeCommand = new RelayCommand(ToggleAdminMode);
         SubmitAdminPasswordCommand = new RelayCommand(SubmitAdminPassword);
         CancelAdminPasswordCommand = new RelayCommand(CancelAdminPasswordPrompt);
@@ -272,6 +272,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             if (SetProperty(ref _selectedProject, value))
             {
                 ApplySelectedProject();
+                OnPropertyChanged(nameof(StatusBarProjectText));
+                OnPropertyChanged(nameof(FlashPageTitleText));
                 if (IsFrameFilterEnabled)
                 {
                     Frames.Clear();
@@ -320,6 +322,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             if (SetProperty(ref _selectedBootConfig, value))
             {
                 OnPropertyChanged(nameof(FlowConfigFilePath));
+                OnPropertyChanged(nameof(StatusBarProjectText));
                 LoadFlowFromSelected();
                 RaiseCommandStates();
             }
@@ -336,6 +339,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 SaveAppSettings();
                 OnPropertyChanged(nameof(ConnectionText));
                 OnPropertyChanged(nameof(ConnectionSummaryText));
+                OnPropertyChanged(nameof(StatusBarDeviceText));
             }
         }
     }
@@ -351,6 +355,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 OnPropertyChanged(nameof(ConnectionText));
                 OnPropertyChanged(nameof(ConnectionSummaryText));
                 OnPropertyChanged(nameof(BaudRateStatusText));
+                OnPropertyChanged(nameof(StatusBarDeviceText));
             }
         }
     }
@@ -393,6 +398,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             if (SetProperty(ref _selectedCanChannel, value))
             {
                 SaveAppSettings();
+                OnPropertyChanged(nameof(StatusBarDeviceText));
             }
         }
     }
@@ -616,13 +622,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public int SelectedShellIndex
     {
         get => _selectedShellIndex;
-        set
-        {
-            if (SetProperty(ref _selectedShellIndex, value))
-            {
-                OnPropertyChanged(nameof(StatusBarContextText));
-            }
-        }
+        set => SetProperty(ref _selectedShellIndex, value);
     }
 
     public bool IsConnected
@@ -639,6 +639,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 OnPropertyChanged(nameof(DeviceStatusIcon));
                 OnPropertyChanged(nameof(ConnectionSummaryText));
                 OnPropertyChanged(nameof(BaudRateStatusText));
+                OnPropertyChanged(nameof(StatusBarDeviceText));
                 RaiseCommandStates();
             }
         }
@@ -708,6 +709,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 OnPropertyChanged(nameof(DownloadStatusText));
                 OnPropertyChanged(nameof(DownloadStatusIcon));
                 OnPropertyChanged(nameof(DownloadMonitorDetailText));
+                OnPropertyChanged(nameof(StatusBarStateText));
             }
         }
     }
@@ -763,22 +765,28 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     };
 
     public string ProgressText => $"{Progress}%";
-    public string DatabaseStatusText => "数据库已连接";
     public string ScriptRootText => Path.Combine(_paths.ConfigDirectory, "Scripts");
     public string AlgorithmCatalogText => AlgorithmRows.Count == 0 ? "未发现算法配置" : $"已发现 {AlgorithmRows.Count} 个算法配置";
-    public string StatusBarContextText => SelectedShellIndex switch
-    {
-        0 => "刷写中心 / 固件刷写",
-        1 => "刷写中心 / 刷写监控",
-        2 => "刷写中心 / 历史记录",
-        3 => "配置管理 / 项目配置",
-        4 => "配置管理 / 流程配置",
-        5 => "配置管理 / 算法配置",
-        6 => "系统 / 系统设置",
-        7 => "系统 / 开发者选项",
-        8 => "系统 / 日志",
-        _ => DatabaseStatusText
-    };
+
+    /// <summary>工作台页头标题，附加当前项目上下文；未选择项目时退化为页面名。</summary>
+    public string FlashPageTitleText => SelectedProject is null
+        ? "固件刷写"
+        : $"固件刷写 · {SelectedProject.ProjectName}";
+
+    /// <summary>状态栏运行态：当前 CAN 设备与通道。</summary>
+    public string StatusBarDeviceText => IsConnected
+        ? $"设备：{SelectedDeviceType} / {SelectedBaudRate} / 通道 {SelectedCanChannel}"
+        : "设备：未连接";
+
+    /// <summary>状态栏运行态：当前项目与 BOOT 配置。</summary>
+    public string StatusBarProjectText => SelectedProject is null
+        ? "项目：未选择"
+        : string.IsNullOrWhiteSpace(SelectedBootConfig)
+            ? $"项目：{SelectedProject.ProjectName}"
+            : $"项目：{SelectedProject.ProjectName} / BOOT：{SelectedBootConfig}";
+
+    /// <summary>状态栏运行态：当前下载/刷写状态。</summary>
+    public string StatusBarStateText => $"状态：{DownloadStatusText}";
 
     public SystemLogEntry? LatestLogEntry
     {

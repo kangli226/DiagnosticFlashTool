@@ -29,6 +29,12 @@ The executable is generated at:
 src/DiagnosticFlashTool.App/bin/Debug/net8.0-windows/DiagnosticFlashTool.exe
 ```
 
+## Documentation
+
+- [软件功能说明](docs/软件功能说明.md): current functional baseline for development, testing and acceptance.
+- [ECU 专用烧写工具配置说明](docs/ECU专用烧写工具配置说明.md): ECU-X publishing, Seed&Key DLL and vehicle integration notes.
+- [管理员模式功能说明](docs/管理员模式功能说明.md): administrator-mode behavior and current permission boundary.
+
 ## Notes
 
 - Device type `Mock` is intended for offline UI and protocol-flow checks.

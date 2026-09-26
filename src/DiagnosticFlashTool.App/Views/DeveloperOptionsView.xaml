@@ -217,6 +217,7 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
 
                                 <TextBlock Grid.Column="0"
@@ -257,6 +258,18 @@
                                         <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.ExportVariant}"
                                                                  Style="{StaticResource Button.PackIcon.Current}" />
                                         <TextBlock Text="导出" Style="{StaticResource Button.IconLabel}" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Grid.Column="4"
+                                        Width="108"
+                                        Margin="8,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Command="{Binding ClearFramesCommand}"
+                                        Style="{StaticResource Button.ToolBar}">
+                                    <StackPanel Style="{StaticResource Button.InlineContent}">
+                                        <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.DeleteSweepOutline}"
+                                                                 Style="{StaticResource Button.PackIcon.Current}" />
+                                        <TextBlock Text="清空报文" Style="{StaticResource Button.IconLabel}" />
                                     </StackPanel>
                                 </Button>
                             </Grid>

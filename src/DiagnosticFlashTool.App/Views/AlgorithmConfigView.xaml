@@ -11,11 +11,19 @@
 
         <controls:PageHeader Grid.Row="0"
                              Title="算法配置"
-                             Subtitle="{Binding ScriptRootText}">
+                             Subtitle="查看已注册的安全访问算法与校验脚本">
             <controls:PageHeader.Actions>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <TextBlock Text="{Binding AlgorithmCatalogText}"
                                Style="{StaticResource PageHeaderMetaTextStyle}" />
+                    <TextBlock Text="{Binding ScriptRootText}"
+                               ToolTip="{Binding ScriptRootText}"
+                               Margin="12,0,0,0"
+                               MaxWidth="280"
+                               FontSize="12"
+                               Foreground="{StaticResource SubtleTextBrush}"
+                               TextTrimming="CharacterEllipsis"
+                               VerticalAlignment="Center" />
                     <controls:PageHelpDocumentButton Margin="8,0,0,0" />
                 </StackPanel>
             </controls:PageHeader.Actions>

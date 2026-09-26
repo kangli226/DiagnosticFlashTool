@@ -1,6 +1,7 @@
 <UserControl x:Class="DiagnosticFlashTool.App.Views.FlowConfigView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
     <UserControl.Resources>
         <Style x:Key="FlowConfigToolbarButtonStyle"
@@ -83,6 +84,8 @@
 
     <Grid Style="{StaticResource PageRootGridStyle}">
         <Grid.RowDefinitions>
+            <RowDefinition Style="{StaticResource PageHeaderRowStyle}" />
+            <RowDefinition Style="{StaticResource PageHeaderGapRowStyle}" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="12" />
             <RowDefinition Height="*" />
@@ -90,21 +93,17 @@
             <RowDefinition Height="44" />
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Style="{StaticResource CardStyle}">
+        <controls:PageHeader Grid.Row="0"
+                             Title="流程配置"
+                             Subtitle="编辑 BOOT 配置中的刷写流程节点与脚本" />
+
+        <Border Grid.Row="2" Style="{StaticResource CardStyle}">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="36" />
-                    <RowDefinition Height="1" />
                     <RowDefinition Height="60" />
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0"
-                           Text="流程配置"
-                           Margin="14,0"
-                           Style="{StaticResource CardHeaderTextStyle}" />
-                <Border Grid.Row="1" Background="{StaticResource DividerBrush}" />
-
-                <ScrollViewer Grid.Row="2"
+                <ScrollViewer Grid.Row="0"
                               HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Disabled">
                     <Grid MinWidth="1010" Margin="14,0">
@@ -191,7 +190,7 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="2" Style="{StaticResource CardStyle}">
+        <Border Grid.Row="4" Style="{StaticResource CardStyle}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="42" />
@@ -362,7 +361,7 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="4" Style="{StaticResource CardStyle}">
+        <Border Grid.Row="6" Style="{StaticResource CardStyle}">
             <Grid Margin="14,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -382,7 +381,7 @@
             </Grid>
         </Border>
 
-        <Border Grid.RowSpan="5">
+        <Border Grid.RowSpan="6">
             <Border.Style>
                 <Style TargetType="Border">
                     <Setter Property="Visibility" Value="Collapsed" />
