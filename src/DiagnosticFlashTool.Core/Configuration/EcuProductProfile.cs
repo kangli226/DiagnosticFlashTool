@@ -9,9 +9,6 @@ namespace DiagnosticFlashTool.Core.Configuration;
 /// </summary>
 public sealed class EcuProductProfile
 {
-    [JsonPropertyName("schemaVersion")]
-    public int SchemaVersion { get; set; } = 1;
-
     [JsonPropertyName("productId")]
     public string ProductId { get; set; } = string.Empty;
 

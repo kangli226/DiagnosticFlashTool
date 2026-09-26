@@ -7,9 +7,6 @@ public sealed class BootConfig
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
 
-    [JsonPropertyName("schemaVersion")]
-    public int SchemaVersion { get; set; } = 1;
-
     [JsonPropertyName("scripts")]
     public List<FlowScriptConfig> Scripts { get; set; } = [];
 

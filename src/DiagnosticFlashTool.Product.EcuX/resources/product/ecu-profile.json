@@ -1,5 +1,4 @@
 {
-  "schemaVersion": 1,
   "productId": "ECU-X",
   "displayName": "ECU-X 控制器",
   "integrationNote": "以下 CAN 地址、帧格式与波特率为示例值，量产前必须按目标 ECU 通信矩阵确认。",
