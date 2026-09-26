@@ -10,9 +10,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <controls:PageHeader Grid.Row="0"
-                             Title="开发者选项"
-                             Subtitle="调试刷写流程、发送 CAN 消息、查看接收日志">
+        <controls:PageHeader Grid.Row="0">
             <controls:PageHeader.Actions>
                 <controls:PageHelpDocumentButton />
             </controls:PageHeader.Actions>

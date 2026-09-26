@@ -13,8 +13,7 @@
         </Grid.RowDefinitions>
 
         <controls:PageHeader Grid.Row="0"
-                             Title="功能检测"
-                             Subtitle="加载配方并运行检测，结果如下表所示">
+                             Context="加载配方并运行检测，结果如下表所示">
             <controls:PageHeader.Actions>
                 <controls:PageHelpDocumentButton />
             </controls:PageHeader.Actions>

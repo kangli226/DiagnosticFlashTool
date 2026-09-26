@@ -10,9 +10,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <controls:PageHeader Grid.Row="0"
-                             Title="系统设置"
-                             Subtitle="配置 CAN 适配器、运行路径、日志与管理员模式">
+        <controls:PageHeader Grid.Row="0">
             <controls:PageHeader.Actions>
                 <controls:PageHelpDocumentButton />
             </controls:PageHeader.Actions>

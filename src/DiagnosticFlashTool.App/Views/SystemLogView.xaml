@@ -10,9 +10,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <controls:PageHeader Grid.Row="0"
-                             Title="日志"
-                             Subtitle="查看运行日志与本地日志文件">
+        <controls:PageHeader Grid.Row="0">
             <controls:PageHeader.Actions>
                 <controls:PageHelpDocumentButton />
             </controls:PageHeader.Actions>

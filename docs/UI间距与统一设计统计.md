@@ -9,9 +9,9 @@
 | 区域/令牌 | 值 | 来源与说明 |
 |---|---:|---|
 | 页面根外边距 `PageMargin` | 24 四边 | `PageRootGridStyle` 继承 |
-| 页面页头行 `PageHeaderRowStyle` | 高 88 | 所有 11 个页面统一 |
-| 页头后间距 `PageHeaderGapRowStyle` | 高 12 | 所有页面统一 |
-| 页面区块间距 `PageSectionGapRowStyle` | 高 12 | 多卡片页面使用 |
+| 页面页头行 `PageHeaderRowStyle` | 高 52 | 所有页面统一（单行上下文栏） |
+| 页头后间距 `PageHeaderGapRowStyle` | 高 16 | 继承 `PageSectionGapRowStyle` |
+| 页面区块间距 `PageSectionGapRowStyle` | 高 16 | 多卡片页面使用 |
 | 页面列间距 `PageColumnGapStyle` | 宽 12 | 两列/三列布局使用 |
 | 页面摘要行 `PageSummaryRowStyle` | 高 122 | 固件刷写、刷写监控 |
 | 表单标签列 `FormLabelColumnStyle` | 宽 90 | 标签右对齐，样式 `FieldLabelStyle` 另有右边距 12 |
@@ -19,6 +19,9 @@
 | 页面卡片顶部间距 `PageCardTopGap` | 0,12,0,0 | `PageTrailingCompactCardStyle` |
 | 内容顶部/底部令牌 | `0,12,0,0` / `0,0,0,12` | `PageContentTopGap` / `PageContentBottomGap` |
 | 标签后辅助文字偏移 | `90,0,0,0` | `FormAssistTextAfterLabelMargin`，与标签列对齐 |
+
+> 页头结构：`PageHeader` 为单行上下文栏 —— 左侧 13px 辅助色上下文文本（`PageHeaderContextTextStyle`，超长省略、为空时隐藏），右侧操作区（帮助文档按钮、元信息）。页面名不再重复左导航文字，运行时上下文（如工作台的“项目 / BOOT / 连接状态”）取代原副标题。
+> 页头资源（行高、卡片容器、文本样式、隐式样式）已独立到 `Styles/Controls/PageHeaderStyles.xaml`；该文件含一条无 `x:Key` 的隐式样式，把 `Context` 绑定到 `MainViewModel.CurrentPageContextText`（按 `SelectedShellIndex` 分发）—— 页面 XAML 不再声明页头文案，只需 `Style="{StaticResource PageHeaderRowStyle}"` 的行定义 + `<controls:PageHeader Grid.Row="0" />`；个别页面写 `Context="..."` 可覆盖（局部值优先）。
 
 ## 2. 统一控件与模板
 
@@ -98,8 +101,8 @@
 | 样式 | 值 |
 |---|---|
 | 隐式 `TextBlock` | 字号 13、垂直居中、正文色 |
-| `PageTitleTextStyle` | 字号 22、半粗 |
-| `PageSubtitleTextStyle` / `HintTextStyle` | 字号 13；辅助色；页头副标题上边距 10 |
+| `PageHeaderContextTextStyle` | 位于 `Controls/PageHeaderStyles.xaml`；字号 13、辅助色、单行省略、垂直居中 |
+| `PageSubtitleTextStyle` / `HintTextStyle` | 字号 13；辅助色；上边距 10 |
 | `SettingAssistTextStyle` | 继承提示文字，字号 12、透明度 0.78 |
 | `ConfigLabelTextStyle` | 字号 12、右对齐 |
 | `ConfigValueTextStyle` | 继承数值文字，字号 13、行高 19.6 |
@@ -143,7 +146,7 @@
 
 ### 3.1 `FirmwareFlashView.xaml` 固件刷写
 
-- 根：`PageRootGridStyle`，外边距 24；行依次为页头 88、间距 12、主体 `*`、间距 12、摘要 122。
+- 根：`PageRootGridStyle`，外边距 24；行依次为页头 52、间距 16、主体 `*`、间距 16、摘要 122。
 - 主体（第 2 行）：三列 `1* / 12 / 1*`，左右两张卡片等宽，列间 12。
 - 左卡“设备配置”：`CardStyle`；标题行高 50；标题左右 22；内容 `Margin=22,12,22,12`。
   - 内容行：高 74 + 间距 14 + 当前配置 `Auto` + 余量 `*`。
@@ -158,21 +161,21 @@
 
 ### 3.2 `FlashMonitorView.xaml` 刷写监控
 
-- 根：外边距 24；页头 88 + 12；摘要行 122；摘要与表格间 12；表格占余量。
+- 根：外边距 24；页头 52 + 16；摘要行 122；摘要与表格间 12；表格占余量。
 - 摘要区三列 `1* / 12 / 1* / 12 / 1*`；每张 `PageSummaryCardStyle` 无额外内边距，内容 StackPanel 左右 18、垂直居中。
 - 每张摘要卡内部：标签；主状态值上边距 10、字号 22；次级文字上边距 6。进度卡的进度网格使用 `PageContentTopGap=0,12,0,0`，进度条高 24。
 - 底部 DataGrid：`Card.Compact` 内边距 16；表格基线行高 40、表头 38。列宽 `Time=120, Dir=70, Ch=70, ID=140, DLC=70, Data=*`。
 
 ### 3.3 `FlashHistoryView.xaml` 历史记录
 
-- 根：外边距 24；页头 88 + 12；主体 `*`。
+- 根：外边距 24；页头 52 + 16；主体 `*`。
 - 主卡 `Card.Standard`，内边距 16。
 - 空状态 Border 页面显式：内边距 20、边框 1、圆角 8，填充 Surface；居中 StackPanel。
 - 空状态标题 `EmptyStateTitleTextStyle`（字号 22）；说明文字上边距 8，水平居中。
 
 ### 3.4 `FunctionCheckView.xaml` 功能检测
 
-- 根：外边距 24；页头 88 + 12；配方卡按内容自适应高度；间距 12；检测卡占余量。
+- 根：外边距 24；页头 52 + 16；配方卡按内容自适应高度；间距 12；检测卡占余量。
 - 页头动作区含主题按钮（高 36、右边距 12）及三个窗口控制按钮 `46 x 46`，均为页面专用组合。
 - 配方选择卡：采用 `Card.Form` + `CardContentPanel`，按标题后 10、内容行间 12 的通用节奏自适应高度；标签列 90，选择列显式宽 300，ComboBox 显式宽 270（左对齐），剩余列 `*`。检测表格仍保留专用布局。
 - 检测卡：标题行 50；内容边距 22/12；内部行 `Auto / * / 44`，底部操作区高 44。
@@ -181,7 +184,7 @@
 
 ### 3.5 `ProjectConfigView.xaml` 项目配置
 
-- 根：外边距 24；页头 88 + 12；主体 `*`。
+- 根：外边距 24；页头 52 + 16；主体 `*`。
 - 页头操作：Add `80`、Delete `80`、Save `90`；均横向排列，工具栏按钮间默认右边距 8（Save 仍继承主按钮基线，页面未额外改 Margin）。
 - 主卡 `Card.Compact`（内边距 16）包住 DataGrid；表格基线行高 40、表头 38、左右内边距 10。
 - 列宽：`Project=160, No=70, Baud=80, Physical ID=130, Functional ID=130, Response ID=130, BOOT=120, Driver file=220, Application file=*`。
@@ -189,13 +192,13 @@
 
 ### 3.6 `RecipeConfigView.xaml` 配方配置
 
-- 布局与 `ProjectConfigView` 完全相同：根外边距 24、页头 88 + 12、主卡 `Card.Compact` 内边距 16。
+- 布局与 `ProjectConfigView` 完全相同：根外边距 24、页头 52 + 16、主卡 `Card.Compact` 内边距 16。
 - 页头操作宽度 `80 / 80 / 90`，按钮间距遵循工具栏/主按钮样式。
 - DataGrid 列宽同样为 `160 / 70 / 80 / 130 / 130 / 130 / 120 / 220 / *`；页面未定义独立配方列模板，属于复用项目表格模板。
 
 ### 3.7 `FlowConfigView.xaml` 流程配置
 
-- 根：外边距 24；页头 88 + 12；工具卡 `Auto`；表格 `*`；底部验证卡固定高 110。
+- 根：外边距 24；页头 52 + 16；工具卡 `Auto`；表格 `*`；底部验证卡固定高 110。
 - 工具卡 `PageLeadStandardCardStyle`（继承 `Card.Form`，内边距 16，底部间距 12），内部 DockPanel 左右两组。
   - 左组：标签右边距 8；ComboBox 显式宽 180；按钮 `Load=80, Validate=90, Save=90`；工具栏按钮默认右边距 8。
   - 右组：`Add Step=100, Delete=86, Up=70, Down=70`；横向排列，最后按钮仍可能继承工具栏右边距 8。
@@ -204,14 +207,14 @@
 
 ### 3.8 `AlgorithmConfigView.xaml` 算法配置
 
-- 根：外边距 24；页头 88 + 12；主体 `*`。
-- 页头副标题绑定脚本根路径；右侧元信息 `PageHeaderMetaTextStyle`（字号 13、半粗）。
+- 根：外边距 24；页头 52 + 16；主体 `*`。
+- 页头右侧元信息显示算法数量与脚本根路径（`PageHeaderMetaTextStyle` 字号 13、半粗）。
 - 主卡 `Card.Compact` 内边距 16，DataGrid 只读；基线行高 40、表头 38。
 - 列宽：`Category=150, Name=180, Status=110, Source=*`；单元格左右内边距 10。
 
 ### 3.9 `DeveloperOptionsView.xaml` 开发者选项
 
-- 根：外边距 24；页头 88 + 12；内容区先为自适应高度的表单卡，再占余量主体。
+- 根：外边距 24；页头 52 + 16；内容区先为自适应高度的表单卡，再占余量主体。
 - 刷写配置卡：采用 `Card.Form` + `CardContentPanel`，标题后 10、内容行间 12；标签列 `Auto`，ComboBox 列 `*`（页面显式 `Width=Auto`、拉伸），列间固定 12，开始刷写按钮显式宽 118、样式 `Button.Primary`。
 - 主体左右比例 `7* / 12 / 13*`，中间间距 12（星号为比例而非像素）。
 - 左列：上部下载进度卡固定高 108（标题后 10、进度条 24）；下部下载信息卡占余量，标题后 10；内嵌 TextBox 页面显式 `Height=Auto, Margin=0, Padding=0`。
@@ -224,7 +227,7 @@
 
 ### 3.10 `SystemSettingsView.xaml` 系统设置
 
-- 根：外边距 24；页头 88 + 12；内容为垂直 ScrollViewer，卡片顺序固定，卡片均 `PageLeadStandardCardStyle`（继承 `Card.Form`，内边距 16，底部间距 12）。
+- 根：外边距 24；页头 52 + 16；内容为垂直 ScrollViewer，卡片顺序固定，卡片均 `PageLeadStandardCardStyle`（继承 `Card.Form`，内边距 16，底部间距 12）。
 - “基础设置”卡：采用 `Card.Form` + `CardContentPanel`，标题后 10、数据行间 12、末行不追加间距；内容两列 `* / 24 / *`。每列内部标签列 90、开关 `44 x 24`、开关后间距 12、状态辅助文字字号 12。
 - “CAN 适配器设置”卡：采用 `CardContentPanel`，设备类型、设备通道、自动连接三行均按 12 间隔排列；标签列 90，开关后间距 12，状态辅助文字字号 12。
 - “运行配置管理”卡：采用 `CardContentPanel`，标题操作区使用无外边距的面板标题样式；标题后 10、三条路径行之间 12；导入按钮高 32、右边距 8，清空按钮高 32、Margin 0。标签列 90，路径框高 32，路径操作统一 `Button.PathAction`（高 30、左边距 6、最小宽 52）。
@@ -234,7 +237,7 @@
 
 ### 3.11 `SystemLogView.xaml` 日志
 
-- 根：外边距 24；页头 88 + 12；主体为 `PageLeadStandardCardStyle`（内边距 16）。
+- 根：外边距 24；页头 52 + 16；主体为 `PageLeadStandardCardStyle`（内边距 16）。
 - 主卡内部行：标题区 `Auto`、间距 12、工具栏 `Auto`、间距 10、日志列表 `*`。
 - 标题区：标题使用 `CardHeaderTextStyle`；标题与状态/路径行之间 `CardContentTitleGapRowStyle=10`。
 - 状态/路径行列：状态框最小宽 148；状态框与路径框间 10；路径框与右侧过滤汇总间 12；路径框高度 32、内边距 10/0。
@@ -262,7 +265,7 @@
 | 类别 | 统一资源 |
 |---|---|
 | 页面骨架 | `PageRootGridStyle`、`PageHeaderRowStyle`、`PageHeaderGapRowStyle`、`PageSectionGapRowStyle`、`PageSummaryRowStyle`、`PageColumnGapStyle`、`FormLabelColumnStyle` |
-| 页头与复用控件 | `PageHeader`、`PageHeaderCardStyle`、`PageTitleTextStyle`、`PageSubtitleTextStyle`、`PageHeaderSubtitleTextStyle`、`PageHeaderMetaTextStyle`、`PageHelpDocumentButton` |
+| 页头与复用控件 | `PageHeader`、`PageHeaderStyles.xaml`（`PageHeaderRowStyle`、`PageHeaderCardStyle`、`PageHeaderContextTextStyle`、`PageHeaderMetaTextStyle`、隐式样式）、`PageSubtitleTextStyle`、`PageHelpDocumentButton` |
 | 卡片与面板 | `CardStyle`、`Card.Compact`、`Card.Standard`、`Card.Form`、`Card.FormContent`、`CardContentPanel`、`Card.Elevated`、`DialogPanelStyle`、`SettingGroupPanelStyle`、`PanelHeaderStyle`、`PanelContentGridStyle`、`PanelContentGroupStyle`、`CardContentPanelTitleTextStyle` |
 | 按钮 | `Button.Base`、`Button.Normal`、`Button.Primary`、`Button.Danger`、`Button.ToolBar`、`Button.Compact`、`Button.PathAction`、`Button.ConnectionAction`、`Button.ConnectionPrimaryAction`、`Button.HelpDocument`、`Button.Icon`、对话框/窗口按钮样式 |
 | 输入与反馈 | `SoftTextBoxStyle`、`PathTextBoxStyle`、`PathDisplayBorderStyle`、`StandardComboBoxStyle`、ComboBoxItem 模板、`SoftSwitchStyle`、`SoftProgressBarStyle`、`InlineStatusValueBorderStyle` |
@@ -304,7 +307,7 @@
 | `PageHeader` 控件 | 11 | 全部业务页面 |
 | `ShellNavRadioButtonStyle` | 10 | 主窗口 10 个导航入口 |
 
-- 11 个页面全部复用 `PageRootGridStyle`、页头行、页头间距和 `PageHeader`，页面外框一致。
+- 所有页面全部复用 `PageRootGridStyle`、页头行、页头间距和 `PageHeader`（单行上下文栏，不重复左导航页面名），页面外框一致。
 - 卡片、面板标题、表单标签、按钮、输入框、ComboBox、开关、进度条和 DataGrid 均已有资源级基线；新页面优先组合这些资源。
 - 自定义主要集中在业务列定义、页面专用固定高度/列宽、复杂嵌套网格和管理员弹窗；这些是内容层差异，不应回写为全局模板，除非出现至少两个页面的同形复用需求。
 
@@ -315,6 +318,7 @@
 | `src/DiagnosticFlashTool.App/App.xaml` | 合并 `Styles/AppStyles.xaml`，应用资源入口 |
 | `src/DiagnosticFlashTool.App/MainWindow.xaml` | 窗口标题栏、导航、Tab 壳、状态栏 |
 | `src/DiagnosticFlashTool.App/Views/Controls/PageHeader.xaml` | 页头复用控件 |
+| `src/DiagnosticFlashTool.App/Styles/Controls/PageHeaderStyles.xaml` | 页头独立样式字典（行高、卡片、文本、隐式样式） |
 | `src/DiagnosticFlashTool.App/Views/Controls/PageHelpDocumentButton.xaml` | 帮助按钮复用控件 |
 | `src/DiagnosticFlashTool.App/Views/*.xaml` | 11 个业务页面，详见第 3 节；其中 `RecipeConfigView.xaml` 当前未在 `MainWindow` 的 TabControl 中实例化，但仍已纳入审计 |
 | `src/DiagnosticFlashTool.App/Styles/AppStyles.xaml` | 统一资源字典合并入口 |

@@ -5,14 +5,9 @@ namespace DiagnosticFlashTool.App.Views.Controls;
 
 public partial class PageHeader : UserControl
 {
-    public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(
-        nameof(Title),
-        typeof(string),
-        typeof(PageHeader),
-        new PropertyMetadata(string.Empty));
-
-    public static readonly DependencyProperty SubtitleProperty = DependencyProperty.Register(
-        nameof(Subtitle),
+    /// <summary>页头单行上下文文本；为空时页头仅显示操作区。</summary>
+    public static readonly DependencyProperty ContextProperty = DependencyProperty.Register(
+        nameof(Context),
         typeof(string),
         typeof(PageHeader),
         new PropertyMetadata(string.Empty));
@@ -28,16 +23,10 @@ public partial class PageHeader : UserControl
         InitializeComponent();
     }
 
-    public string Title
+    public string Context
     {
-        get => (string)GetValue(TitleProperty);
-        set => SetValue(TitleProperty, value);
-    }
-
-    public string Subtitle
-    {
-        get => (string)GetValue(SubtitleProperty);
-        set => SetValue(SubtitleProperty, value);
+        get => (string)GetValue(ContextProperty);
+        set => SetValue(ContextProperty, value);
     }
 
     public object? Actions

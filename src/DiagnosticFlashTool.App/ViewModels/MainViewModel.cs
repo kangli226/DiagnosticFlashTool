@@ -273,7 +273,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             {
                 ApplySelectedProject();
                 OnPropertyChanged(nameof(StatusBarProjectText));
-                OnPropertyChanged(nameof(FlashPageTitleText));
+                RaiseWorkbenchContextText();
                 if (IsFrameFilterEnabled)
                 {
                     Frames.Clear();
@@ -323,6 +323,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             {
                 OnPropertyChanged(nameof(FlowConfigFilePath));
                 OnPropertyChanged(nameof(StatusBarProjectText));
+                RaiseWorkbenchContextText();
                 LoadFlowFromSelected();
                 RaiseCommandStates();
             }
@@ -622,7 +623,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public int SelectedShellIndex
     {
         get => _selectedShellIndex;
-        set => SetProperty(ref _selectedShellIndex, value);
+        set
+        {
+            if (SetProperty(ref _selectedShellIndex, value))
+            {
+                OnPropertyChanged(nameof(CurrentPageContextText));
+            }
+        }
     }
 
     public bool IsConnected
@@ -640,6 +647,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 OnPropertyChanged(nameof(ConnectionSummaryText));
                 OnPropertyChanged(nameof(BaudRateStatusText));
                 OnPropertyChanged(nameof(StatusBarDeviceText));
+                RaiseWorkbenchContextText();
                 RaiseCommandStates();
             }
         }
@@ -768,10 +776,45 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public string ScriptRootText => Path.Combine(_paths.ConfigDirectory, "Scripts");
     public string AlgorithmCatalogText => AlgorithmRows.Count == 0 ? "未发现算法配置" : $"已发现 {AlgorithmRows.Count} 个算法配置";
 
-    /// <summary>工作台页头标题，附加当前项目上下文；未选择项目时退化为页面名。</summary>
-    public string FlashPageTitleText => SelectedProject is null
-        ? "固件刷写"
-        : $"固件刷写 · {SelectedProject.ProjectName}";
+    /// <summary>工作台页头上下文：当前项目、BOOT 配置与设备连接状态。</summary>
+    public string WorkbenchContextText
+    {
+        get
+        {
+            var connection = IsConnected ? "设备已连接" : "设备未连接";
+            if (SelectedProject is null)
+            {
+                return $"未选择项目 · {connection}";
+            }
+
+            var boot = string.IsNullOrWhiteSpace(SelectedBootConfig)
+                ? "未指定 BOOT"
+                : $"BOOT {SelectedBootConfig}";
+
+            return $"项目 {SelectedProject.ProjectName} · {boot} · {connection}";
+        }
+    }
+
+    /// <summary>当前页面的页头上下文文案；由页头隐式样式绑定，页面 XAML 不再声明页头文案。</summary>
+    public string CurrentPageContextText => SelectedShellIndex switch
+    {
+        0 => WorkbenchContextText,
+        1 => "调试刷写流程、发送 CAN 消息、查看接收日志",
+        2 => "刷写历史尚未接入持久化，结果暂请在系统日志中追溯",
+        3 => "维护项目通信参数、BOOT 配置与固件文件",
+        4 => "编辑 BOOT 配置中的刷写流程节点与脚本",
+        5 => "查看已注册的安全访问算法与校验脚本",
+        6 => "配置 CAN 适配器、运行路径、日志与管理员模式",
+        7 => "查看运行日志与本地日志文件",
+        _ => string.Empty
+    };
+
+    /// <summary>工作台上下文变化时同时刷新页头文案与页头上下文属性。</summary>
+    private void RaiseWorkbenchContextText()
+    {
+        OnPropertyChanged(nameof(WorkbenchContextText));
+        OnPropertyChanged(nameof(CurrentPageContextText));
+    }
 
     /// <summary>状态栏运行态：当前 CAN 设备与通道。</summary>
     public string StatusBarDeviceText => IsConnected

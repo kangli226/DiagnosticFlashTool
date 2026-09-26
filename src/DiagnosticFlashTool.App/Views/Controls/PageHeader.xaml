@@ -9,12 +9,9 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                <TextBlock Text="{Binding Title, ElementName=Root}"
-                           Style="{StaticResource PageTitleTextStyle}" />
-                <TextBlock Text="{Binding Subtitle, ElementName=Root}"
-                           Style="{StaticResource PageHeaderSubtitleTextStyle}" />
-            </StackPanel>
+            <TextBlock Grid.Column="0"
+                       Text="{Binding Context, ElementName=Root}"
+                       Style="{StaticResource PageHeaderContextTextStyle}" />
 
             <ContentControl Grid.Column="1"
                             Content="{Binding Actions, ElementName=Root}"

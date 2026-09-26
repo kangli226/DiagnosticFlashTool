@@ -9,6 +9,7 @@
         <ResourceDictionary Source="Layout/CardStyles.xaml" />
         <ResourceDictionary Source="Layout/PanelStyles.xaml" />
         <ResourceDictionary Source="Layout/PageStyles.xaml" />
+        <ResourceDictionary Source="Controls/PageHeaderStyles.xaml" />
         <ResourceDictionary Source="Shell/ShellStyles.xaml" />
         <ResourceDictionary Source="Domain/FunctionCheckStyles.xaml" />
         <ResourceDictionary Source="Domain/StatusStyles.xaml" />

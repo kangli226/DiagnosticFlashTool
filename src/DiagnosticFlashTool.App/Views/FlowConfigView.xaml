@@ -93,9 +93,7 @@
             <RowDefinition Height="44" />
         </Grid.RowDefinitions>
 
-        <controls:PageHeader Grid.Row="0"
-                             Title="流程配置"
-                             Subtitle="编辑 BOOT 配置中的刷写流程节点与脚本" />
+        <controls:PageHeader Grid.Row="0" />
 
         <Border Grid.Row="2" Style="{StaticResource CardStyle}">
             <Grid>

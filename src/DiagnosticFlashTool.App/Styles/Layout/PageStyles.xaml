@@ -16,10 +16,6 @@
         <Setter Property="Margin" Value="{StaticResource PageMargin}" />
     </Style>
 
-    <Style x:Key="PageHeaderRowStyle" TargetType="RowDefinition">
-        <Setter Property="Height" Value="88" />
-    </Style>
-
     <Style x:Key="PageSectionGapRowStyle" TargetType="RowDefinition">
         <Setter Property="Height" Value="16" />
     </Style>
@@ -40,10 +36,6 @@
         <Setter Property="Width" Value="90" />
     </Style>
 
-    <Style x:Key="PageHeaderCardStyle" TargetType="Border" BasedOn="{StaticResource Card.Elevated}">
-        <Setter Property="Padding" Value="{StaticResource CardHeaderContentPadding}" />
-    </Style>
-
     <Style x:Key="PageLeadStandardCardStyle" TargetType="Border" BasedOn="{StaticResource Card.Form}">
         <Setter Property="Margin" Value="{StaticResource PageCardBottomGap}" />
     </Style>
@@ -56,33 +48,10 @@
         <Setter Property="Margin" Value="{StaticResource PageCardTopGap}" />
     </Style>
 
-    <Style x:Key="PageTitleTextStyle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="22" />
-        <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
-    </Style>
-
     <Style x:Key="PageSubtitleTextStyle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="13" />
         <Setter Property="Foreground" Value="{StaticResource SubtleTextBrush}" />
         <Setter Property="Margin" Value="0,10,0,0" />
-    </Style>
-
-    <Style x:Key="PageHeaderSubtitleTextStyle"
-           TargetType="TextBlock"
-           BasedOn="{StaticResource PageSubtitleTextStyle}">
-        <Style.Triggers>
-            <Trigger Property="Text" Value="">
-                <Setter Property="Visibility" Value="Collapsed" />
-            </Trigger>
-        </Style.Triggers>
-    </Style>
-
-    <Style x:Key="PageHeaderMetaTextStyle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="13" />
-        <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}" />
-        <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
     <Style x:Key="EmptyStateTitleTextStyle" TargetType="TextBlock">

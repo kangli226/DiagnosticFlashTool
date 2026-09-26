@@ -12,9 +12,7 @@
             <RowDefinition Style="{StaticResource PageSummaryRowStyle}" />
         </Grid.RowDefinitions>
 
-        <controls:PageHeader Grid.Row="0"
-                             Title="{Binding FlashPageTitleText}"
-                             Subtitle="连接 CAN 设备并监控刷写状态与进度">
+        <controls:PageHeader Grid.Row="0">
             <controls:PageHeader.Actions>
                 <controls:PageHelpDocumentButton />
             </controls:PageHeader.Actions>

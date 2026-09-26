@@ -9,9 +9,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <controls:PageHeader Grid.Row="0"
-                             Title="历史记录"
-                             Subtitle="当前版本暂未接入刷写历史持久化，刷写过程与结果可先在系统日志中追溯。">
+        <controls:PageHeader Grid.Row="0">
             <controls:PageHeader.Actions>
                 <controls:PageHelpDocumentButton />
             </controls:PageHeader.Actions>
