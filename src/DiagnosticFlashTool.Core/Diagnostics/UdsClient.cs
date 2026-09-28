@@ -48,7 +48,7 @@ public sealed class UdsClient
                 var remaining = deadline - DateTimeOffset.UtcNow;
                 if (remaining <= TimeSpan.Zero)
                 {
-                    throw new TimeoutException($"UDS pending response timeout after {timing.PendingOverallTimeout?.TotalMilliseconds:0} ms.");
+                    throw new TimeoutException($"UDS Pending 响应等待超过 {timing.PendingOverallTimeout?.TotalMilliseconds:0} 毫秒。");
                 }
 
                 var waitTimeout = remaining < timing.P2StarClientTimeout
@@ -74,7 +74,7 @@ public sealed class UdsClient
     {
         if (request.Length == 0)
         {
-            throw new ArgumentException("UDS request payload cannot be empty.", nameof(request));
+            throw new ArgumentException("UDS 请求数据不能为空。", nameof(request));
         }
 
         return SendAsync(request[0], request.Skip(1), addressing, responseTimeout, pendingTimeout, cancellationToken);
@@ -88,7 +88,7 @@ public sealed class UdsClient
     {
         if (request.Length == 0)
         {
-            throw new ArgumentException("UDS request payload cannot be empty.", nameof(request));
+            throw new ArgumentException("UDS 请求数据不能为空。", nameof(request));
         }
 
         return SendAsync(request[0], request.Skip(1), addressing, timing, cancellationToken);

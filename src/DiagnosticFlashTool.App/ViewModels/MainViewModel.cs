@@ -880,7 +880,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
 
         BootConfigFiles.Clear();
-        foreach (var config in _bootConfigRepository.ListConfigFiles())
+        foreach (var config in _bootConfigRepository.ListConfigFileNames())
         {
             BootConfigFiles.Add(config);
         }
@@ -1395,7 +1395,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
             using var transport = new IsoTpTransport(_canDevice, options);
             var udsClient = new UdsClient(transport);
-            var executor = new FlashFlowExecutor(udsClient, _seedKeyAlgorithmRegistry);
+            IFlashFlowExecutor executor = new FlashFlowExecutor(udsClient, _seedKeyAlgorithmRegistry);
             var progress = new Progress<FlashProgress>(item =>
             {
                 Progress = Math.Clamp(item.Percent, 0, 100);
@@ -1404,17 +1404,21 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             });
 
             var result = await executor.ExecuteAsync(
-                bootConfig,
-                SelectedProject,
-                firmwareSet,
+                new FlashExecutionRequest(
+                    bootConfig,
+                    firmwareSet),
                 progress,
-                AppendLog,
                 cancellationToken);
+
+            foreach (var message in result.LogMessages)
+            {
+                AppendLog(message);
+            }
 
             DownloadStatusKind = result.Success ? DiagnosticStatusKind.Success : DiagnosticStatusKind.Error;
             var resultMessage = result.Success
-                ? "Flash completed"
-                : string.IsNullOrWhiteSpace(result.UserMessage) ? "Flash failed" : result.UserMessage;
+                ? "刷写完成"
+                : string.IsNullOrWhiteSpace(result.UserMessage) ? "刷写失败" : result.UserMessage;
             SetStatus(resultMessage, DownloadStatusKind);
             Progress = result.Success ? 100 : Progress;
         }
@@ -1422,13 +1426,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             DownloadStatusKind = DiagnosticStatusKind.Warning;
             SetStatus("刷写已取消", DiagnosticStatusKind.Warning);
-            AppendLog("Flash canceled.");
+            AppendLog("刷写已取消。");
         }
         catch (Exception ex)
         {
             DownloadStatusKind = DiagnosticStatusKind.Error;
             SetStatus(ex.Message, DiagnosticStatusKind.Error);
-            AppendLog($"Flash failed: {ex.Message}");
+            AppendLog($"刷写失败：{ex.Message}");
         }
         finally
         {
@@ -1480,15 +1484,15 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         var driver = LoadFirmwareImage(
             driverPath,
             FirmwareImageKind.Driver,
-            "Driver",
-            RequiresDownloadStep(bootConfig, "DownloadDriver"),
+            "驱动",
+            RequiresDownloadStep(bootConfig, FlashStepKind.DownloadDriver),
             0);
 
         var application = LoadFirmwareImage(
             applicationPath,
             FirmwareImageKind.Application,
-            "Application",
-            RequiresDownloadStep(bootConfig, "DownloadApplication"),
+            "应用",
+            RequiresDownloadStep(bootConfig, FlashStepKind.DownloadApplication),
             HexUtil.ParseUInt32(project.AppStartAddress, 0));
 
         return new FirmwareSet { Driver = driver, Application = application };
@@ -1499,10 +1503,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         return string.IsNullOrWhiteSpace(preferred) ? fallback ?? string.Empty : preferred;
     }
 
-    private static bool RequiresDownloadStep(BootConfig bootConfig, string stepType)
+    private static bool RequiresDownloadStep(BootConfig bootConfig, FlashStepKind expectedKind)
     {
         return bootConfig.Flow.Any(step =>
-            string.Equals(step.StepType, stepType, StringComparison.OrdinalIgnoreCase));
+            FlashStepTypes.TryParse(step.StepType, out var kind) && kind == expectedKind);
     }
 
     private FirmwareImage? LoadFirmwareImage(
@@ -1878,8 +1882,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 issues.Add($"节点 {row.Id}：名称不能为空。");
             }
 
-            var isDownload = string.Equals(row.StepType, "DownloadDriver", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(row.StepType, "DownloadApplication", StringComparison.OrdinalIgnoreCase);
+            var isDownload = FlashStepTypes.IsDownload(row.StepType);
             if (!isDownload && string.IsNullOrWhiteSpace(row.Service))
             {
                 issues.Add($"节点 {row.Id}：服务不能为空。");
@@ -1938,9 +1941,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             Id = nextId,
             Name = $"新增节点 {nextId}",
-            AddressingMode = "physical",
-            TimeoutMs = "1500",
-            PendingTimeoutMs = "30000"
+            AddressingMode = "physical"
         };
 
         FlowRows.Add(row);

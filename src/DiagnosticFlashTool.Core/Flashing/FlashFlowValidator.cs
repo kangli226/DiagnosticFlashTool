@@ -6,10 +6,10 @@ namespace DiagnosticFlashTool.Core.Flashing;
 
 public enum FlashFlowIssueKind
 {
-    /// <summary>Blocks flashing. The flow cannot be executed as declared.</summary>
+    /// <summary>阻止刷写；当前流程无法按照配置内容可靠执行。</summary>
     Error,
 
-    /// <summary>Flashing proceeds, but the operator must be told what is not honoured.</summary>
+    /// <summary>允许继续刷写，但必须告知操作人员哪些配置不会生效。</summary>
     Warning
 }
 
@@ -19,28 +19,24 @@ public sealed record FlashFlowIssue(FlashFlowIssueKind Kind, int StepId, string 
 }
 
 /// <summary>
-/// Validates a BOOT flow against what <see cref="FlashFlowExecutor"/> can actually do.
+/// 根据 <see cref="FlashFlowExecutor"/> 当前具备的执行能力校验 BOOT 刷写流程。
 /// </summary>
 /// <remarks>
-/// Two classes of problem are reported, and keeping them apart matters:
+/// 校验结果分为以下两类：
 /// <list type="bullet">
 /// <item>
-/// A <see cref="FlashFlowIssueKind.Error"/> means the flow would fail or silently do
-/// nothing. Flashing must be refused, because a "completed" flash would be a lie.
+/// <see cref="FlashFlowIssueKind.Error"/> 表示流程将执行失败，或者关键操作会被静默跳过。
+/// 此时必须拒绝刷写，避免在流程未被完整执行时仍报告刷写成功。
 /// </item>
 /// <item>
-/// A <see cref="FlashFlowIssueKind.Warning"/> means the flow declares metadata the
-/// executor does not consume yet (CRC, erase routine, receive/verify matchers).
-/// The flow still runs, but the declaration is not honoured, so the operator has to
-/// be told rather than left to assume the ECU was verified.
+/// <see cref="FlashFlowIssueKind.Warning"/> 表示流程仍可执行，但部分非关键配置不会生效，
+/// 例如响应匹配、校验规则或节点级 Tester Present 周期。必须向操作人员明确提示这些限制。
 /// </item>
 /// </list>
 /// </remarks>
 public static class FlashFlowValidator
 {
     private const byte SecurityAccessService = 0x27;
-    private const string DownloadDriverStepType = "DownloadDriver";
-    private const string DownloadApplicationStepType = "DownloadApplication";
 
     public static IReadOnlyList<FlashFlowIssue> Validate(
         BootConfig bootConfig,
@@ -63,18 +59,16 @@ public static class FlashFlowValidator
 
         foreach (var step in bootConfig.Flow)
         {
-            var isDownload = IsDownloadStep(step);
-
-            if (!isDownload && !string.IsNullOrWhiteSpace(step.StepType))
+            if (!FlashStepTypes.TryParse(step.StepType, out var kind))
             {
                 issues.Add(new FlashFlowIssue(
                     FlashFlowIssueKind.Error,
                     step.Id,
-                    $"未知的步骤类型 \"{step.StepType}\"，只能是 {DownloadDriverStepType} 或 {DownloadApplicationStepType}。"));
+                    $"未知的步骤类型 \"{step.StepType}\"，只能是 {FlashStepTypes.DownloadDriver} 或 {FlashStepTypes.DownloadApplication}。"));
                 continue;
             }
 
-            if (!isDownload && !HexUtil.TryParseByte(step.Service, out _))
+            if (kind == FlashStepKind.Uds && !HexUtil.TryParseByte(step.Service, out _))
             {
                 issues.Add(new FlashFlowIssue(
                     FlashFlowIssueKind.Error,
@@ -100,9 +94,9 @@ public static class FlashFlowValidator
     }
 
     /// <summary>
-    /// Validates the 0x27 request-seed / send-key pairing. ISO 14229 uses an odd
-    /// sub-function to request the seed and the following even sub-function to send
-    /// the key, so the two have to appear as an ordered pair within one flow.
+    /// 校验 0x27 安全访问中的请求 seed 与发送 key 步骤。
+    /// ISO 14229 使用奇数子功能请求 seed，使用偶数子功能发送 key，
+    /// 因此发送 key 之前必须已经出现请求 seed 的步骤。
     /// </summary>
     private static IEnumerable<FlashFlowIssue> ValidateSecuritySteps(
         FlashStepConfig step,
@@ -170,9 +164,9 @@ public static class FlashFlowValidator
     }
 
     /// <summary>
-    /// Reports metadata the flow declares but <see cref="FlashFlowExecutor"/> does not consume.
-    /// Erase/CRC/verify declarations must block, because an unverified flash that reports
-    /// success is worse than a refused one.
+    /// 报告流程中已声明但 <see cref="FlashFlowExecutor"/> 当前尚未使用的配置。
+    /// 未执行的 CRC 校验和擦除例程会产生错误并阻止刷写；响应匹配、校验规则及
+    /// 节点级 Tester Present 周期会产生警告，以免操作人员误以为这些配置已经生效。
     /// </summary>
     private static void AddUnsupportedMetadataIssues(FlashStepConfig step, List<FlashFlowIssue> issues)
     {
@@ -219,7 +213,6 @@ public static class FlashFlowValidator
 
     public static bool IsDownloadStep(FlashStepConfig step)
     {
-        return string.Equals(step.StepType, DownloadDriverStepType, StringComparison.OrdinalIgnoreCase)
-            || string.Equals(step.StepType, DownloadApplicationStepType, StringComparison.OrdinalIgnoreCase);
+        return FlashStepTypes.IsDownload(step.StepType);
     }
 }

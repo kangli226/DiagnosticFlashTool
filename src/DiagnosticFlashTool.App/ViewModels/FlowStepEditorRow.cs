@@ -1,4 +1,5 @@
 using DiagnosticFlashTool.Core.Configuration;
+using DiagnosticFlashTool.Core.Flashing;
 
 namespace DiagnosticFlashTool.App.ViewModels;
 
@@ -13,8 +14,6 @@ public sealed class FlowStepEditorRow : ObservableObject
     private string _addressingMode = "physical";
     private string _securityAlgorithm = string.Empty;
     private string _crcAlgorithm = string.Empty;
-    private string _timeoutMs = string.Empty;
-    private string _pendingTimeoutMs = string.Empty;
     private string _testerPresentIntervalMs = string.Empty;
     private string _algorithmParamsText = string.Empty;
 
@@ -97,8 +96,7 @@ public sealed class FlowStepEditorRow : ObservableObject
         }
     }
 
-    public bool IsDownloadStep => string.Equals(StepType, "DownloadDriver", StringComparison.OrdinalIgnoreCase)
-        || string.Equals(StepType, "DownloadApplication", StringComparison.OrdinalIgnoreCase);
+    public bool IsDownloadStep => FlashStepTypes.IsDownload(StepType);
 
     public bool IsUdsStep => !IsDownloadStep;
 
@@ -146,18 +144,6 @@ public sealed class FlowStepEditorRow : ObservableObject
         }
     }
 
-    public string TimeoutMs
-    {
-        get => _timeoutMs;
-        set => SetProperty(ref _timeoutMs, value);
-    }
-
-    public string PendingTimeoutMs
-    {
-        get => _pendingTimeoutMs;
-        set => SetProperty(ref _pendingTimeoutMs, value);
-    }
-
     public string TesterPresentIntervalMs
     {
         get => _testerPresentIntervalMs;
@@ -183,8 +169,6 @@ public sealed class FlowStepEditorRow : ObservableObject
             AddressingMode = string.IsNullOrWhiteSpace(step.AddressingMode) ? "physical" : step.AddressingMode!,
             SecurityAlgorithm = step.SecurityAlgorithm ?? string.Empty,
             CrcAlgorithm = step.CrcAlgorithm ?? string.Empty,
-            TimeoutMs = step.TimeoutMs ?? string.Empty,
-            PendingTimeoutMs = step.PendingTimeoutMs ?? string.Empty,
             TesterPresentIntervalMs = step.TesterPresentIntervalMs ?? string.Empty,
             AlgorithmParamsText = string.Join(", ", step.AlgorithmParams),
             Receive = new Dictionary<string, string>(step.Receive),
@@ -207,8 +191,6 @@ public sealed class FlowStepEditorRow : ObservableObject
             Receive = new Dictionary<string, string>(Receive),
             Verify = Verify,
             BlockSize = BlockSize,
-            TimeoutMs = EmptyToNull(TimeoutMs),
-            PendingTimeoutMs = EmptyToNull(PendingTimeoutMs),
             TesterPresentIntervalMs = EmptyToNull(TesterPresentIntervalMs),
             EraseRoutine = EraseRoutine,
             AddressingMode = EmptyToNull(AddressingMode),

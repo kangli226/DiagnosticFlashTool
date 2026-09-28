@@ -56,7 +56,7 @@ public sealed class FlowScriptConfig
 /// 刷写流程中的单个步骤，由 BootConfig.Flow 按顺序执行；
 /// StepType 为 DownloadDriver/DownloadApplication 时走镜像下载，否则下发普通 UDS 请求。
 /// 真正生效：StepType、Service、SubService、Extend、AddressingMode、SecurityAlgorithm、
-/// AlgorithmParams、TimeoutMs、PendingTimeoutMs、BlockSize。
+/// AlgorithmParams、BlockSize。
 /// 声明即阻断刷写（校验报错）：CrcAlgorithm、EraseRoutine；
 /// 声明被忽略（仅告警）：Receive、Verify、TesterPresentIntervalMs。
 /// </summary>
@@ -97,14 +97,6 @@ public sealed class FlashStepConfig
     /// <summary>0x36 TransferData 单次传输字节数（可写 0x80，缺省 0xF0），并受 ECU 声明的最大块长与 ISO-TP 上限裁剪。</summary>
     [JsonPropertyName("blockSize")]
     public string? BlockSize { get; set; }
-
-    /// <summary>本步骤响应超时（毫秒，P2client），缺省沿用会话级配置（默认 1500ms）。</summary>
-    [JsonPropertyName("timeoutMs")]
-    public string? TimeoutMs { get; set; }
-
-    /// <summary>0x78 等待响应后的轮询超时（毫秒，P2*client），缺省沿用会话级配置（默认 30000ms）。</summary>
-    [JsonPropertyName("pendingTimeoutMs")]
-    public string? PendingTimeoutMs { get; set; }
 
     /// <summary>节点级 Tester Present 周期；当前版本使用会话级周期，此设置会被忽略。</summary>
     [JsonPropertyName("testerPresentIntervalMs")]

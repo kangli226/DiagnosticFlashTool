@@ -20,17 +20,17 @@ public sealed class UdsResponse
     {
         if (Payload.Length == 0)
         {
-            throw new InvalidOperationException("UDS response payload is empty.");
+            throw new InvalidOperationException("UDS 响应数据为空。");
         }
 
         if (IsNegative)
         {
-            throw new InvalidOperationException($"UDS negative response: SID=0x{Payload[1]:X2}, NRC=0x{Payload[2]:X2}.");
+            throw new InvalidOperationException($"UDS 否定响应：SID=0x{Payload[1]:X2}，NRC=0x{Payload[2]:X2}。");
         }
 
         if (Request.Length > 0 && Payload[0] != unchecked((byte)(Request[0] + 0x40)))
         {
-            throw new InvalidOperationException($"Unexpected UDS response SID 0x{Payload[0]:X2} for request 0x{Request[0]:X2}.");
+            throw new InvalidOperationException($"UDS 响应 SID 0x{Payload[0]:X2} 与请求 0x{Request[0]:X2} 不匹配。");
         }
     }
 

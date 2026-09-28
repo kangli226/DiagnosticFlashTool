@@ -39,7 +39,8 @@ public sealed class EcuProductProfile
         {
             P2ClientMs = Timing.P2ClientMs,
             P2StarClientMs = Timing.P2StarClientMs,
-            S3ClientMs = Timing.S3ClientMs,
+            S3ServerTimeoutMs = Timing.S3ServerTimeoutMs,
+            TesterPresentIntervalMs = Timing.TesterPresentIntervalMs,
             PendingOverallTimeoutMs = Timing.PendingOverallTimeoutMs
         }.Validate();
     }
@@ -84,16 +85,19 @@ public sealed class ProductTransportConfig
 public sealed class ProductTimingConfig
 {
     [JsonPropertyName("p2ClientMs")]
-    public int P2ClientMs { get; set; } = 5000;
+    public int P2ClientMs { get; set; } = 1000;
 
     [JsonPropertyName("p2StarClientMs")]
-    public int P2StarClientMs { get; set; } = 5100;
+    public int P2StarClientMs { get; set; } = 6000;
 
-    [JsonPropertyName("s3ClientMs")]
-    public int S3ClientMs { get; set; } = 5000;
+    [JsonPropertyName("s3ServerTimeoutMs")]
+    public int S3ServerTimeoutMs { get; set; } = 5000;
+
+    [JsonPropertyName("testerPresentIntervalMs")]
+    public int TesterPresentIntervalMs { get; set; } = 2000;
 
     [JsonPropertyName("pendingOverallTimeoutMs")]
-    public int PendingOverallTimeoutMs { get; set; } = 30_000;
+    public int PendingOverallTimeoutMs { get; set; } = 120_000;
 }
 
 public sealed class ProductSecurityConfig
@@ -188,8 +192,11 @@ public sealed class UserProductSettings
     [JsonPropertyName("p2StarClientMs")]
     public int? P2StarClientMs { get; set; }
 
-    [JsonPropertyName("s3ClientMs")]
-    public int? S3ClientMs { get; set; }
+    [JsonPropertyName("s3ServerTimeoutMs")]
+    public int? S3ServerTimeoutMs { get; set; }
+
+    [JsonPropertyName("testerPresentIntervalMs")]
+    public int? TesterPresentIntervalMs { get; set; }
 
     [JsonPropertyName("pendingOverallTimeoutMs")]
     public int? PendingOverallTimeoutMs { get; set; }

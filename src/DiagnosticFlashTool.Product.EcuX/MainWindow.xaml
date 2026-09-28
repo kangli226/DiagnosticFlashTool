@@ -137,6 +137,7 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="120" />
@@ -148,10 +149,12 @@
                             <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding P2ClientMsText, UpdateSourceTrigger=PropertyChanged}" />
                             <TextBlock Grid.Row="0" Grid.Column="2" Text="P2* 客户端" Style="{StaticResource FieldLabel}" Margin="16,0,10,0" />
                             <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding P2StarClientMsText, UpdateSourceTrigger=PropertyChanged}" />
-                            <TextBlock Grid.Row="1" Grid.Column="0" Text="S3 客户端" Style="{StaticResource FieldLabel}" />
-                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding S3ClientMsText, UpdateSourceTrigger=PropertyChanged}" />
-                            <TextBlock Grid.Row="1" Grid.Column="2" Text="Pending 总超时" Style="{StaticResource FieldLabel}" Margin="16,0,10,0" />
-                            <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding PendingOverallTimeoutMsText, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="S3 服务端超时" Style="{StaticResource FieldLabel}" />
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding S3ServerTimeoutMsText, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="Tester Present 周期" Style="{StaticResource FieldLabel}" Margin="16,0,10,0" />
+                            <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding TesterPresentIntervalMsText, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Pending 总超时" Style="{StaticResource FieldLabel}" />
+                            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding PendingOverallTimeoutMsText, UpdateSourceTrigger=PropertyChanged}" />
                         </Grid>
                     </GroupBox>
 

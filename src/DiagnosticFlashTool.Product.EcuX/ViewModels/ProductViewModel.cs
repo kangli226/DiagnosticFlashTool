@@ -46,10 +46,11 @@ public sealed class ProductViewModel : ObservableObject, IAsyncDisposable
     private string _securityLevelText = "0x01";
     private string _variant = string.Empty;
     private string _optionsText = string.Empty;
-    private string _p2ClientMsText = "5000";
-    private string _p2StarClientMsText = "5100";
-    private string _s3ClientMsText = "5000";
-    private string _pendingOverallTimeoutMsText = "30000";
+    private string _p2ClientMsText = "1000";
+    private string _p2StarClientMsText = "6000";
+    private string _s3ServerTimeoutMsText = "5000";
+    private string _testerPresentIntervalMsText = "2000";
+    private string _pendingOverallTimeoutMsText = "120000";
     private bool _isConnected;
     private bool _isBusy;
     private int _progress;
@@ -220,10 +221,16 @@ public sealed class ProductViewModel : ObservableObject, IAsyncDisposable
         set => SetProperty(ref _p2StarClientMsText, value);
     }
 
-    public string S3ClientMsText
+    public string S3ServerTimeoutMsText
     {
-        get => _s3ClientMsText;
-        set => SetProperty(ref _s3ClientMsText, value);
+        get => _s3ServerTimeoutMsText;
+        set => SetProperty(ref _s3ServerTimeoutMsText, value);
+    }
+
+    public string TesterPresentIntervalMsText
+    {
+        get => _testerPresentIntervalMsText;
+        set => SetProperty(ref _testerPresentIntervalMsText, value);
     }
 
     public string PendingOverallTimeoutMsText
@@ -397,7 +404,12 @@ public sealed class ProductViewModel : ObservableObject, IAsyncDisposable
                 CurrentStep = item.Message;
                 UpdateStepStatus(item.Message);
             });
-            var result = await _session.FlashAsync(sessionOptions, progress, AppendLog, flashCts.Token).ConfigureAwait(true);
+            var result = await _session.FlashAsync(sessionOptions, progress, flashCts.Token).ConfigureAwait(true);
+            foreach (var message in result.LogMessages)
+            {
+                AppendLog(message);
+            }
+
             Progress = result.Success ? 100 : Progress;
             if (result.Success)
             {
@@ -479,7 +491,8 @@ public sealed class ProductViewModel : ObservableObject, IAsyncDisposable
             : _profile.Transport.BaudRate.ToString(System.Globalization.CultureInfo.InvariantCulture);
         P2ClientMsText = _profile.Timing.P2ClientMs.ToString(System.Globalization.CultureInfo.InvariantCulture);
         P2StarClientMsText = _profile.Timing.P2StarClientMs.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        S3ClientMsText = _profile.Timing.S3ClientMs.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        S3ServerTimeoutMsText = _profile.Timing.S3ServerTimeoutMs.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        TesterPresentIntervalMsText = _profile.Timing.TesterPresentIntervalMs.ToString(System.Globalization.CultureInfo.InvariantCulture);
         PendingOverallTimeoutMsText = _profile.Timing.PendingOverallTimeoutMs.ToString(System.Globalization.CultureInfo.InvariantCulture);
         AlgorithmName = _profile.Security.AlgorithmName;
         EntryPoint = _profile.Security.EntryPoint;
@@ -523,7 +536,8 @@ public sealed class ProductViewModel : ObservableObject, IAsyncDisposable
             OptionsText = settings.Options ?? OptionsText;
             P2ClientMsText = settings.P2ClientMs?.ToString() ?? P2ClientMsText;
             P2StarClientMsText = settings.P2StarClientMs?.ToString() ?? P2StarClientMsText;
-            S3ClientMsText = settings.S3ClientMs?.ToString() ?? S3ClientMsText;
+            S3ServerTimeoutMsText = settings.S3ServerTimeoutMs?.ToString() ?? S3ServerTimeoutMsText;
+            TesterPresentIntervalMsText = settings.TesterPresentIntervalMs?.ToString() ?? TesterPresentIntervalMsText;
             PendingOverallTimeoutMsText = settings.PendingOverallTimeoutMs?.ToString() ?? PendingOverallTimeoutMsText;
             ApplicationFiles.Clear();
             foreach (var path in settings.ApplicationFilePaths ?? [])
@@ -561,7 +575,8 @@ public sealed class ProductViewModel : ObservableObject, IAsyncDisposable
                 Options = NullIfWhiteSpace(OptionsText),
                 P2ClientMs = ParseInt(P2ClientMsText, "P2 时间"),
                 P2StarClientMs = ParseInt(P2StarClientMsText, "P2* 时间"),
-                S3ClientMs = ParseInt(S3ClientMsText, "S3 时间"),
+                S3ServerTimeoutMs = ParseInt(S3ServerTimeoutMsText, "S3 服务端超时"),
+                TesterPresentIntervalMs = ParseInt(TesterPresentIntervalMsText, "Tester Present 周期"),
                 PendingOverallTimeoutMs = ParseInt(PendingOverallTimeoutMsText, "Pending 总超时")
             };
             Directory.CreateDirectory(Path.GetDirectoryName(_settingsPath)!);
@@ -606,7 +621,8 @@ public sealed class ProductViewModel : ObservableObject, IAsyncDisposable
         {
             P2ClientMs = ParseInt(P2ClientMsText, "P2 时间"),
             P2StarClientMs = ParseInt(P2StarClientMsText, "P2* 时间"),
-            S3ClientMs = ParseInt(S3ClientMsText, "S3 时间"),
+            S3ServerTimeoutMs = ParseInt(S3ServerTimeoutMsText, "S3 服务端超时"),
+            TesterPresentIntervalMs = ParseInt(TesterPresentIntervalMsText, "Tester Present 周期"),
             PendingOverallTimeoutMs = ParseInt(PendingOverallTimeoutMsText, "Pending 总超时")
         }.Validate();
     }
@@ -727,7 +743,8 @@ public sealed class ProductViewModel : ObservableObject, IAsyncDisposable
             return;
         }
 
-        if (message.Contains("completed", StringComparison.OrdinalIgnoreCase))
+        if (message.Contains("已完成", StringComparison.Ordinal)
+            || message.Contains("completed", StringComparison.OrdinalIgnoreCase))
         {
             row.Status = "完成";
             return;
@@ -753,13 +770,18 @@ public sealed class ProductViewModel : ObservableObject, IAsyncDisposable
     private static bool TryParseStepId(string message, out int stepId)
     {
         stepId = 0;
-        if (!message.StartsWith("Step ", StringComparison.OrdinalIgnoreCase))
+        var prefix = message.StartsWith("步骤 ", StringComparison.Ordinal)
+            ? "步骤 "
+            : message.StartsWith("Step ", StringComparison.OrdinalIgnoreCase)
+                ? "Step "
+                : null;
+        if (prefix is null)
         {
             return false;
         }
 
-        var idStart = "Step ".Length;
-        var idEnd = message.IndexOfAny([':', ' '], idStart);
+        var idStart = prefix.Length;
+        var idEnd = message.IndexOfAny(['：', ':', ' '], idStart);
         if (idEnd < 0)
         {
             idEnd = message.Length;

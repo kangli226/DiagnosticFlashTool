@@ -6,86 +6,98 @@ using DiagnosticFlashTool.Core.Util;
 
 namespace DiagnosticFlashTool.Core.Flashing;
 
-public sealed class FlashFlowExecutor
+public sealed class FlashFlowExecutor : IFlashFlowExecutor
 {
     /// <summary>
-    /// Short timing used by best-effort cleanup calls. Cleanup must not inherit the
-    /// step timing, otherwise a missing ECU could stall shutdown for 30 seconds.
+    /// 尽力清理时使用的短超时。清理操作不能沿用步骤超时，
+    /// 否则 ECU 无响应时可能导致关闭过程停滞 30 秒。
     /// </summary>
     private static readonly UdsTimingOptions CleanupTiming = new UdsTimingOptions
     {
         P2ClientMs = 1000,
         P2StarClientMs = 1000,
-        S3ClientMs = 0,
+        S3ServerTimeoutMs = 0,
+        TesterPresentIntervalMs = 0,
         PendingOverallTimeoutMs = 2000
     }.Validate();
 
-    /// <summary>Weight given to a step that transfers no firmware bytes.</summary>
+    /// <summary>未传输固件字节的步骤所使用的权重。</summary>
     private const double NominalUdsStepWeight = 1.0;
 
-    /// <summary>Share of the progress bar reserved for non-download steps.</summary>
+    /// <summary>为非下载步骤预留的进度占比。</summary>
     private const double NonDownloadProgressShare = 0.2;
 
     private readonly UdsClient _udsClient;
     private readonly SeedKeyAlgorithmRegistry _seedKeyAlgorithms;
-    private byte[] _lastSeed = [];
-    private bool _nonDefaultSessionActive;
+    private readonly UdsFirmwareDownloader _firmwareDownloader;
+    private readonly SemaphoreSlim _executionGate = new(1, 1);
 
     public FlashFlowExecutor(UdsClient udsClient, SeedKeyAlgorithmRegistry? seedKeyAlgorithms = null)
     {
-        _udsClient = udsClient;
+        _udsClient = udsClient ?? throw new ArgumentNullException(nameof(udsClient));
         _seedKeyAlgorithms = seedKeyAlgorithms ?? new SeedKeyAlgorithmRegistry();
+        _firmwareDownloader = new UdsFirmwareDownloader(_udsClient, CleanupTiming);
     }
 
     public async Task<FlashResult> ExecuteAsync(
-        BootConfig bootConfig,
-        ProjectConfigEntry project,
-        FirmwareSet firmwareSet,
-        IProgress<FlashProgress>? progress,
-        Action<string>? log,
-        CancellationToken cancellationToken,
-        UdsTimingOptions? timingOptions = null)
+        FlashExecutionRequest request,
+        IProgress<FlashProgress>? progress = null,
+        CancellationToken cancellationToken = default)
     {
-        var timing = timingOptions?.Validate();
-        _lastSeed = [];
-        _nonDefaultSessionActive = false;
-        var logs = new List<string>();
-        void WriteLog(string message)
+        ArgumentNullException.ThrowIfNull(request);
+        await _executionGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
         {
-            var line = $"[{DateTime.Now:HH:mm:ss}] {message}";
-            logs.Add(line);
-            log?.Invoke(line);
+            return await ExecuteCoreAsync(request, progress, cancellationToken).ConfigureAwait(false);
         }
+        finally
+        {
+            _executionGate.Release();
+        }
+    }
+
+    private async Task<FlashResult> ExecuteCoreAsync(
+        FlashExecutionRequest request,
+        IProgress<FlashProgress>? progress,
+        CancellationToken cancellationToken)
+    {
+        var context = new FlashExecutionContext();
 
         try
         {
-            // Refuse a flow that would silently do nothing or fail halfway. Reporting
-            // "flash completed" for a flow that never downloaded, or whose declared CRC
-            // was never checked, is worse than refusing to start.
-            var issues = FlashFlowValidator.Validate(bootConfig, _seedKeyAlgorithms);
+            ValidateRequest(request);
+            var timing = ValidateTiming(request.Timing) ?? new UdsTimingOptions().Validate();
+            context.ConfigureTiming(timing);
+
+            // 拒绝执行可能静默跳过操作或中途失败的流程。对于未执行任何下载，
+            // 或声明了 CRC 却未进行校验的流程，报告“刷写完成”比拒绝启动更危险。
+            var issues = FlashFlowValidator.Validate(request.BootConfig, _seedKeyAlgorithms);
             var errors = issues.Where(issue => issue.Kind == FlashFlowIssueKind.Error).ToList();
             if (errors.Count > 0)
             {
-                throw new InvalidOperationException(
+                throw new FlashExecutionException(
+                    FlashFailureKind.Validation,
                     "BOOT 流程校验未通过：" + Environment.NewLine +
                     string.Join(Environment.NewLine, errors.Select(issue => "  - " + issue)));
             }
 
             foreach (var warning in issues.Where(issue => issue.Kind == FlashFlowIssueKind.Warning))
             {
-                WriteLog($"WARNING: {warning}");
+                context.WriteLog($"警告：{warning}");
             }
 
-            WriteLog($"Start flash: project={project.ProjectName}, boot={bootConfig.Name}");
+            context.WriteLog($"开始刷写：BOOT={request.BootConfig.Name}");
 
-            var weights = ComputeStepWeights(bootConfig, firmwareSet);
+            var weights = ComputeStepWeights(request.BootConfig, request.FirmwareSet);
             var totalWeight = weights.Sum();
             var completedWeight = 0.0;
 
-            for (var index = 0; index < bootConfig.Flow.Count; index++)
+            // 流程步骤必须严格串行。只有当前步骤完整执行且未抛出异常，
+            // 才会进入下一次循环；不得在此处创建后台任务或并行等待多个步骤。
+            for (var index = 0; index < request.BootConfig.Flow.Count; index++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var step = bootConfig.Flow[index];
+                var step = request.BootConfig.Flow[index];
                 var stepWeight = weights[index];
                 var stepBaseWeight = completedWeight;
 
@@ -94,82 +106,103 @@ public sealed class FlashFlowExecutor
                     var normalized = Math.Clamp(percentWithinStep, 0, 100) / 100.0;
                     var completed = stepBaseWeight + (stepWeight * normalized);
                     var overall = totalWeight > 0 ? completed / totalWeight : 0;
-                    progress?.Report(new FlashProgress(Math.Clamp((int)Math.Round(overall * 100), 0, 100), message));
+                    progress?.Report(new FlashProgress(
+                        Math.Clamp((int)Math.Round(overall * 100), 0, 100),
+                        message));
                 }
 
-                ReportStepProgress(0, $"Step {step.Id}: {step.Name}");
-                WriteLog($"Step {step.Id}: {step.Name}");
+                ReportStepProgress(0, $"步骤 {step.Id}：{step.Name}");
+                context.WriteLog($"步骤 {step.Id}：{step.Name}");
 
-                if (string.Equals(step.StepType, "DownloadDriver", StringComparison.OrdinalIgnoreCase))
+                if (!FlashStepTypes.TryParse(step.StepType, out var kind))
                 {
-                    await DownloadImageAsync(firmwareSet.Driver, step, FirmwareImageKind.Driver, WriteLog, ReportStepProgress, cancellationToken, timing).ConfigureAwait(false);
-                }
-                else if (string.Equals(step.StepType, "DownloadApplication", StringComparison.OrdinalIgnoreCase))
-                {
-                    var applications = firmwareSet.GetApplicationImages();
-                    if (applications.Count == 0)
-                    {
-                        await DownloadImageAsync(null, step, FirmwareImageKind.Application, WriteLog, ReportStepProgress, cancellationToken, timing).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        for (var applicationIndex = 0; applicationIndex < applications.Count; applicationIndex++)
-                        {
-                            var currentIndex = applicationIndex;
-                            void ReportApplicationProgress(int imagePercent, string message)
-                            {
-                                var allImagesPercent = (int)Math.Round((currentIndex + (Math.Clamp(imagePercent, 0, 100) / 100.0)) * 100 / applications.Count);
-                                ReportStepProgress(allImagesPercent, message);
-                            }
-
-                            await DownloadImageAsync(
-                                applications[applicationIndex],
-                                step,
-                                FirmwareImageKind.Application,
-                                WriteLog,
-                                ReportApplicationProgress,
-                                cancellationToken,
-                                timing).ConfigureAwait(false);
-                        }
-                    }
-                }
-                else
-                {
-                    await ExecuteUdsStepAsync(step, WriteLog, cancellationToken, timing).ConfigureAwait(false);
+                    throw new FlashExecutionException(
+                        FlashFailureKind.Validation,
+                        $"步骤 {step.Id} 包含未知的步骤类型：{step.StepType}");
                 }
 
+                switch (kind)
+                {
+                    case FlashStepKind.DownloadDriver:
+                        await DownloadDriverAsync(
+                            request.FirmwareSet.Driver,
+                            step,
+                            context,
+                            ReportStepProgress,
+                            cancellationToken).ConfigureAwait(false);
+                        break;
+
+                    case FlashStepKind.DownloadApplication:
+                        await DownloadApplicationsAsync(
+                            request.FirmwareSet.GetApplicationImages(),
+                            step,
+                            context,
+                            ReportStepProgress,
+                            cancellationToken).ConfigureAwait(false);
+                        break;
+
+                    default:
+                        await ExecuteUdsStepAsync(
+                            step,
+                            context,
+                            cancellationToken).ConfigureAwait(false);
+                        break;
+                }
+
+                ReportStepProgress(100, $"步骤 {step.Id} 已完成：{step.Name}");
                 completedWeight += stepWeight;
-                WriteLog($"Step {step.Id} completed: {step.Name}");
+                context.WriteLog($"步骤 {step.Id} 已完成：{step.Name}");
             }
 
-            progress?.Report(new FlashProgress(100, "Flash completed"));
-            WriteLog("Flash completed.");
-            return new FlashResult { Success = true, UserMessage = "刷写完成", LogMessages = logs };
+            progress?.Report(new FlashProgress(100, "刷写完成"));
+            context.WriteLog("刷写完成。");
+            return new FlashResult
+            {
+                Success = true,
+                UserMessage = "刷写完成",
+                LogMessages = [.. context.Logs]
+            };
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            WriteLog("Flash canceled.");
-            await TryReturnToDefaultSessionAsync(WriteLog).ConfigureAwait(false);
+            context.WriteLog("刷写已取消。");
+            await TryReturnToDefaultSessionAsync(context).ConfigureAwait(false);
             throw;
+        }
+        catch (FlashExecutionException ex)
+        {
+            return await CreateFailureResultAsync(context, ex, ex.FailureKind).ConfigureAwait(false);
+        }
+        catch (TimeoutException ex)
+        {
+            return await CreateFailureResultAsync(context, ex, FlashFailureKind.Timeout).ConfigureAwait(false);
+        }
+        catch (IOException ex)
+        {
+            return await CreateFailureResultAsync(context, ex, FlashFailureKind.Transport).ConfigureAwait(false);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return await CreateFailureResultAsync(context, ex, FlashFailureKind.Protocol).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            WriteLog($"ERROR: {ex.Message}");
-            await TryReturnToDefaultSessionAsync(WriteLog).ConfigureAwait(false);
-            return new FlashResult { Success = false, UserMessage = ex.Message, LogMessages = logs };
+            context.WriteLog($"未处理异常：{ex.Message}");
+            await TryReturnToDefaultSessionAsync(context).ConfigureAwait(false);
+            throw;
         }
     }
 
     private async Task ExecuteUdsStepAsync(
         FlashStepConfig step,
-        Action<string> log,
-        CancellationToken cancellationToken,
-        UdsTimingOptions? timing)
+        FlashExecutionContext context,
+        CancellationToken cancellationToken)
     {
         if (!HexUtil.TryParseByte(step.Service, out var serviceId))
         {
-            log("Skip non-UDS step without service.");
-            return;
+            throw new FlashExecutionException(
+                FlashFailureKind.Configuration,
+                $"步骤 {step.Id} 没有可解析的 UDS 服务号。");
         }
 
         var parameters = new List<byte>();
@@ -178,190 +211,168 @@ public sealed class FlashFlowExecutor
             parameters.Add(subService);
         }
 
-        parameters.AddRange(step.Extend.SelectMany(HexUtil.ParseBytes));
-
-        if (serviceId == 0x27 && HexUtil.TryParseByte(step.SubService, out subService) && subService % 2 == 0 && !string.IsNullOrWhiteSpace(step.SecurityAlgorithm))
+        try
         {
-            if (_lastSeed.Length == 0)
+            parameters.AddRange(step.Extend.SelectMany(HexUtil.ParseBytes));
+        }
+        catch (Exception ex) when (ex is FormatException or OverflowException)
+        {
+            throw new FlashExecutionException(
+                FlashFailureKind.Configuration,
+                $"步骤 {step.Id} 的附加参数不是有效的十六进制字节。",
+                ex);
+        }
+
+        if (serviceId == 0x27
+            && HexUtil.TryParseByte(step.SubService, out subService)
+            && subService % 2 == 0
+            && !string.IsNullOrWhiteSpace(step.SecurityAlgorithm))
+        {
+            if (context.LastSeed.Length == 0)
             {
-                throw new InvalidOperationException("Security key requested before a seed was received.");
+                throw new FlashExecutionException(
+                    FlashFailureKind.SecurityAccess,
+                    "尚未收到 Seed，无法计算安全访问 Key。");
             }
 
             var algorithm = _seedKeyAlgorithms.Resolve(step.SecurityAlgorithm);
-            var key = await algorithm
-                .ComputeKeyAsync(_lastSeed, step.AlgorithmParams.ToList(), cancellationToken)
-                .ConfigureAwait(false);
+            byte[] key;
+            try
+            {
+                key = await algorithm
+                    .ComputeKeyAsync(context.LastSeed, step.AlgorithmParams.ToList(), cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new FlashExecutionException(
+                    FlashFailureKind.SecurityAccess,
+                    $"安全访问算法 {algorithm.Name} 计算 Key 失败：{ex.Message}",
+                    ex);
+            }
 
             parameters.AddRange(key);
 
-            // A seed is single-use. Dropping it prevents an accidental replay when a
-            // flow declares two send-key steps for the same seed.
-            _lastSeed = [];
-            log($"Security key generated by {algorithm.Name}, length={key.Length} bytes.");
+            // Seed 只能使用一次。使用后立即清除，避免流程为同一个 Seed 声明两个
+            // 发送 Key 步骤时意外重放。
+            context.LastSeed = [];
+            context.WriteLog($"安全访问算法 {algorithm.Name} 已生成 {key.Length} 字节 Key。");
         }
-
-        var requestTiming = ResolveTiming(step, timing);
 
         var response = await _udsClient.SendAsync(
             serviceId,
             parameters,
-            ParseAddressing(step.AddressingMode),
-            requestTiming,
+            FlashStepUdsSettings.ParseAddressing(step.AddressingMode),
+            context.EffectiveTiming,
             cancellationToken).ConfigureAwait(false);
 
-        response.EnsurePositive();
-        log($"RX {response}");
+        FlashStepUdsSettings.EnsurePositive(response);
+        context.WriteLog($"接收：{response}");
 
-        if (serviceId == 0x27 && response.Payload.Length > 2 && response.Payload[0] == 0x67 && response.Payload[1] % 2 == 1)
+        if (serviceId == 0x27
+            && response.Payload.Length > 2
+            && response.Payload[0] == 0x67
+            && response.Payload[1] % 2 == 1)
         {
-            _lastSeed = response.Payload.Skip(2).ToArray();
+            context.LastSeed = response.Payload.Skip(2).ToArray();
         }
 
-        if (serviceId == 0x10 && HexUtil.TryParseByte(step.SubService, out var sessionType) && sessionType != 0x01)
-        {
-            // Anything other than the default session has to be undone if the flow fails,
-            // otherwise the ECU is left inside the programming session.
-            _nonDefaultSessionActive = true;
-        }
+        UpdateSessionStateAndTiming(serviceId, step.SubService, response, context);
     }
 
-    private async Task DownloadImageAsync(
+    private async Task DownloadDriverAsync(
         FirmwareImage? image,
         FlashStepConfig step,
-        FirmwareImageKind kind,
-        Action<string> log,
-        Action<int, string>? reportProgress,
-        CancellationToken cancellationToken,
-        UdsTimingOptions? timing)
+        FlashExecutionContext context,
+        Action<int, string> reportProgress,
+        CancellationToken cancellationToken)
     {
-        if (image is null || image.Length == 0)
+        var firmware = RequireFirmware(image, FirmwareImageKind.Driver);
+        await _firmwareDownloader.DownloadAsync(
+            firmware,
+            step,
+            FirmwareImageKind.Driver,
+            item =>
+            {
+                var percent = CalculatePercent(item.TransferredBytes, item.TotalBytes);
+                reportProgress(percent, item.Message);
+            },
+            context,
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task DownloadApplicationsAsync(
+        IReadOnlyList<FirmwareImage> images,
+        FlashStepConfig step,
+        FlashExecutionContext context,
+        Action<int, string> reportProgress,
+        CancellationToken cancellationToken)
+    {
+        if (images.Count == 0)
         {
-            // A download step with nothing to download is a configuration error.
-            // Returning quietly here is exactly what let a flow report "刷写完成"
-            // without having written a single byte.
-            throw new InvalidOperationException(
-                $"{kind} 下载步骤没有可用的固件：请在“固件刷写”页选择固件文件，或从 BOOT 流程中移除该步骤。");
+            _ = RequireFirmware(null, FirmwareImageKind.Application);
         }
 
-        var addressing = ParseAddressing(step.AddressingMode);
-        var completedBytes = 0;
-
-        foreach (var block in image.Blocks)
+        foreach (var image in images)
         {
-            var requestTiming = ResolveTiming(step, timing);
-            var ecuMaximumBlockLength = await RequestDownloadAsync(
-                block.Address,
-                block.Data.Length,
+            _ = RequireFirmware(image, FirmwareImageKind.Application);
+        }
+
+        var totalBytes = images.Sum(image => (long)image.Length);
+        long completedBytes = 0;
+
+        foreach (var image in images)
+        {
+            var imageBaseBytes = completedBytes;
+            await _firmwareDownloader.DownloadAsync(
+                image,
                 step,
-                requestTiming,
+                FirmwareImageKind.Application,
+                item =>
+                {
+                    var percent = CalculatePercent(imageBaseBytes + item.TransferredBytes, totalBytes);
+                    reportProgress(percent, $"应用固件下载 {percent}%");
+                },
+                context,
                 cancellationToken).ConfigureAwait(false);
-
-            // From here on the ECU expects a RequestTransferExit. The finally block
-            // guarantees 0x37 is sent even when the transfer is cancelled or fails,
-            // so the ECU is not left waiting for more TransferData.
-            var transferOpen = true;
-            try
-            {
-                var payloadSize = ResolveTransferDataSize(step, ecuMaximumBlockLength);
-                var blockCounter = 1;
-                for (var offset = 0; offset < block.Data.Length; offset += payloadSize)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    var count = Math.Min(payloadSize, block.Data.Length - offset);
-                    var payload = new byte[2 + count];
-                    payload[0] = 0x36;
-                    payload[1] = (byte)(blockCounter & 0xFF);
-                    Buffer.BlockCopy(block.Data, offset, payload, 2, count);
-
-                    var response = await _udsClient.SendRawAsync(
-                        payload,
-                        addressing,
-                        requestTiming,
-                        cancellationToken).ConfigureAwait(false);
-                    response.EnsurePositive();
-
-                    blockCounter = (blockCounter + 1) & 0xFF;
-                    var percentWithinImage = (int)Math.Round((completedBytes + offset + count) * 100.0 / image.Length);
-                    reportProgress?.Invoke(percentWithinImage, $"{kind} download {percentWithinImage}%");
-                }
-
-                var exitResponse = await _udsClient.SendRawAsync(
-                    [0x37],
-                    addressing,
-                    requestTiming,
-                    cancellationToken).ConfigureAwait(false);
-                exitResponse.EnsurePositive();
-                transferOpen = false;
-            }
-            finally
-            {
-                if (transferOpen)
-                {
-                    await TryRequestTransferExitAsync(addressing, kind, block, log).ConfigureAwait(false);
-                }
-            }
-
-            log($"{kind} block downloaded: address=0x{block.Address:X8}, length={block.Data.Length}");
-            completedBytes += block.Data.Length;
+            completedBytes += image.Length;
         }
     }
 
     /// <summary>
-    /// Best-effort RequestTransferExit after an aborted download. Runs on its own token
-    /// and timing so it still executes while the flash is being cancelled, and it never
-    /// replaces the original failure with a cleanup failure.
+    /// 刷写失败或取消后将 ECU 恢复到默认会话，避免其停留在编程会话中。
+    /// 此操作仅作尽力清理，绝不能掩盖原始故障。
     /// </summary>
-    private async Task TryRequestTransferExitAsync(
-        UdsAddressing addressing,
-        FirmwareImageKind kind,
-        FirmwareBlock block,
-        Action<string> log)
+    private async Task TryReturnToDefaultSessionAsync(FlashExecutionContext context)
     {
-        try
-        {
-            var response = await _udsClient
-                .SendRawAsync([0x37], addressing, CleanupTiming, CancellationToken.None)
-                .ConfigureAwait(false);
-            response.EnsurePositive();
-            log($"{kind} block 0x{block.Address:X8} 已中止，已补发 0x37 结束传输。");
-        }
-        catch (Exception ex)
-        {
-            log($"{kind} block 0x{block.Address:X8} 传输收尾失败：{ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Returns the ECU to the default session after a failed or cancelled flash so it is
-    /// not left inside the programming session. Best-effort only: this must never mask
-    /// the original failure.
-    /// </summary>
-    private async Task TryReturnToDefaultSessionAsync(Action<string> log)
-    {
-        if (!_nonDefaultSessionActive)
+        if (!context.NonDefaultSessionActive)
         {
             return;
         }
 
-        _nonDefaultSessionActive = false;
+        context.NonDefaultSessionActive = false;
         try
         {
             var response = await _udsClient
                 .SendAsync(0x10, [0x01], UdsAddressing.Physical, CleanupTiming, CancellationToken.None)
                 .ConfigureAwait(false);
-            response.EnsurePositive();
-            log("已返回默认会话（0x10 0x01）。");
+            FlashStepUdsSettings.EnsurePositive(response);
+            context.WriteLog("已返回默认会话（0x10 0x01）。");
         }
         catch (Exception ex)
         {
-            log($"返回默认会话失败：{ex.Message}");
+            context.WriteLog($"返回默认会话失败：{ex.Message}");
         }
     }
 
     /// <summary>
-    /// Weights progress by transferred bytes instead of by step count. A download step
-    /// moves hundreds of kilobytes while a session or security step moves a few bytes, so
-    /// dividing the bar equally makes it stall for almost the whole flash.
+    /// 按传输字节数而非步骤数计算进度权重。下载步骤可能传输数百 KB，
+    /// 而会话或安全访问步骤仅传输几个字节；若平均分配进度，进度条会在
+    /// 几乎整个刷写期间停滞不前。
     /// </summary>
     private static double[] ComputeStepWeights(BootConfig bootConfig, FirmwareSet firmwareSet)
     {
@@ -374,19 +385,16 @@ public sealed class FlashFlowExecutor
         for (var index = 0; index < bootConfig.Flow.Count; index++)
         {
             var step = bootConfig.Flow[index];
-            double weight;
+            _ = FlashStepTypes.TryParse(step.StepType, out var kind);
+            var weight = kind switch
+            {
+                FlashStepKind.DownloadDriver => Math.Max(1, firmwareSet.Driver?.Length ?? 0),
+                FlashStepKind.DownloadApplication => Math.Max(1, applicationBytes),
+                _ => 0
+            };
 
-            if (string.Equals(step.StepType, "DownloadDriver", StringComparison.OrdinalIgnoreCase))
+            if (kind == FlashStepKind.Uds)
             {
-                weight = Math.Max(1, firmwareSet.Driver?.Length ?? 0);
-            }
-            else if (string.Equals(step.StepType, "DownloadApplication", StringComparison.OrdinalIgnoreCase))
-            {
-                weight = Math.Max(1, applicationBytes);
-            }
-            else
-            {
-                weight = 0;
                 udsSteps++;
             }
 
@@ -401,7 +409,7 @@ public sealed class FlashFlowExecutor
 
         if (downloadSteps == 0)
         {
-            // Nothing transfers bytes, so step count is the only sensible measure.
+            // 没有步骤传输字节时，步骤数是唯一合理的进度衡量方式。
             Array.Fill(weights, NominalUdsStepWeight);
             return weights;
         }
@@ -411,8 +419,8 @@ public sealed class FlashFlowExecutor
             return weights;
         }
 
-        // Reserve a fixed share for the non-download steps and split it equally, so the
-        // bar still advances during session, security and routine steps.
+        // 为非下载步骤预留固定比例并平均分配，使进度条在会话、安全访问和例程步骤中
+        // 仍能继续推进。
         var total = downloadWeight / (1 - NonDownloadProgressShare);
         var udsWeight = (total - downloadWeight) / udsSteps;
 
@@ -427,101 +435,106 @@ public sealed class FlashFlowExecutor
         return weights;
     }
 
-    private async Task<int?> RequestDownloadAsync(
-        uint address,
-        int length,
-        FlashStepConfig step,
-        UdsTimingOptions timing,
-        CancellationToken cancellationToken)
+    private async Task<FlashResult> CreateFailureResultAsync(
+        FlashExecutionContext context,
+        Exception exception,
+        FlashFailureKind failureKind)
     {
-        var request = new byte[11];
-        request[0] = 0x34;
-        request[1] = 0x00;
-        request[2] = 0x44;
-        WriteUInt32BigEndian(request.AsSpan(3, 4), address);
-        WriteUInt32BigEndian(request.AsSpan(7, 4), (uint)length);
-
-        var response = await _udsClient.SendRawAsync(
-            request,
-            ParseAddressing(step.AddressingMode),
-            timing,
-            cancellationToken).ConfigureAwait(false);
-        response.EnsurePositive();
-        return ParseMaximumBlockLength(response.Payload);
+        context.WriteLog($"错误：{exception.Message}");
+        await TryReturnToDefaultSessionAsync(context).ConfigureAwait(false);
+        return new FlashResult
+        {
+            Success = false,
+            UserMessage = exception.Message,
+            FailureKind = failureKind,
+            LogMessages = [.. context.Logs]
+        };
     }
 
-    private static int ResolveTransferDataSize(FlashStepConfig step, int? ecuMaximumBlockLength)
+    private static void ValidateRequest(FlashExecutionRequest request)
     {
-        var configuredSize = HexUtil.ParseInt(step.BlockSize, 0xF0);
-        if (configuredSize <= 0)
+        if (request.BootConfig is null)
         {
-            throw new InvalidOperationException("TransferData block size must be greater than zero.");
+            throw new FlashExecutionException(FlashFailureKind.Configuration, "BOOT 流程配置不能为空。");
         }
 
-        const int transferDataOverhead = 2;
-        const int isoTpMaximumPayload = 4095;
-        var maximumDataSize = isoTpMaximumPayload - transferDataOverhead;
-        if (ecuMaximumBlockLength is > transferDataOverhead)
+        if (request.FirmwareSet is null)
         {
-            maximumDataSize = Math.Min(maximumDataSize, ecuMaximumBlockLength.Value - transferDataOverhead);
+            throw new FlashExecutionException(FlashFailureKind.Configuration, "固件集合不能为空。");
         }
 
-        return Math.Min(configuredSize, maximumDataSize);
     }
 
-    private static int? ParseMaximumBlockLength(byte[] responsePayload)
+    private static UdsTimingOptions? ValidateTiming(UdsTimingOptions? timing)
     {
-        if (responsePayload.Length < 3 || responsePayload[0] != 0x74)
+        try
         {
-            return null;
+            return timing?.Validate();
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            throw new FlashExecutionException(
+                FlashFailureKind.Configuration,
+                $"UDS 时序配置无效：{ex.Message}",
+                ex);
+        }
+    }
+
+    private static FirmwareImage RequireFirmware(FirmwareImage? image, FirmwareImageKind kind)
+    {
+        if (image is not null && image.Length > 0)
+        {
+            return image;
         }
 
-        var lengthByteCount = responsePayload[1] >> 4;
-        if (lengthByteCount <= 0 || lengthByteCount > 4 || responsePayload.Length < 2 + lengthByteCount)
+        var kindName = kind == FirmwareImageKind.Driver ? "驱动" : "应用";
+        throw new FlashExecutionException(
+            FlashFailureKind.Configuration,
+            $"{kindName}固件下载步骤没有可用固件：请在“固件刷写”页选择固件文件，或从 BOOT 流程中移除该步骤。");
+    }
+
+    private static int CalculatePercent(long completedBytes, long totalBytes)
+    {
+        return totalBytes <= 0
+            ? 0
+            : Math.Clamp((int)Math.Round(completedBytes * 100.0 / totalBytes), 0, 100);
+    }
+
+    private static void UpdateSessionStateAndTiming(
+        byte serviceId,
+        string? subService,
+        UdsResponse response,
+        FlashExecutionContext context)
+    {
+        if (serviceId == 0x10 && HexUtil.TryParseByte(subService, out var sessionType))
         {
-            return null;
+            context.NonDefaultSessionActive = (sessionType & 0x7F) != 0x01;
+            context.ResetEffectiveTiming();
+
+            if (UdsSessionTiming.TryParse(response, out var sessionTiming))
+            {
+                context.EffectiveTiming = sessionTiming.CreateClientTiming(context.ConfiguredTiming);
+                context.WriteLog(
+                    $"ECU 会话时序：P2ServerMax={sessionTiming.P2ServerMaxMs}ms，" +
+                    $"P2*ServerMax={sessionTiming.P2StarServerMaxMs}ms；" +
+                    $"后续使用 P2Client={context.EffectiveTiming.P2ClientMs}ms，" +
+                    $"P2*Client={context.EffectiveTiming.P2StarClientMs}ms。");
+            }
+            else
+            {
+                context.WriteLog(
+                    $"警告：0x50 应答未包含有效会话时序，后续沿用配置值 " +
+                    $"P2Client={context.ConfiguredTiming.P2ClientMs}ms，" +
+                    $"P2*Client={context.ConfiguredTiming.P2StarClientMs}ms。");
+            }
+
+            return;
         }
 
-        uint value = 0;
-        for (var index = 0; index < lengthByteCount; index++)
+        if (serviceId == 0x11)
         {
-            value = (value << 8) | responsePayload[2 + index];
+            context.NonDefaultSessionActive = false;
+            context.ResetEffectiveTiming();
         }
-
-        return value is > 0 and <= int.MaxValue ? (int)value : null;
-    }
-
-    private static UdsTimingOptions ResolveTiming(FlashStepConfig step, UdsTimingOptions? timing)
-    {
-        return new UdsTimingOptions
-        {
-            P2ClientMs = ParsePositiveMilliseconds(step.TimeoutMs, timing?.P2ClientMs ?? 1500),
-            P2StarClientMs = ParsePositiveMilliseconds(step.PendingTimeoutMs, timing?.P2StarClientMs ?? 30_000),
-            S3ClientMs = timing?.S3ClientMs ?? 0,
-            PendingOverallTimeoutMs = timing?.PendingOverallTimeoutMs ?? 30_000
-        }.Validate();
-    }
-
-    private static int ParsePositiveMilliseconds(string? value, int fallbackMs)
-    {
-        var milliseconds = HexUtil.ParseInt(value, fallbackMs);
-        return milliseconds > 0
-            ? milliseconds
-            : throw new InvalidOperationException("UDS timeout must be greater than zero.");
-    }
-
-    private static void WriteUInt32BigEndian(Span<byte> span, uint value)
-    {
-        span[0] = (byte)((value >> 24) & 0xFF);
-        span[1] = (byte)((value >> 16) & 0xFF);
-        span[2] = (byte)((value >> 8) & 0xFF);
-        span[3] = (byte)(value & 0xFF);
-    }
-
-    private static UdsAddressing ParseAddressing(string? value)
-    {
-        return string.Equals(value, "functional", StringComparison.OrdinalIgnoreCase)
-            ? UdsAddressing.Functional
-            : UdsAddressing.Physical;
     }
 }

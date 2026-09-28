@@ -4,7 +4,7 @@ using DiagnosticFlashTool.Core.Configuration;
 using DiagnosticFlashTool.Core.Diagnostics;
 using DiagnosticFlashTool.Core.Firmware;
 using DiagnosticFlashTool.Core.Flashing;
-using System.Diagnostics;
+using DiagnosticFlashTool.Infrastructure.Can;
 using Xunit;
 
 namespace DiagnosticFlashTool.Application.Tests;
@@ -32,7 +32,8 @@ public sealed class FlashSessionServiceTests
             var result = await session.FlashAsync(CreateOptions(device, firmwarePath), progress);
 
             Assert.True(result.Success, result.UserMessage);
-            Assert.Contains(result.LogMessages, line => line.Contains("Flash completed", StringComparison.Ordinal));
+            Assert.Contains(result.LogMessages, line => line.Contains("刷写完成", StringComparison.Ordinal));
+            Assert.Contains(result.LogMessages, line => line.Contains("P2ServerMax=50ms", StringComparison.Ordinal));
             Assert.Equal(100, progress.Values[^1]);
             Assert.True(progress.Values.SequenceEqual(progress.Values.OrderBy(value => value)));
         }
@@ -60,7 +61,7 @@ public sealed class FlashSessionServiceTests
             Channel = 1
         }));
 
-        Assert.Contains("reconnect", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("重新连接", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -70,7 +71,7 @@ public sealed class FlashSessionServiceTests
 
         var exception = Assert.Throws<InvalidOperationException>(options.Validate);
 
-        Assert.Contains("Application", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("应用固件", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -102,12 +103,43 @@ public sealed class FlashSessionServiceTests
             {
                 P2ClientMs = 250,
                 P2StarClientMs = 250,
-                S3ClientMs = 0,
+                S3ServerTimeoutMs = 0,
+                TesterPresentIntervalMs = 0,
                 PendingOverallTimeoutMs = 1000
             },
             CancellationToken.None);
 
         Assert.Equal(new byte[] { 0x62, 0xF1, 0x90 }, response.Payload);
+    }
+
+    [Fact]
+    public async Task UdsClient_ConsumesSingleResponseReceivedDuringSend()
+    {
+        await using var device = new ImmediatePendingCanDevice();
+        await device.OpenAsync(new CanDeviceOptions { DeviceType = "Mock" }, CancellationToken.None);
+        using var transport = new IsoTpTransport(device, new DiagnosticTransportOptions
+        {
+            PhysicalRequestId = 0x700,
+            FunctionalRequestId = 0x7DF,
+            ResponseId = 0x708
+        });
+        var client = new UdsClient(transport);
+
+        var response = await client.SendAsync(
+            0x10,
+            [0x02],
+            UdsAddressing.Physical,
+            new UdsTimingOptions
+            {
+                P2ClientMs = 250,
+                P2StarClientMs = 250,
+                S3ServerTimeoutMs = 0,
+                TesterPresentIntervalMs = 0,
+                PendingOverallTimeoutMs = 1000
+            },
+            CancellationToken.None);
+
+        Assert.Equal(new byte[] { 0x50, 0x02 }, response.Payload);
     }
 
     [Fact]
@@ -131,7 +163,7 @@ public sealed class FlashSessionServiceTests
             // count would already put it at 60% when the download starts, so it would sit
             // still for the whole transfer. Weighting by bytes keeps it well below that.
             var downloadStart = progress.Entries
-                .First(entry => entry.Message.Contains("Application download", StringComparison.Ordinal));
+                .First(entry => entry.Message.Contains("应用固件下载", StringComparison.Ordinal));
 
             Assert.True(
                 downloadStart.Percent < 40,
@@ -182,7 +214,14 @@ public sealed class FlashSessionServiceTests
             Flow =
             [
                 new FlashStepConfig { Id = 1, Name = "Programming session", Service = "0x10", SubService = "0x02", AddressingMode = "physical" },
-                new FlashStepConfig { Id = 2, Name = "Download application", StepType = "DownloadApplication", AddressingMode = "physical" }
+                new FlashStepConfig
+                {
+                    Id = 2,
+                    Name = "Download application",
+                    StepType = "DownloadApplication",
+                    AddressingMode = "physical",
+                    BlockSize = "0x05"
+                }
             ]
         };
 
@@ -196,20 +235,14 @@ public sealed class FlashSessionServiceTests
             }
         };
 
-        var log = new List<string>();
         var exception = await Record.ExceptionAsync(() => executor.ExecuteAsync(
-            bootConfig,
-            new ProjectConfigEntry { ProjectName = "cancel" },
-            firmwareSet,
+            new FlashExecutionRequest(bootConfig, firmwareSet),
             null,
-            log.Add,
             cancellation.Token));
 
         Assert.True(
             exception is OperationCanceledException,
-            $"期望取消异常，实际为：{exception?.ToString() ?? "（未抛出异常）"}"
-            + Environment.NewLine
-            + string.Join(Environment.NewLine, log));
+            $"期望取消异常，实际为：{exception?.ToString() ?? "（未抛出异常）"}");
 
         var sent = device.SentSingleFramePayloads();
 
@@ -218,6 +251,215 @@ public sealed class FlashSessionServiceTests
 
         // And the ECU must not be left inside the programming session.
         Assert.Contains(sent, payload => payload.Length > 1 && payload[0] == 0x10 && payload[1] == 0x01);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WeightsMultipleApplicationsByBytes()
+    {
+        await using var device = new MockCanDevice();
+        var transportOptions = new DiagnosticTransportOptions
+        {
+            PhysicalRequestId = 0x700,
+            FunctionalRequestId = 0x7DF,
+            ResponseId = 0x708,
+            Channel = 0,
+            ExtendedFrame = false
+        };
+        device.ConfigureTransport(transportOptions);
+        await device.OpenAsync(new CanDeviceOptions { DeviceType = "Mock" }, CancellationToken.None);
+
+        using var transport = new IsoTpTransport(device, transportOptions);
+        IFlashFlowExecutor executor = new FlashFlowExecutor(new UdsClient(transport));
+        var bootConfig = new BootConfig
+        {
+            Name = "multiple-applications",
+            Flow =
+            [
+                new FlashStepConfig
+                {
+                    Id = 1,
+                    Name = "Download applications",
+                    StepType = "DownloadApplication",
+                    AddressingMode = "physical",
+                    BlockSize = "0x40"
+                }
+            ]
+        };
+        var firmwareSet = new FirmwareSet
+        {
+            Applications =
+            [
+                new FirmwareImage
+                {
+                    FilePath = "small.bin",
+                    Kind = FirmwareImageKind.Application,
+                    Blocks = [new FirmwareBlock(0x00400000, new byte[32])]
+                },
+                new FirmwareImage
+                {
+                    FilePath = "large.bin",
+                    Kind = FirmwareImageKind.Application,
+                    Blocks = [new FirmwareBlock(0x00500000, new byte[1024])]
+                }
+            ]
+        };
+        var progress = new RecordingProgress();
+
+        var result = await executor.ExecuteAsync(
+            new FlashExecutionRequest(bootConfig, firmwareSet),
+            progress);
+
+        Assert.True(result.Success, result.UserMessage);
+        var firstDownloadProgress = progress.Entries.First(entry =>
+            entry.Percent > 0 && entry.Message.Contains("应用固件下载", StringComparison.Ordinal));
+        Assert.InRange(firstDownloadProgress.Percent, 1, 5);
+        Assert.True(progress.Values.SequenceEqual(progress.Values.OrderBy(value => value)));
+    }
+
+    [Theory]
+    [InlineData("0x10", "0x01", 1)]
+    [InlineData("0x11", "0x01", 0)]
+    public async Task ExecuteAsync_DoesNotRepeatSessionCleanup_WhenFlowAlreadyLeftProgrammingSession(
+        string service,
+        string subService,
+        int expectedDefaultSessionRequests)
+    {
+        using var cancellation = new CancellationTokenSource();
+        await using var device = new StallingCanDevice(cancellation);
+        await device.OpenAsync(new CanDeviceOptions { DeviceType = "Mock" }, CancellationToken.None);
+
+        using var transport = new IsoTpTransport(device, new DiagnosticTransportOptions
+        {
+            PhysicalRequestId = 0x700,
+            FunctionalRequestId = 0x7DF,
+            ResponseId = 0x708,
+            Channel = 0,
+            ExtendedFrame = false
+        });
+        IFlashFlowExecutor executor = new FlashFlowExecutor(new UdsClient(transport));
+        var bootConfig = new BootConfig
+        {
+            Name = "default-session",
+            Flow =
+            [
+                new FlashStepConfig { Id = 1, Name = "Programming session", Service = "0x10", SubService = "0x02" },
+                new FlashStepConfig { Id = 2, Name = "Leave programming session", Service = service, SubService = subService },
+                new FlashStepConfig
+                {
+                    Id = 3,
+                    Name = "Download application",
+                    StepType = "DownloadApplication",
+                    BlockSize = "0x05"
+                }
+            ]
+        };
+        var firmwareSet = new FirmwareSet
+        {
+            Application = new FirmwareImage
+            {
+                FilePath = "in-memory",
+                Kind = FirmwareImageKind.Application,
+                Blocks = [new FirmwareBlock(0x00400000, new byte[64])]
+            }
+        };
+
+        var exception = await Record.ExceptionAsync(() => executor.ExecuteAsync(
+            new FlashExecutionRequest(bootConfig, firmwareSet),
+            cancellationToken: cancellation.Token));
+
+        Assert.True(
+            exception is OperationCanceledException,
+            $"期望取消异常，实际为：{exception?.ToString() ?? "（未抛出异常）"}");
+
+        var defaultSessionRequests = device.SentSingleFramePayloads()
+            .Count(payload => payload.Length > 1 && payload[0] == 0x10 && payload[1] == 0x01);
+        Assert.Equal(expectedDefaultSessionRequests, defaultSessionRequests);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ReturnsConfigurationFailure_WhenDownloadFirmwareIsMissing()
+    {
+        await using var device = new MockCanDevice();
+        var transportOptions = new DiagnosticTransportOptions
+        {
+            PhysicalRequestId = 0x700,
+            FunctionalRequestId = 0x7DF,
+            ResponseId = 0x708,
+            Channel = 0,
+            ExtendedFrame = false
+        };
+        device.ConfigureTransport(transportOptions);
+        await device.OpenAsync(new CanDeviceOptions { DeviceType = "Mock" }, CancellationToken.None);
+
+        using var transport = new IsoTpTransport(device, transportOptions);
+        IFlashFlowExecutor executor = new FlashFlowExecutor(new UdsClient(transport));
+        var result = await executor.ExecuteAsync(new FlashExecutionRequest(
+            new BootConfig
+            {
+                Name = "missing-firmware",
+                Flow =
+                [
+                    new FlashStepConfig
+                    {
+                        Id = 1,
+                        Name = "Download application",
+                        StepType = "DownloadApplication"
+                    }
+                ]
+            },
+            new FirmwareSet()));
+
+        Assert.False(result.Success);
+        Assert.Equal(FlashFailureKind.Configuration, result.FailureKind);
+        Assert.Contains("应用固件", result.UserMessage, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ExecuteAsync_WaitsForCurrentStepAndOnlyStartsNextStepAfterSuccess(
+        bool firstStepSucceeds)
+    {
+        await using var device = new ControlledSequenceCanDevice();
+        await device.OpenAsync(new CanDeviceOptions { DeviceType = "Mock" }, CancellationToken.None);
+        using var transport = new IsoTpTransport(device, new DiagnosticTransportOptions
+        {
+            PhysicalRequestId = 0x700,
+            FunctionalRequestId = 0x7DF,
+            ResponseId = 0x708
+        });
+        IFlashFlowExecutor executor = new FlashFlowExecutor(new UdsClient(transport));
+        var execution = executor.ExecuteAsync(new FlashExecutionRequest(
+            new BootConfig
+            {
+                Name = "sequential",
+                Flow =
+                [
+                    new FlashStepConfig { Id = 1, Name = "Programming session", Service = "0x10", SubService = "0x02" },
+                    new FlashStepConfig { Id = 2, Name = "ECU reset", Service = "0x11", SubService = "0x01" }
+                ]
+            },
+            new FirmwareSet()));
+
+        await device.FirstRequestReceived.WaitAsync(TimeSpan.FromSeconds(1));
+
+        // 第一步尚未响应时，第二步不能提前发送。
+        Assert.Equal(new byte[] { 0x10 }, device.SentServices);
+
+        device.CompleteFirstRequest(firstStepSucceeds);
+        var result = await execution;
+
+        if (firstStepSucceeds)
+        {
+            Assert.True(result.Success, result.UserMessage);
+            Assert.Equal(new byte[] { 0x10, 0x11 }, device.SentServices);
+        }
+        else
+        {
+            Assert.False(result.Success);
+            Assert.Equal(FlashFailureKind.Protocol, result.FailureKind);
+            Assert.Equal(new byte[] { 0x10 }, device.SentServices);
+        }
     }
 
     private static FlashSessionOptions CreateOptions(
@@ -253,7 +495,8 @@ public sealed class FlashSessionServiceTests
             {
                 P2ClientMs = 1000,
                 P2StarClientMs = 1000,
-                S3ClientMs = 0,
+                S3ServerTimeoutMs = 0,
+                TesterPresentIntervalMs = 0,
                 PendingOverallTimeoutMs = 3000
             },
             ApplicationFilePaths = applicationPath is null ? [] : [applicationPath],
@@ -323,7 +566,7 @@ public sealed class FlashSessionServiceTests
             switch (frame.Data[0] >> 4)
             {
                 case 0:
-                    RespondAsync(frame.Data.Skip(1).Take(frame.Data[0] & 0x0F).ToArray());
+                    Respond(frame.Data.Skip(1).Take(frame.Data[0] & 0x0F).ToArray());
                     break;
                 case 1:
                     lock (_rxSync)
@@ -357,7 +600,7 @@ public sealed class FlashSessionServiceTests
 
                     if (completed is not null)
                     {
-                        RespondAsync(completed);
+                        Respond(completed);
                     }
 
                     break;
@@ -384,36 +627,23 @@ public sealed class FlashSessionServiceTests
             return ValueTask.CompletedTask;
         }
 
-        private void RespondAsync(byte[] payload)
+        private void Respond(byte[] payload)
         {
-            _ = Task.Run(async () =>
+            switch (payload.Length > 0 ? payload[0] : 0)
             {
-                try
-                {
-                    // A real ECU answers asynchronously. Emitting the response inside Send
-                    // would land it before the client starts waiting for it.
-                    await Task.Delay(1).ConfigureAwait(false);
-
-                    switch (payload.Length > 0 ? payload[0] : 0)
-                    {
-                        case 0x34:
-                            EmitPayload([0x74, 0x20, 0x0F, 0x00]);
-                            break;
-                        case 0x37:
-                        case 0x10:
-                            EmitPayload([(byte)(payload[0] + 0x40), payload.Length > 1 ? payload[1] : (byte)0x00]);
-                            break;
-                        case 0x36:
-                            // Never answered: the client has to be cancelled out of the wait.
-                            cancellation.Cancel();
-                            break;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine(ex);
-                }
-            });
+                case 0x34:
+                    EmitPayload([0x74, 0x20, 0x0F, 0x00]);
+                    break;
+                case 0x37:
+                case 0x10:
+                case 0x11:
+                    EmitPayload([(byte)(payload[0] + 0x40), payload.Length > 1 ? payload[1] : (byte)0x00]);
+                    break;
+                case 0x36:
+                    // 不返回 0x36 响应，通过取消令牌触发下载中止和清理路径。
+                    cancellation.Cancel();
+                    break;
+            }
         }
 
         private void EmitPayload(byte[] payload)
@@ -452,10 +682,19 @@ public sealed class FlashSessionServiceTests
         public Task SendAsync(CanFrame frame, CancellationToken cancellationToken)
         {
             FrameSent?.Invoke(this, frame);
-            if ((frame.Data[0] >> 4) == 0 && frame.Data.Length > 1 && frame.Data[1] == 0x22)
+            if ((frame.Data[0] >> 4) != 0 || frame.Data.Length <= 1)
+            {
+                return Task.CompletedTask;
+            }
+
+            if (frame.Data[1] == 0x22)
             {
                 FrameReceived?.Invoke(this, new CanFrame(0x708, [0x03, 0x7F, 0x22, 0x78, 0, 0, 0, 0]));
                 FrameReceived?.Invoke(this, new CanFrame(0x708, [0x03, 0x62, 0xF1, 0x90, 0, 0, 0, 0]));
+            }
+            else if (frame.Data[1] == 0x10)
+            {
+                FrameReceived?.Invoke(this, new CanFrame(0x708, [0x02, 0x50, 0x02, 0, 0, 0, 0, 0]));
             }
 
             return Task.CompletedTask;
@@ -465,6 +704,118 @@ public sealed class FlashSessionServiceTests
         {
             IsOpen = false;
             return ValueTask.CompletedTask;
+        }
+    }
+
+    private sealed class ControlledSequenceCanDevice : ICanDevice
+    {
+        private const uint ResponseId = 0x708;
+        private readonly object _sync = new();
+        private readonly List<byte> _sentServices = [];
+        private readonly TaskCompletionSource _firstRequestReceived =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private byte[]? _firstRequest;
+
+        public event EventHandler<CanFrame>? FrameReceived;
+        public event EventHandler<CanFrame>? FrameSent;
+
+        public bool IsOpen { get; private set; }
+
+        public Task FirstRequestReceived => _firstRequestReceived.Task;
+
+        public IReadOnlyList<byte> SentServices
+        {
+            get
+            {
+                lock (_sync)
+                {
+                    return _sentServices.ToArray();
+                }
+            }
+        }
+
+        public Task OpenAsync(CanDeviceOptions options, CancellationToken cancellationToken)
+        {
+            IsOpen = true;
+            return Task.CompletedTask;
+        }
+
+        public Task CloseAsync(CancellationToken cancellationToken)
+        {
+            IsOpen = false;
+            return Task.CompletedTask;
+        }
+
+        public Task SendAsync(CanFrame frame, CancellationToken cancellationToken)
+        {
+            FrameSent?.Invoke(this, frame);
+            if ((frame.Data[0] >> 4) != 0 || frame.Data.Length <= 1)
+            {
+                return Task.CompletedTask;
+            }
+
+            var payload = frame.Data.Skip(1).Take(frame.Data[0] & 0x0F).ToArray();
+            var isFirstRequest = false;
+            lock (_sync)
+            {
+                _sentServices.Add(payload[0]);
+                if (_firstRequest is null)
+                {
+                    _firstRequest = payload;
+                    isFirstRequest = true;
+                }
+            }
+
+            if (isFirstRequest)
+            {
+                _firstRequestReceived.TrySetResult();
+            }
+            else
+            {
+                EmitPositiveResponse(payload);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public void CompleteFirstRequest(bool success)
+        {
+            byte[] request;
+            lock (_sync)
+            {
+                request = _firstRequest?.ToArray()
+                    ?? throw new InvalidOperationException("尚未收到第一条请求。");
+            }
+
+            if (success)
+            {
+                EmitPositiveResponse(request);
+                return;
+            }
+
+            EmitPayload([0x7F, request[0], 0x22]);
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            IsOpen = false;
+            return ValueTask.CompletedTask;
+        }
+
+        private void EmitPositiveResponse(byte[] request)
+        {
+            var response = request.Length > 1
+                ? new byte[] { (byte)(request[0] + 0x40), request[1] }
+                : [(byte)(request[0] + 0x40)];
+            EmitPayload(response);
+        }
+
+        private void EmitPayload(byte[] payload)
+        {
+            var data = new byte[8];
+            data[0] = (byte)payload.Length;
+            Buffer.BlockCopy(payload, 0, data, 1, payload.Length);
+            FrameReceived?.Invoke(this, new CanFrame(ResponseId, data, 0, false));
         }
     }
 }

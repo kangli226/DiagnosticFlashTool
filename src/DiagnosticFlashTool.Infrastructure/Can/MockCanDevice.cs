@@ -133,7 +133,8 @@ public sealed class MockCanDevice : ICanDevice
 
         var response = service switch
         {
-            0x10 or 0x11 or 0x28 or 0x31 or 0x85 => PositiveWithSubFunction(request),
+            0x10 => DiagnosticSessionControlResponse(request),
+            0x11 or 0x28 or 0x31 or 0x85 => PositiveWithSubFunction(request),
             0x3E => PositiveWithSubFunction(request),
             0x27 => SecurityResponse(request),
             0x34 => [0x74, 0x20, 0x0F, 0x00],
@@ -151,6 +152,17 @@ public sealed class MockCanDevice : ICanDevice
         return request.Length > 1
             ? [(byte)(request[0] + 0x40), request[1]]
             : [(byte)(request[0] + 0x40)];
+    }
+
+    private static byte[] DiagnosticSessionControlResponse(byte[] request)
+    {
+        if (request.Length < 2)
+        {
+            return [0x7F, 0x10, 0x13];
+        }
+
+        // P2Server_max=50 ms，P2*Server_max=5000 ms（编码单位为 10 ms）。
+        return [0x50, (byte)(request[1] & 0x7F), 0x00, 0x32, 0x01, 0xF4];
     }
 
     private static byte[] SecurityResponse(byte[] request)

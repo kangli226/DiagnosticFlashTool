@@ -31,43 +31,43 @@ public sealed class FlashSessionOptions
     {
         if (string.IsNullOrWhiteSpace(Project.ProjectName))
         {
-            throw new ArgumentException("Project name is required.", nameof(Project));
+            throw new ArgumentException("项目名称不能为空。", nameof(Project));
         }
 
         if (BootConfig.Flow.Count == 0)
         {
-            throw new InvalidOperationException($"BOOT config has no flow steps: {BootConfig.Name}");
+            throw new InvalidOperationException($"BOOT 配置没有流程步骤：{BootConfig.Name}");
         }
 
         Timing.Validate();
         if (Device.BaudRate == 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(Device), "CAN baud rate must be greater than zero.");
+            throw new ArgumentOutOfRangeException(nameof(Device), "CAN 波特率必须大于零。");
         }
 
         if (Transport.PhysicalRequestId == 0 || Transport.ResponseId == 0)
         {
-            throw new ArgumentException("Physical request and response CAN IDs are required.", nameof(Transport));
+            throw new ArgumentException("物理请求和响应 CAN ID 不能为空。", nameof(Transport));
         }
 
         if (Transport.Channel != Device.Channel)
         {
-            throw new ArgumentException("Diagnostic transport channel must match the connected CAN channel.", nameof(Transport));
+            throw new ArgumentException("诊断传输通道必须与已连接的 CAN 通道一致。", nameof(Transport));
         }
 
         if (RequireDriverFile && string.IsNullOrWhiteSpace(DriverFilePath))
         {
-            throw new InvalidOperationException("The required Driver firmware file is not configured.");
+            throw new InvalidOperationException("未配置必需的驱动固件文件。");
         }
 
         if (RequireApplicationFile && !ApplicationFilePaths.Any(path => !string.IsNullOrWhiteSpace(path)))
         {
-            throw new InvalidOperationException("At least one required Application firmware file must be configured.");
+            throw new InvalidOperationException("至少需要配置一个应用固件文件。");
         }
 
         if (ApplicationFilePaths.Count(path => string.Equals(Path.GetExtension(path), ".bin", StringComparison.OrdinalIgnoreCase)) > 1)
         {
-            throw new InvalidOperationException("Multiple BIN application files require per-file addresses and cannot share one fallback address.");
+            throw new InvalidOperationException("多个 BIN 应用固件必须分别配置地址，不能共用同一个回退地址。");
         }
 
         var customAlgorithms = BootConfig.Flow
@@ -81,25 +81,25 @@ public sealed class FlashSessionOptions
             && customAlgorithms.Count > 0
             && SeedKeyDll is null)
         {
-            throw new InvalidOperationException("A Seed&Key DLL is required by the selected BOOT flow.");
+            throw new InvalidOperationException("当前 BOOT 流程需要配置 Seed/Key DLL。");
         }
 
         if (SeedKeyDll is not null
             && customAlgorithms.Any(name => !string.Equals(name, SeedKeyDll.AlgorithmName, StringComparison.OrdinalIgnoreCase)))
         {
-            throw new InvalidOperationException("The Seed&Key DLL algorithm name does not match the selected BOOT flow.");
+            throw new InvalidOperationException("Seed/Key DLL 的算法名称与当前 BOOT 流程不匹配。");
         }
 
         // The flow is the specification: a download step means that firmware has to
         // exist. Without this a flow could declare a download, supply no file, and still
         // report success.
-        if (RequiresDownload("DownloadDriver") && string.IsNullOrWhiteSpace(DriverFilePath))
+        if (RequiresDownload(FlashStepKind.DownloadDriver) && string.IsNullOrWhiteSpace(DriverFilePath))
         {
             throw new InvalidOperationException(
                 "BOOT 流程包含 DownloadDriver 步骤，但没有配置 Driver 固件文件。");
         }
 
-        if (RequiresDownload("DownloadApplication")
+        if (RequiresDownload(FlashStepKind.DownloadApplication)
             && !ApplicationFilePaths.Any(path => !string.IsNullOrWhiteSpace(path)))
         {
             throw new InvalidOperationException(
@@ -110,10 +110,10 @@ public sealed class FlashSessionOptions
         ValidateFlow();
     }
 
-    private bool RequiresDownload(string stepType)
+    private bool RequiresDownload(FlashStepKind expectedKind)
     {
         return BootConfig.Flow.Any(step =>
-            string.Equals(step.StepType, stepType, StringComparison.OrdinalIgnoreCase));
+            FlashStepTypes.TryParse(step.StepType, out var kind) && kind == expectedKind);
     }
 
     private bool IsMockDevice =>

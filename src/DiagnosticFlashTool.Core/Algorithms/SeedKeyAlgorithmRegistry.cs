@@ -27,7 +27,7 @@ public sealed class SeedKeyAlgorithmRegistry
         {
             return _algorithms.TryGetValue(Aes128SeedKeyAlgorithm.AlgorithmName, out var fallback)
                 ? fallback
-                : throw new NotSupportedException($"Seed-key algorithm is not registered: {name}");
+                : throw new NotSupportedException($"Seed/Key 算法未注册：{name}");
         }
 
         if (_algorithms.TryGetValue(name, out var algorithm))
@@ -35,6 +35,6 @@ public sealed class SeedKeyAlgorithmRegistry
             return algorithm;
         }
 
-        throw new NotSupportedException($"Seed-key algorithm is not registered: {name}");
+        throw new NotSupportedException($"Seed/Key 算法未注册：{name}");
     }
 }

@@ -16,10 +16,11 @@
     "flowControlStMinMs": 10
   },
   "timing": {
-    "p2ClientMs": 5000,
-    "p2StarClientMs": 5100,
-    "s3ClientMs": 5000,
-    "pendingOverallTimeoutMs": 30000
+    "p2ClientMs": 1000,
+    "p2StarClientMs": 6000,
+    "s3ServerTimeoutMs": 5000,
+    "testerPresentIntervalMs": 2000,
+    "pendingOverallTimeoutMs": 120000
   },
   "security": {
     "provider": "dll",

@@ -49,7 +49,7 @@ public sealed class FlashSessionService : IAsyncDisposable
                     return;
                 }
 
-                throw new InvalidOperationException("CAN connection parameters changed. Disconnect and reconnect the device before flashing.");
+                throw new InvalidOperationException("CAN 连接参数已改变，请断开设备后重新连接。");
             }
 
             if (_device is not null)
@@ -96,7 +96,6 @@ public sealed class FlashSessionService : IAsyncDisposable
     public async Task<FlashResult> FlashAsync(
         FlashSessionOptions options,
         IProgress<FlashProgress>? progress = null,
-        Action<string>? log = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(options);
@@ -109,12 +108,12 @@ public sealed class FlashSessionService : IAsyncDisposable
             var device = _device;
             if (device is null || !device.IsOpen)
             {
-                throw new InvalidOperationException("CAN device is not connected.");
+                throw new InvalidOperationException("CAN 设备尚未连接。");
             }
 
             if (!ConnectionMatches(options.Device, _connectedOptions))
             {
-                throw new InvalidOperationException("Flash device parameters do not match the active CAN connection. Disconnect and reconnect the device.");
+                throw new InvalidOperationException("刷写参数与当前 CAN 连接不一致，请断开设备后重新连接。");
             }
 
             if (device is MockCanDevice mockDevice)
@@ -133,15 +132,14 @@ public sealed class FlashSessionService : IAsyncDisposable
             testerPresent?.Start();
             try
             {
-                var executor = new FlashFlowExecutor(udsClient, algorithms);
+                IFlashFlowExecutor executor = new FlashFlowExecutor(udsClient, algorithms);
                 return await executor.ExecuteAsync(
-                    options.BootConfig,
-                    options.Project,
-                    firmwareSet,
+                    new FlashExecutionRequest(
+                        options.BootConfig,
+                        firmwareSet,
+                        options.Timing),
                     progress,
-                    log,
-                    cancellationToken,
-                    options.Timing).ConfigureAwait(false);
+                    cancellationToken).ConfigureAwait(false);
             }
             finally
             {
@@ -199,14 +197,14 @@ public sealed class FlashSessionService : IAsyncDisposable
 
     private static TesterPresentScheduler? CreateTesterPresentScheduler(UdsClient udsClient, UdsTimingOptions timing)
     {
-        if (timing.S3ClientMs <= 0)
+        if (timing.TesterPresentIntervalMs <= 0)
         {
             return null;
         }
 
         return new TesterPresentScheduler(
             udsClient,
-            TimeSpan.FromMilliseconds(Math.Max(1, timing.S3ClientMs / 2)),
+            TimeSpan.FromMilliseconds(timing.TesterPresentIntervalMs),
             UdsAddressing.Physical);
     }
 

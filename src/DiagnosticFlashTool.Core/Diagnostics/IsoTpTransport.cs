@@ -64,40 +64,52 @@ public sealed class IsoTpTransport : IDisposable
 
     public async Task<byte[]> WaitForPayloadAsync(TimeSpan timeout, CancellationToken cancellationToken)
     {
+        TaskCompletionSource<byte[]> waiter;
         Task<byte[]> task;
         lock (_sync)
         {
-            if (_pendingPayloads.Count > 0)
+            // 发送期间可能已经同步收到响应。必须先消费现有等待器，才能读取
+            // 后续排队的响应，否则会丢失首个响应或颠倒 0x78 与最终响应的顺序。
+            if (_receiveWaiter is null)
             {
-                return _pendingPayloads.Dequeue();
-            }
+                if (_pendingPayloads.Count > 0)
+                {
+                    return _pendingPayloads.Dequeue();
+                }
 
-            if (_receiveWaiter is null || _receiveWaiter.Task.IsCompleted)
-            {
                 _receiveWaiter = NewWaiter();
             }
 
-            task = _receiveWaiter.Task;
+            waiter = _receiveWaiter;
+            task = waiter.Task;
         }
 
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var delayTask = Task.Delay(timeout, timeoutCts.Token);
         var completed = await Task.WhenAny(task, delayTask).ConfigureAwait(false);
-        if (completed == task)
+        if (completed == task || task.IsCompleted)
         {
             await timeoutCts.CancelAsync().ConfigureAwait(false);
-            return await task.ConfigureAwait(false);
+            try
+            {
+                return await task.ConfigureAwait(false);
+            }
+            finally
+            {
+                ClearReceiveWaiter(waiter);
+            }
         }
 
+        ClearReceiveWaiter(waiter);
         cancellationToken.ThrowIfCancellationRequested();
-        throw new TimeoutException($"UDS response timeout after {timeout.TotalMilliseconds:0} ms.");
+        throw new TimeoutException($"等待 UDS 响应超过 {timeout.TotalMilliseconds:0} 毫秒。");
     }
 
     private async Task SendPayloadAsync(byte[] payload, UdsAddressing addressing, CancellationToken cancellationToken)
     {
         if (payload.Length > 4095)
         {
-            throw new ArgumentOutOfRangeException(nameof(payload), "ISO-TP classic CAN payload is limited to 4095 bytes.");
+            throw new ArgumentOutOfRangeException(nameof(payload), "经典 CAN 的 ISO-TP 数据长度不能超过 4095 字节。");
         }
 
         var requestId = addressing == UdsAddressing.Functional ? _options.FunctionalRequestId : _options.PhysicalRequestId;
@@ -154,7 +166,7 @@ public sealed class IsoTpTransport : IDisposable
             }
         }
 
-        throw new TimeoutException("Timeout waiting for ISO-TP flow control frame.");
+        throw new TimeoutException("等待 ISO-TP 流控帧超时。");
     }
 
     private void OnFrameReceived(object? sender, CanFrame frame)
@@ -225,7 +237,7 @@ public sealed class IsoTpTransport : IDisposable
             var sequence = (byte)(frame.Data[0] & 0x0F);
             if (sequence != _nextConsecutiveFrame)
             {
-                _receiveWaiter?.TrySetException(new InvalidOperationException($"Unexpected ISO-TP CF sequence {sequence}, expected {_nextConsecutiveFrame}."));
+                _receiveWaiter?.TrySetException(new InvalidOperationException($"ISO-TP 连续帧序号为 {sequence}，预期为 {_nextConsecutiveFrame}。"));
                 return;
             }
 
@@ -265,6 +277,17 @@ public sealed class IsoTpTransport : IDisposable
         lock (_sync)
         {
             _receiveWaiter = null;
+        }
+    }
+
+    private void ClearReceiveWaiter(TaskCompletionSource<byte[]> waiter)
+    {
+        lock (_sync)
+        {
+            if (ReferenceEquals(_receiveWaiter, waiter))
+            {
+                _receiveWaiter = null;
+            }
         }
     }
 
