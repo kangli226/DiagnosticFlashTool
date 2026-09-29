@@ -50,6 +50,14 @@
             <Setter Property="FontSize" Value="13" />
         </Style>
 
+        <Style x:Key="FlowConfigReadOnlyCellTextStyle" TargetType="TextBlock">
+            <Setter Property="Margin" Value="8,0" />
+            <Setter Property="Foreground" Value="{StaticResource BodyTextBrush}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+
         <Style x:Key="FlowConfigCellComboBoxStyle"
                TargetType="ComboBox"
                BasedOn="{StaticResource StandardComboBoxStyle}">
@@ -60,19 +68,6 @@
             <Setter Property="FontSize" Value="13" />
         </Style>
 
-        <Style x:Key="FlowConfigDisabledHintTextStyle" TargetType="TextBlock">
-            <Setter Property="Visibility" Value="Collapsed" />
-            <Setter Property="Margin" Value="8,0" />
-            <Setter Property="Foreground" Value="{StaticResource DisabledTextBrush}" />
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="IsHitTestVisible" Value="False" />
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding IsDownloadStep}" Value="True">
-                    <Setter Property="Visibility" Value="Visible" />
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
     </UserControl.Resources>
 
     <Grid Style="{StaticResource PageRootGridStyle}">
@@ -106,12 +101,13 @@
                         </Grid.ColumnDefinitions>
 
                         <TextBlock Grid.Column="0"
-                                   Text="配置文件："
+                                   Text="配置名称："
                                    Margin="0,0,10,0"
                                    Style="{StaticResource FieldLabelStyle}" />
                         <ComboBox Grid.Column="1"
-                                  ItemsSource="{Binding BootConfigFiles}"
-                                  SelectedItem="{Binding SelectedBootConfig, Mode=TwoWay}"
+                                  ItemsSource="{Binding Projects}"
+                                  SelectedItem="{Binding SelectedProject, Mode=TwoWay}"
+                                  DisplayMemberPath="ProjectName"
                                   ToolTip="{Binding FlowConfigFilePath}"
                                   Style="{StaticResource StandardComboBoxStyle}" />
 
@@ -135,12 +131,12 @@
                                 </StackPanel>
                             </Button>
                             <Button Command="{Binding NewFlowCommand}"
-                                    ToolTip="创建新的 BOOT 流程配置"
+                                    ToolTip="新建流程配置"
                                     Style="{StaticResource FlowConfigToolbarButtonStyle}">
                                 <StackPanel Style="{StaticResource Button.InlineContent}">
                                     <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Plus}"
                                                              Style="{StaticResource Button.PackIcon.Current}" />
-                                    <TextBlock Text="新增流程" Style="{StaticResource Button.IconLabel}" />
+                                    <TextBlock Text="新建配置" Style="{StaticResource Button.IconLabel}" />
                                 </StackPanel>
                             </Button>
                             <Button Command="{Binding SaveFlowCommand}"
@@ -174,12 +170,21 @@
                     <TextBlock Text="流程节点" Style="{StaticResource CardHeaderTextStyle}" />
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                         <Button Command="{Binding AddFlowStepCommand}"
-                                ToolTip="添加节点"
+                                ToolTip="从模板添加节点"
                                 Style="{StaticResource FlowConfigToolbarButtonStyle}">
                             <StackPanel Style="{StaticResource Button.InlineContent}">
                                 <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Plus}"
                                                          Style="{StaticResource Button.PackIcon.Current}" />
                                 <TextBlock Text="添加节点" Style="{StaticResource Button.IconLabel}" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding ReplaceFlowStepTemplateCommand}"
+                                ToolTip="更换选中节点的模板并清除不兼容配置"
+                                Style="{StaticResource FlowConfigToolbarButtonStyle}">
+                            <StackPanel Style="{StaticResource Button.InlineContent}">
+                                <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Refresh}"
+                                                         Style="{StaticResource Button.PackIcon.Current}" />
+                                <TextBlock Text="更换模板" Style="{StaticResource Button.IconLabel}" />
                             </StackPanel>
                         </Button>
                         <Button Command="{Binding DeleteFlowStepCommand}"
@@ -257,60 +262,80 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
-                        <DataGridTemplateColumn Header="名称" Width="180">
+                        <DataGridTemplateColumn Header="名称" Width="180" IsReadOnly="True">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             Style="{StaticResource FlowConfigCellTextBoxStyle}" />
+                                    <TextBlock Text="{Binding Name}"
+                                               ToolTip="名称由节点模板决定"
+                                               Style="{StaticResource FlowConfigReadOnlyCellTextStyle}" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
-                        <DataGridTemplateColumn Header="服务" Width="68">
+                        <DataGridTemplateColumn Header="服务" Width="68" IsReadOnly="True">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Service}"
+                                               ToolTip="服务 ID 由节点模板决定"
+                                               HorizontalAlignment="Center"
+                                               Style="{StaticResource FlowConfigReadOnlyCellTextStyle}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn Header="子服务" Width="68" IsReadOnly="True">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding SubService}"
+                                               ToolTip="子服务 ID 由节点模板决定"
+                                               HorizontalAlignment="Center"
+                                               Style="{StaticResource FlowConfigReadOnlyCellTextStyle}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn Header="扩展数据" Width="220" IsReadOnly="True">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding ExtendText}"
+                                               ToolTip="扩展数据由节点模板固定"
+                                               Style="{StaticResource FlowConfigReadOnlyCellTextStyle}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn Header="算法" Width="220">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Grid>
-                                        <TextBox Text="{Binding Service, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 IsEnabled="{Binding IsUdsStep}"
-                                                 ToolTip="服务 ID，例如 0X10"
-                                                 Style="{StaticResource FlowConfigCellTextBoxStyle}" />
-                                        <TextBlock Text="由步骤类型决定" Style="{StaticResource FlowConfigDisabledHintTextStyle}" />
+                                        <ComboBox ItemsSource="{Binding DataContext.FlowSecurityAlgorithmOptions, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}"
+                                                  SelectedItem="{Binding SecurityAlgorithm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  ToolTip="仅发送 Key 节点可配置安全算法">
+                                            <ComboBox.Style>
+                                                <Style TargetType="ComboBox" BasedOn="{StaticResource FlowConfigCellComboBoxStyle}">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding CanEditSecurityAlgorithm}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ComboBox.Style>
+                                        </ComboBox>
+                                        <TextBlock Text="{Binding AlgorithmDisplayText}"
+                                                   ToolTip="{Binding AlgorithmDisplayText}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource FlowConfigReadOnlyCellTextStyle}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding CanEditSecurityAlgorithm}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
                                     </Grid>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-
-                        <DataGridTemplateColumn Header="子服务" Width="68">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Grid>
-                                        <TextBox Text="{Binding SubService, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 IsEnabled="{Binding IsUdsStep}"
-                                                 ToolTip="子服务 ID，例如 0X01"
-                                                 Style="{StaticResource FlowConfigCellTextBoxStyle}" />
-                                        <TextBlock Text="由步骤类型决定" Style="{StaticResource FlowConfigDisabledHintTextStyle}" />
-                                    </Grid>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-
-                        <DataGridTemplateColumn Header="扩展数据" Width="280">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBox Text="{Binding ExtendText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             ToolTip="多个字节可用逗号分隔，例如 0X01, 0X03"
-                                             Style="{StaticResource FlowConfigCellTextBoxStyle}" />
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-
-                        <DataGridTemplateColumn Header="算法" Width="170">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <ComboBox ItemsSource="{Binding DataContext.FlowAlgorithmOptions, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}"
-                                              SelectedItem="{Binding Algorithm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                              ToolTip="安全访问步骤使用安全算法，下载步骤使用 CRC 算法"
-                                              Style="{StaticResource FlowConfigCellComboBoxStyle}" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -318,9 +343,12 @@
                         <DataGridTemplateColumn Header="算法参数" Width="*">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBox Text="{Binding AlgorithmParamsText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             ToolTip="多个参数可用逗号分隔"
-                                             Style="{StaticResource FlowConfigCellTextBoxStyle}" />
+                                    <Grid>
+                                        <TextBox Text="{Binding AlgorithmParamsText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 ToolTip="仅发送 Key 节点可配置，多个参数可用逗号分隔"
+                                                 IsEnabled="{Binding CanEditSecurityAlgorithm}"
+                                                 Style="{StaticResource FlowConfigCellTextBoxStyle}" />
+                                    </Grid>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -348,5 +376,6 @@
                            ToolTip="{Binding FlowValidationText}" />
             </Grid>
         </Border>
+
     </Grid>
 </UserControl>

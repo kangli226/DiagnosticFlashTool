@@ -6,6 +6,7 @@ namespace DiagnosticFlashTool.App.ViewModels;
 public sealed class FlowStepEditorRow : ObservableObject
 {
     private int _id;
+    private string _templateId = string.Empty;
     private string _name = string.Empty;
     private string _stepType = string.Empty;
     private string _service = string.Empty;
@@ -28,6 +29,18 @@ public sealed class FlowStepEditorRow : ObservableObject
         set => SetProperty(ref _id, value);
     }
 
+    public string TemplateId
+    {
+        get => _templateId;
+        private set
+        {
+            if (SetProperty(ref _templateId, value))
+            {
+                RaiseTemplateStateChanged();
+            }
+        }
+    }
+
     public string Name
     {
         get => _name;
@@ -43,7 +56,7 @@ public sealed class FlowStepEditorRow : ObservableObject
             {
                 OnPropertyChanged(nameof(IsDownloadStep));
                 OnPropertyChanged(nameof(IsUdsStep));
-                OnPropertyChanged(nameof(Algorithm));
+                RaiseTemplateStateChanged();
             }
         }
     }
@@ -79,7 +92,8 @@ public sealed class FlowStepEditorRow : ObservableObject
         {
             if (SetProperty(ref _securityAlgorithm, value))
             {
-                OnPropertyChanged(nameof(Algorithm));
+                OnPropertyChanged(nameof(HasUnsupportedAlgorithm));
+                OnPropertyChanged(nameof(AlgorithmDisplayText));
             }
         }
     }
@@ -91,7 +105,9 @@ public sealed class FlowStepEditorRow : ObservableObject
         {
             if (SetProperty(ref _crcAlgorithm, value))
             {
-                OnPropertyChanged(nameof(Algorithm));
+                OnPropertyChanged(nameof(HasUnsupportedAlgorithm));
+                OnPropertyChanged(nameof(AlgorithmDisplayText));
+                OnPropertyChanged(nameof(CanEditSecurityAlgorithm));
             }
         }
     }
@@ -100,49 +116,20 @@ public sealed class FlowStepEditorRow : ObservableObject
 
     public bool IsUdsStep => !IsDownloadStep;
 
-    /// <summary>
-    /// The compact editor presents the algorithm configured by this step in one column.
-    /// Download steps own a CRC algorithm; regular UDS steps own a security algorithm.
-    /// </summary>
-    public string Algorithm
-    {
-        get => string.IsNullOrWhiteSpace(SecurityAlgorithm) ? CrcAlgorithm : SecurityAlgorithm;
-        set
-        {
-            var algorithm = value?.Trim() ?? string.Empty;
-            var useCrcAlgorithm = IsDownloadStep
-                || (string.IsNullOrWhiteSpace(SecurityAlgorithm) && !string.IsNullOrWhiteSpace(CrcAlgorithm));
+    public bool IsSecurityAlgorithmStep =>
+        BuiltInFlowStepTemplateCatalog.FindById(TemplateId)?.AlgorithmUsage
+        == FlowStepTemplateAlgorithmUsage.Security;
 
-            if (useCrcAlgorithm)
-            {
-                var changed = !string.Equals(_crcAlgorithm, algorithm, StringComparison.Ordinal)
-                    || !string.IsNullOrEmpty(_securityAlgorithm);
-                _crcAlgorithm = algorithm;
-                _securityAlgorithm = string.Empty;
+    public bool CanEditSecurityAlgorithm => IsSecurityAlgorithmStep && string.IsNullOrWhiteSpace(CrcAlgorithm);
 
-                if (changed)
-                {
-                    OnPropertyChanged(nameof(CrcAlgorithm));
-                    OnPropertyChanged(nameof(SecurityAlgorithm));
-                    OnPropertyChanged();
-                }
+    public bool HasUnsupportedAlgorithm =>
+        !string.IsNullOrWhiteSpace(CrcAlgorithm)
+        || (!IsSecurityAlgorithmStep
+            && (!string.IsNullOrWhiteSpace(SecurityAlgorithm) || !string.IsNullOrWhiteSpace(AlgorithmParamsText)));
 
-                return;
-            }
-
-            var securityChanged = !string.Equals(_securityAlgorithm, algorithm, StringComparison.Ordinal)
-                || !string.IsNullOrEmpty(_crcAlgorithm);
-            _securityAlgorithm = algorithm;
-            _crcAlgorithm = string.Empty;
-
-            if (securityChanged)
-            {
-                OnPropertyChanged(nameof(SecurityAlgorithm));
-                OnPropertyChanged(nameof(CrcAlgorithm));
-                OnPropertyChanged();
-            }
-        }
-    }
+    public string AlgorithmDisplayText => HasUnsupportedAlgorithm
+        ? $"不兼容：{FirstConfiguredAlgorithm()}（请更换模板）"
+        : "不适用";
 
     public string TesterPresentIntervalMs
     {
@@ -153,7 +140,14 @@ public sealed class FlowStepEditorRow : ObservableObject
     public string AlgorithmParamsText
     {
         get => _algorithmParamsText;
-        set => SetProperty(ref _algorithmParamsText, value);
+        set
+        {
+            if (SetProperty(ref _algorithmParamsText, value))
+            {
+                OnPropertyChanged(nameof(HasUnsupportedAlgorithm));
+                OnPropertyChanged(nameof(AlgorithmDisplayText));
+            }
+        }
     }
 
     public static FlowStepEditorRow FromConfig(FlashStepConfig step)
@@ -161,6 +155,7 @@ public sealed class FlowStepEditorRow : ObservableObject
         return new FlowStepEditorRow
         {
             Id = step.Id,
+            TemplateId = ResolveTemplateId(step),
             Name = step.Name,
             StepType = step.StepType ?? string.Empty,
             Service = step.Service ?? string.Empty,
@@ -182,6 +177,7 @@ public sealed class FlowStepEditorRow : ObservableObject
     {
         return new FlashStepConfig
         {
+            TemplateId = EmptyToNull(TemplateId),
             Id = Id,
             Name = Name,
             StepType = EmptyToNull(StepType),
@@ -198,6 +194,74 @@ public sealed class FlowStepEditorRow : ObservableObject
             CrcAlgorithm = EmptyToNull(CrcAlgorithm),
             AlgorithmParams = ToStringList(AlgorithmParamsText)
         };
+    }
+
+    public void ApplyTemplate(FlowStepTemplateDefinition template, bool preserveCompatibleValues)
+    {
+        ArgumentNullException.ThrowIfNull(template);
+
+        var wasSecurityStep = IsSecurityAlgorithmStep;
+        var wasDownloadStep = IsDownloadStep;
+        var securityAlgorithm = SecurityAlgorithm;
+        var algorithmParams = AlgorithmParamsText;
+        var blockSize = BlockSize;
+
+        TemplateId = template.Id;
+        Name = template.StepName;
+        StepType = template.StepType ?? string.Empty;
+        Service = template.Service ?? string.Empty;
+        SubService = template.SubService ?? string.Empty;
+        ExtendText = string.Join(", ", template.Extend);
+        AddressingMode = "physical";
+
+        var preserveSecurity = preserveCompatibleValues
+            && wasSecurityStep
+            && template.AlgorithmUsage == FlowStepTemplateAlgorithmUsage.Security;
+        SecurityAlgorithm = preserveSecurity ? securityAlgorithm : string.Empty;
+        AlgorithmParamsText = preserveSecurity ? algorithmParams : string.Empty;
+        CrcAlgorithm = string.Empty;
+        BlockSize = preserveCompatibleValues && wasDownloadStep && FlashStepTypes.IsDownload(template.StepType)
+            ? blockSize
+            : null;
+
+        Receive = [];
+        Verify = [];
+        TesterPresentIntervalMs = string.Empty;
+        EraseRoutine = null;
+        RaiseTemplateStateChanged();
+    }
+
+    private static string ResolveTemplateId(FlashStepConfig step)
+    {
+        if (!string.IsNullOrWhiteSpace(step.TemplateId))
+        {
+            return BuiltInFlowStepTemplateCatalog.FindById(step.TemplateId)?.Id ?? step.TemplateId.Trim();
+        }
+
+        return BuiltInFlowStepTemplateCatalog.FindMatchingTemplate(step)?.Id ?? string.Empty;
+    }
+
+    private string FirstConfiguredAlgorithm()
+    {
+        if (!string.IsNullOrWhiteSpace(CrcAlgorithm))
+        {
+            return CrcAlgorithm;
+        }
+
+        if (!string.IsNullOrWhiteSpace(SecurityAlgorithm))
+        {
+            return SecurityAlgorithm;
+        }
+
+        return "算法参数";
+    }
+
+    private void RaiseTemplateStateChanged()
+    {
+        OnPropertyChanged(nameof(IsSecurityAlgorithmStep));
+        OnPropertyChanged(nameof(CanEditSecurityAlgorithm));
+        OnPropertyChanged(nameof(HasUnsupportedAlgorithm));
+        OnPropertyChanged(nameof(AlgorithmDisplayText));
     }
 
     private static JsonStringList ToStringList(string value)

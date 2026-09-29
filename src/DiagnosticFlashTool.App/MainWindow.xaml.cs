@@ -141,6 +141,30 @@ public partial class MainWindow : Window
         viewModel.SelectedShellIndex = shellIndex;
     }
 
+    private void FlowStepTemplateDialogOverlay_IsVisibleChanged(
+        object sender,
+        DependencyPropertyChangedEventArgs e)
+    {
+        if (e.NewValue is true)
+        {
+            Dispatcher.BeginInvoke(
+                System.Windows.Threading.DispatcherPriority.Input,
+                new Action(() => FlowStepTemplateComboBox.Focus()));
+        }
+    }
+
+    private void NewFlowProjectDialogOverlay_IsVisibleChanged(
+        object sender,
+        DependencyPropertyChangedEventArgs e)
+    {
+        if (e.NewValue is true)
+        {
+            Dispatcher.BeginInvoke(
+                System.Windows.Threading.DispatcherPriority.Input,
+                new Action(() => NewFlowProjectNameTextBox.Focus()));
+        }
+    }
+
     private void ToggleWindowState()
     {
         WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;

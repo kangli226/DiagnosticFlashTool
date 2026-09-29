@@ -293,5 +293,273 @@
                 </Button>
             </Grid>
         </Border>
+
+        <Border x:Name="NewFlowProjectDialogOverlay"
+                Grid.Row="0"
+                Grid.RowSpan="3"
+                Panel.ZIndex="1001"
+                IsVisibleChanged="NewFlowProjectDialogOverlay_IsVisibleChanged">
+            <Border.Style>
+                <Style TargetType="Border" BasedOn="{StaticResource DialogOverlayStyle}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsNewFlowProjectDialogVisible}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+
+            <Border Width="640"
+                    Padding="28"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Style="{StaticResource DialogPanelStyle}">
+                <Grid KeyboardNavigation.TabNavigation="Cycle">
+                    <Grid.InputBindings>
+                        <KeyBinding Key="Enter" Command="{Binding ConfirmNewFlowProjectCommand}" />
+                        <KeyBinding Key="Escape" Command="{Binding CancelNewFlowProjectCommand}" />
+                    </Grid.InputBindings>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="20" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="16" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="20" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="36" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <materialDesign:PackIcon Grid.Column="0"
+                                                 Kind="{x:Static materialDesign:PackIconKind.FolderPlusOutline}"
+                                                 Width="24"
+                                                 Height="24"
+                                                 Foreground="{StaticResource PrimaryBrush}"
+                                                 HorizontalAlignment="Left"
+                                                 VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1"
+                                   Text="新建配置"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource CardTitleTextBrush}"
+                                   VerticalAlignment="Center" />
+                    </Grid>
+
+                    <Border Grid.Row="2" Style="{StaticResource SettingGroupPanelStyle}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="10" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="12" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="10" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0"
+                                       Text="配置名称"
+                                       Style="{StaticResource SectionHeaderTextStyle}" />
+                            <TextBox x:Name="NewFlowProjectNameTextBox"
+                                     Grid.Row="2"
+                                     Height="40"
+                                     Margin="0"
+                                     Text="{Binding NewFlowProjectName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource SoftTextBoxStyle}" />
+
+                            <TextBlock Grid.Row="4"
+                                       Text="创建方式"
+                                       Style="{StaticResource SectionHeaderTextStyle}" />
+                            <StackPanel Grid.Row="6" Orientation="Horizontal">
+                                <RadioButton Content="基于已有配置创建"
+                                             GroupName="FlowProjectCreationMode"
+                                             Margin="0,0,24,0"
+                                             VerticalAlignment="Center"
+                                             IsEnabled="{Binding HasBootConfigTemplates}"
+                                             IsChecked="{Binding CreateFlowProjectFromTemplate, Mode=TwoWay}" />
+                                <RadioButton Content="空白创建"
+                                             GroupName="FlowProjectCreationMode"
+                                             VerticalAlignment="Center"
+                                             IsChecked="{Binding CreateBlankFlowProject, Mode=TwoWay}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Row="4" Style="{StaticResource SettingGroupPanelStyle}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="10" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0"
+                                       Text="已有 BOOT 配置"
+                                       Style="{StaticResource SectionHeaderTextStyle}" />
+                            <ComboBox Grid.Row="2"
+                                      Width="Auto"
+                                      Height="40"
+                                      HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding BootConfigFiles}"
+                                      SelectedItem="{Binding SelectedFlowProjectTemplate, Mode=TwoWay}"
+                                      IsEnabled="{Binding CreateFlowProjectFromTemplate}"
+                                      Style="{StaticResource StandardComboBoxStyle}" />
+                        </Grid>
+                    </Border>
+
+                    <TextBlock Grid.Row="5"
+                               Text="{Binding NewFlowProjectValidationText}"
+                               Foreground="{StaticResource StatusErrorBrush}"
+                               FontSize="13"
+                               TextWrapping="Wrap"
+                               VerticalAlignment="Center" />
+
+                    <StackPanel Grid.Row="6"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right">
+                        <Button Command="{Binding CancelNewFlowProjectCommand}"
+                                Width="88"
+                                Margin="0,0,12,0"
+                                Style="{StaticResource Button.DialogSecondary}">
+                            <TextBlock Text="取消" Style="{StaticResource Button.IconLabel}" Margin="0" />
+                        </Button>
+                        <Button Command="{Binding ConfirmNewFlowProjectCommand}"
+                                Width="104"
+                                Style="{StaticResource Button.DialogPrimary}">
+                            <StackPanel Style="{StaticResource Button.InlineContent}">
+                                <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.CheckCircleOutline}"
+                                                         Style="{StaticResource Button.PackIcon.Current}" />
+                                <TextBlock Text="创建" Style="{StaticResource Button.IconLabel}" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Border>
+
+        <Border x:Name="FlowStepTemplateDialogOverlay"
+                Grid.Row="0"
+                Grid.RowSpan="3"
+                Panel.ZIndex="1000"
+                IsVisibleChanged="FlowStepTemplateDialogOverlay_IsVisibleChanged">
+            <Border.Style>
+                <Style TargetType="Border" BasedOn="{StaticResource DialogOverlayStyle}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsAddFlowStepDialogVisible}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+
+            <Border Width="700"
+                    Padding="28"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Style="{StaticResource DialogPanelStyle}">
+                <Grid KeyboardNavigation.TabNavigation="Cycle">
+                    <Grid.InputBindings>
+                        <KeyBinding Key="Enter" Command="{Binding ConfirmAddFlowStepCommand}" />
+                        <KeyBinding Key="Escape" Command="{Binding CancelAddFlowStepCommand}" />
+                    </Grid.InputBindings>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="24" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="24" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="36" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <materialDesign:PackIcon Grid.Column="0"
+                                                 Kind="{x:Static materialDesign:PackIconKind.Plus}"
+                                                 Width="24"
+                                                 Height="24"
+                                                 Foreground="{StaticResource PrimaryBrush}"
+                                                 HorizontalAlignment="Left"
+                                                 VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="{Binding FlowStepTemplateDialogTitle}"
+                                       FontSize="18"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource CardTitleTextBrush}" />
+                            <TextBlock Text="{Binding FlowStepTemplateDialogDescription}"
+                                       Margin="0,4,0,0"
+                                       Style="{StaticResource HintTextStyle}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Border Grid.Row="2" Style="{StaticResource SettingGroupPanelStyle}">
+                        <StackPanel>
+                            <TextBlock Text="节点模板"
+                                       Margin="0,0,0,12"
+                                       Style="{StaticResource SectionHeaderTextStyle}" />
+                            <Grid>
+                                <ComboBox x:Name="FlowStepTemplateComboBox"
+                                          Width="Auto"
+                                          Height="44"
+                                          HorizontalAlignment="Stretch"
+                                          ItemsSource="{Binding FlowStepTemplates}"
+                                          SelectedItem="{Binding SelectedFlowStepTemplate, Mode=TwoWay}"
+                                          MaxDropDownHeight="360"
+                                          Style="{StaticResource StandardComboBoxStyle}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding DisplayText}"
+                                                       MaxWidth="590"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <TextBlock Text="请选择节点模板"
+                                           Margin="14,0,40,0"
+                                           VerticalAlignment="Center"
+                                           Foreground="{StaticResource SubtleTextBrush}"
+                                           IsHitTestVisible="False">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedFlowStepTemplate}" Value="{x:Null}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Grid.Row="4"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right">
+                        <Button Command="{Binding CancelAddFlowStepCommand}"
+                                Width="88"
+                                Margin="0,0,12,0"
+                                Style="{StaticResource Button.DialogSecondary}">
+                            <TextBlock Text="取消" Style="{StaticResource Button.IconLabel}" Margin="0" />
+                        </Button>
+                        <Button Command="{Binding ConfirmAddFlowStepCommand}"
+                                Width="104"
+                                Style="{StaticResource Button.DialogPrimary}">
+                            <StackPanel Style="{StaticResource Button.InlineContent}">
+                                <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.CheckCircleOutline}"
+                                                         Style="{StaticResource Button.PackIcon.Current}" />
+                                <TextBlock Text="{Binding FlowStepTemplateDialogConfirmText}"
+                                           Style="{StaticResource Button.IconLabel}" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Border>
     </Grid>
 </Window>

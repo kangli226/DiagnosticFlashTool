@@ -62,6 +62,10 @@ public sealed class FlowScriptConfig
 /// </summary>
 public sealed class FlashStepConfig
 {
+    /// <summary>内置节点模板的稳定标识；旧配置可由固定字段反向匹配模板。</summary>
+    [JsonPropertyName("templateId")]
+    public string? TemplateId { get; set; }
+
     /// <summary>步骤序号；流程编辑器拖拽排序后会重新编号，不是稳定标识。</summary>
     [JsonPropertyName("id")]
     public int Id { get; set; }

@@ -52,9 +52,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private readonly SeedKeyAlgorithmRegistry _seedKeyAlgorithmRegistry = new();
     private ICanDevice? _canDevice;
     private BootConfig? _loadedFlowConfig;
+    private BootConfig? _draftFlowConfig;
     private ProjectConfigEntry? _selectedProject;
+    private ProjectConfigEntry? _draftFlowProject;
+    private string? _draftFlowTemplateSnapshotJson;
+    private string? _flowBaselineFingerprint;
     private ProjectConfigEntry? _editingProject;
     private FlowStepEditorRow? _selectedFlowStep;
+    private FlowStepTemplate? _selectedFlowStepTemplate;
     private string? _selectedBootConfig;
     private string _selectedDeviceType = "Mock";
     private string _selectedBaudRate = "500K";
@@ -77,6 +82,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private bool _isFrameCapturePaused;
     private bool _isFrameFilterEnabled;
     private bool _isProjectEditorVisible;
+    private bool _isNewFlowProjectDialogVisible;
+    private bool _isAddFlowStepDialogVisible;
+    private bool _isReplacingFlowStepTemplate;
+    private bool _suppressFlowSelectionPrompt;
+    private bool _createFlowProjectFromTemplate = true;
     private bool _isConnected;
     private bool _isBusy;
     private bool _disposed;
@@ -89,6 +99,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private DiagnosticStatusKind _downloadStatusKind = DiagnosticStatusKind.Neutral;
     private string _flowValidationText = "未加载流程配置。";
     private string _projectEditorTitle = "新建项目";
+    private string _newFlowProjectName = string.Empty;
+    private string? _selectedFlowProjectTemplate;
+    private string _newFlowProjectValidationText = string.Empty;
     private string _adminPassword = string.Empty;
     private string _adminPasswordMessage = "请输入密码，本次启动内有效。";
     private SystemLogEntry? _latestLogEntry;
@@ -101,13 +114,18 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         _projectRepository = new JsonProjectConfigRepository(_paths);
         _bootConfigRepository = new JsonBootConfigRepository(_paths);
 
-        RefreshCommand = new RelayCommand(Refresh);
+        RefreshCommand = new RelayCommand(RefreshWithConfirmation);
         ConnectCommand = new AsyncRelayCommand(ConnectAsync, () => !IsConnected && !IsBusy);
         DisconnectCommand = new AsyncRelayCommand(DisconnectAsync, () => IsConnected && !IsBusy);
         ToggleConnectionCommand = new AsyncRelayCommand(ToggleConnectionAsync, () => !IsBusy);
         BrowseDriverCommand = new RelayCommand(() => BrowseFirmware(path => DriverFilePath = path));
         BrowseApplicationCommand = new RelayCommand(() => BrowseFirmware(path => ApplicationFilePath = path));
-        StartFlashCommand = new AsyncRelayCommand(StartFlashAsync, () => IsConnected && SelectedProject is not null && !IsBusy);
+        StartFlashCommand = new AsyncRelayCommand(
+            StartFlashAsync,
+            () => IsConnected
+                && SelectedProject is not null
+                && !ReferenceEquals(SelectedProject, _draftFlowProject)
+                && !IsBusy);
         CancelFlashCommand = new RelayCommand(() => StartFlashCommand.Cancel(), () => StartFlashCommand.IsRunning);
         RefreshLogCommand = new RelayCommand(ApplyLogFilters);
         ClearLogCommand = new RelayCommand(ClearLogs);
@@ -117,22 +135,50 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         ToggleFrameCaptureCommand = new RelayCommand(ToggleFrameCapture);
         ToggleFrameFilterCommand = new RelayCommand(ToggleFrameFilter);
         ExportFramesCommand = new RelayCommand(ExportFrames);
-        AddProjectCommand = new RelayCommand(AddProject);
-        DeleteProjectCommand = new RelayCommand(DeleteSelectedProject, () => SelectedProject is not null);
-        SaveProjectsCommand = new RelayCommand(SaveProjects);
+        AddProjectCommand = new RelayCommand(AddProject, () => _draftFlowProject is null);
+        DeleteProjectCommand = new RelayCommand(
+            DeleteSelectedProject,
+            () => _draftFlowProject is null && SelectedProject is not null);
+        SaveProjectsCommand = new RelayCommand(SaveProjects, () => _draftFlowProject is null);
         RefreshProjectsCommand = new RelayCommand(RefreshProjectList);
-        NewProjectCommand = new RelayCommand(OpenNewProjectEditor);
-        EditProjectCommand = new RelayCommand(EditSelectedProject, () => SelectedProject is not null);
-        SaveProjectEditorCommand = new RelayCommand(SaveProjectEditor, () => IsProjectEditorVisible);
+        NewProjectCommand = new RelayCommand(OpenNewProjectEditor, () => _draftFlowProject is null);
+        EditProjectCommand = new RelayCommand(
+            EditSelectedProject,
+            () => _draftFlowProject is null && SelectedProject is not null);
+        SaveProjectEditorCommand = new RelayCommand(
+            SaveProjectEditor,
+            () => _draftFlowProject is null && IsProjectEditorVisible);
         CancelProjectEditorCommand = new RelayCommand(CloseProjectEditor, () => IsProjectEditorVisible);
-        DeleteProjectEditorCommand = new RelayCommand(DeleteProjectEditor, () => IsEditingProject);
+        DeleteProjectEditorCommand = new RelayCommand(
+            DeleteProjectEditor,
+            () => _draftFlowProject is null && IsEditingProject);
         BrowseProjectEditorDriverCommand = new RelayCommand(() => BrowseFirmware(path => ProjectEditor.DriverFilePath = path));
         BrowseProjectEditorApplicationCommand = new RelayCommand(() => BrowseFirmware(path => ProjectEditor.ApplicationFilePath = path));
-        LoadFlowCommand = new RelayCommand(LoadFlowFromSelected, () => !string.IsNullOrWhiteSpace(SelectedBootConfig));
+        LoadFlowCommand = new RelayCommand(
+            ReloadFlowFromSelected,
+            () => !string.IsNullOrWhiteSpace(SelectedBootConfig)
+                && !ReferenceEquals(SelectedProject, _draftFlowProject));
         SaveFlowCommand = new RelayCommand(SaveFlowConfig, () => !string.IsNullOrWhiteSpace(SelectedBootConfig) && FlowRows.Count > 0);
         ValidateFlowCommand = new RelayCommand(() => ValidateFlowConfig());
-        NewFlowCommand = new RelayCommand(CreateNewFlowConfig);
-        AddFlowStepCommand = new RelayCommand(AddFlowStep);
+        NewFlowCommand = new RelayCommand(OpenNewFlowProjectDialog);
+        ConfirmNewFlowProjectCommand = new RelayCommand(
+            ConfirmNewFlowProject,
+            () => IsNewFlowProjectDialogVisible);
+        CancelNewFlowProjectCommand = new RelayCommand(
+            CloseNewFlowProjectDialog,
+            () => IsNewFlowProjectDialogVisible);
+        AddFlowStepCommand = new RelayCommand(OpenAddFlowStepDialog);
+        ReplaceFlowStepTemplateCommand = new RelayCommand(
+            OpenReplaceFlowStepDialog,
+            () => SelectedFlowStep is not null);
+        ConfirmAddFlowStepCommand = new RelayCommand(
+            ConfirmSelectedFlowStepTemplate,
+            () => IsAddFlowStepDialogVisible
+                && SelectedFlowStepTemplate is not null
+                && (!IsReplacingFlowStepTemplate || SelectedFlowStep is not null));
+        CancelAddFlowStepCommand = new RelayCommand(
+            CloseAddFlowStepDialog,
+            () => IsAddFlowStepDialogVisible);
         DeleteFlowStepCommand = new RelayCommand(DeleteSelectedFlowStep, () => SelectedFlowStep is not null);
         MoveFlowStepUpCommand = new RelayCommand(() => MoveSelectedFlowStep(-1), () => SelectedFlowStep is not null);
         MoveFlowStepDownCommand = new RelayCommand(() => MoveSelectedFlowStep(1), () => SelectedFlowStep is not null);
@@ -169,7 +215,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public ObservableCollection<SystemLogEntry> RecentLogEntries { get; } = [];
     public ObservableCollection<CanFrameRow> Frames { get; } = [];
     public ObservableCollection<FlowStepEditorRow> FlowRows { get; } = [];
-    public ObservableCollection<string> FlowAlgorithmOptions { get; } = [string.Empty, "AES128_OneFunc", "CRC16_DNP"];
+    public IReadOnlyList<FlowStepTemplate> FlowStepTemplates { get; } = FlowStepTemplate.BuiltIn;
+    public ObservableCollection<string> FlowSecurityAlgorithmOptions { get; } = [string.Empty, "AES128_OneFunc"];
     public ObservableCollection<AlgorithmConfigRow> AlgorithmRows { get; } = [];
 
     public RelayCommand RefreshCommand { get; }
@@ -203,7 +250,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public RelayCommand SaveFlowCommand { get; }
     public RelayCommand ValidateFlowCommand { get; }
     public RelayCommand NewFlowCommand { get; }
+    public RelayCommand ConfirmNewFlowProjectCommand { get; }
+    public RelayCommand CancelNewFlowProjectCommand { get; }
     public RelayCommand AddFlowStepCommand { get; }
+    public RelayCommand ReplaceFlowStepTemplateCommand { get; }
+    public RelayCommand ConfirmAddFlowStepCommand { get; }
+    public RelayCommand CancelAddFlowStepCommand { get; }
     public RelayCommand DeleteFlowStepCommand { get; }
     public RelayCommand MoveFlowStepUpCommand { get; }
     public RelayCommand MoveFlowStepDownCommand { get; }
@@ -238,6 +290,100 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     public bool IsEditingProject => _editingProject is not null;
 
+    public bool IsNewFlowProjectDialogVisible
+    {
+        get => _isNewFlowProjectDialogVisible;
+        private set
+        {
+            if (SetProperty(ref _isNewFlowProjectDialogVisible, value))
+            {
+                ConfirmNewFlowProjectCommand.RaiseCanExecuteChanged();
+                CancelNewFlowProjectCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public string NewFlowProjectName
+    {
+        get => _newFlowProjectName;
+        set
+        {
+            if (SetProperty(ref _newFlowProjectName, value))
+            {
+                NewFlowProjectValidationText = string.Empty;
+            }
+        }
+    }
+
+    public bool CreateFlowProjectFromTemplate
+    {
+        get => _createFlowProjectFromTemplate;
+        set
+        {
+            if (SetProperty(ref _createFlowProjectFromTemplate, value))
+            {
+                OnPropertyChanged(nameof(CreateBlankFlowProject));
+                NewFlowProjectValidationText = string.Empty;
+            }
+        }
+    }
+
+    public bool CreateBlankFlowProject
+    {
+        get => !CreateFlowProjectFromTemplate;
+        set
+        {
+            if (value)
+            {
+                CreateFlowProjectFromTemplate = false;
+            }
+        }
+    }
+
+    public string? SelectedFlowProjectTemplate
+    {
+        get => _selectedFlowProjectTemplate;
+        set
+        {
+            if (SetProperty(ref _selectedFlowProjectTemplate, value))
+            {
+                NewFlowProjectValidationText = string.Empty;
+            }
+        }
+    }
+
+    public string NewFlowProjectValidationText
+    {
+        get => _newFlowProjectValidationText;
+        private set => SetProperty(ref _newFlowProjectValidationText, value);
+    }
+
+    public bool HasBootConfigTemplates => BootConfigFiles.Count > 0;
+
+    public bool IsAddFlowStepDialogVisible
+    {
+        get => _isAddFlowStepDialogVisible;
+        private set
+        {
+            if (SetProperty(ref _isAddFlowStepDialogVisible, value))
+            {
+                RaiseAddFlowStepCommandStates();
+            }
+        }
+    }
+
+    public bool IsReplacingFlowStepTemplate => _isReplacingFlowStepTemplate;
+
+    public string FlowStepTemplateDialogTitle => IsReplacingFlowStepTemplate
+        ? "更换节点模板"
+        : "添加流程节点";
+
+    public string FlowStepTemplateDialogDescription => IsReplacingFlowStepTemplate
+        ? "替换模板固定字段，并保留兼容的下载块大小或安全算法参数"
+        : "从内置模板添加节点，固定协议字段不可自定义";
+
+    public string FlowStepTemplateDialogConfirmText => IsReplacingFlowStepTemplate ? "更换" : "添加";
+
     public string ProjectEditorTitle
     {
         get => _projectEditorTitle;
@@ -249,6 +395,19 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         get => _selectedProject;
         set
         {
+            if (ReferenceEquals(_selectedProject, value))
+            {
+                return;
+            }
+
+            if (!_suppressFlowSelectionPrompt
+                && HasUnsavedFlowChanges()
+                && !ConfirmUnsavedFlowChanges("切换配置", selectFallbackWhenDiscardingDraft: false))
+            {
+                OnPropertyChanged(nameof(SelectedProject));
+                return;
+            }
+
             if (SetProperty(ref _selectedProject, value))
             {
                 ApplySelectedProject();
@@ -276,10 +435,22 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
+    public FlowStepTemplate? SelectedFlowStepTemplate
+    {
+        get => _selectedFlowStepTemplate;
+        set
+        {
+            if (SetProperty(ref _selectedFlowStepTemplate, value))
+            {
+                ConfirmAddFlowStepCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
     public string? SelectedBootConfig
     {
         get => _selectedBootConfig;
-        set
+        private set
         {
             if (SetProperty(ref _selectedBootConfig, value))
             {
@@ -583,6 +754,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             if (SetProperty(ref _selectedShellIndex, value))
             {
+                CloseNewFlowProjectDialog();
+                CloseAddFlowStepDialog();
                 OnPropertyChanged(nameof(CurrentPageContextText));
             }
         }
@@ -870,8 +1043,24 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         AdminPasswordPromptVisible = false;
     }
 
+    private void RefreshWithConfirmation()
+    {
+        if (!ConfirmUnsavedFlowChanges("重新加载配置"))
+        {
+            return;
+        }
+
+        Refresh();
+    }
+
     private void Refresh()
     {
+        _draftFlowProject = null;
+        _draftFlowConfig = null;
+        _draftFlowTemplateSnapshotJson = null;
+        _flowBaselineFingerprint = null;
+        CloseNewFlowProjectDialog();
+
         var selectedName = SelectedProject?.ProjectName;
         Projects.Clear();
         foreach (var project in _projectRepository.LoadAll())
@@ -884,13 +1073,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             BootConfigFiles.Add(config);
         }
+        OnPropertyChanged(nameof(HasBootConfigTemplates));
 
         LoadAlgorithmCatalog();
 
         SelectedProject = Projects.FirstOrDefault(project => string.Equals(project.ProjectName, selectedName, StringComparison.OrdinalIgnoreCase))
             ?? Projects.FirstOrDefault();
-        SelectedBootConfig ??= SelectedProject?.BootConfigFile ?? BootConfigFiles.FirstOrDefault();
-        LoadFlowFromSelected();
         OnPropertyChanged(nameof(ConfigRootText));
         OnPropertyChanged(nameof(ScriptRootText));
         OnPropertyChanged(nameof(FlowConfigDirectory));
@@ -905,6 +1093,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private void RefreshProjectList()
     {
+        if (!ConfirmUnsavedFlowChanges("重新加载项目列表"))
+        {
+            return;
+        }
+
         Refresh();
         CloseProjectEditor();
     }
@@ -987,6 +1180,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private void ImportBuiltinConfiguration()
     {
+        if (!ConfirmUnsavedFlowChanges("导入内置配置"))
+        {
+            return;
+        }
+
         try
         {
             CopyFileIfDifferent(_paths.DefaultProjectConfigPath, _paths.ProjectConfigPath);
@@ -1013,6 +1211,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             return;
         }
+
+        DiscardDraftFlowProject();
 
         try
         {
@@ -1043,6 +1243,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     {
         BrowseFolder("选择流程配置目录", FlowConfigDirectory, path =>
         {
+            if (!ConfirmUnsavedFlowChanges("切换流程配置目录"))
+            {
+                return;
+            }
+
             _paths.BootConfigDirectoryOverride = path;
             SaveAppSettings();
             Refresh();
@@ -1053,6 +1258,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     {
         BrowseFolder("选择配方数据库目录", FormulaDatabaseDirectory, path =>
         {
+            if (!ConfirmUnsavedFlowChanges("切换配方数据库目录"))
+            {
+                return;
+            }
+
             _paths.FormulaDatabaseDirectoryOverride = path;
             Directory.CreateDirectory(path);
             SaveAppSettings();
@@ -1074,6 +1284,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
         if (dialog.ShowDialog() == true)
         {
+            if (!ConfirmUnsavedFlowChanges("切换项目配置文件"))
+            {
+                return;
+            }
+
             _paths.ProjectConfigPathOverride = dialog.FileName;
             SaveAppSettings();
             Refresh();
@@ -1232,19 +1447,23 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private void RefreshFlowAlgorithmOptions()
     {
-        var algorithms = new[] { string.Empty, "AES128_OneFunc", "CRC16_DNP" }
-            .Concat(AlgorithmRows.Select(row => row.Name))
-            .Concat(FlowRows.Select(row => row.Algorithm))
+        var algorithms = new[] { string.Empty, "AES128_OneFunc" }
+            .Concat(AlgorithmRows
+                .Where(row => row.Category.Contains("安全算法", StringComparison.Ordinal))
+                .Select(row => row.Name))
+            .Concat(FlowRows
+                .Where(row => row.IsSecurityAlgorithmStep)
+                .Select(row => row.SecurityAlgorithm))
             .Where(name => !string.IsNullOrWhiteSpace(name))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
             .Prepend(string.Empty)
             .ToList();
 
-        FlowAlgorithmOptions.Clear();
+        FlowSecurityAlgorithmOptions.Clear();
         foreach (var algorithm in algorithms)
         {
-            FlowAlgorithmOptions.Add(algorithm);
+            FlowSecurityAlgorithmOptions.Add(algorithm);
         }
     }
 
@@ -1381,6 +1600,22 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
             var bootFile = SelectedBootConfig ?? SelectedProject.BootConfigFile;
             var bootConfig = _bootConfigRepository.Load(bootFile);
+            var preflightIssues = ValidateAppFlow(bootConfig);
+            var preflightErrors = preflightIssues
+                .Where(issue => issue.Kind == FlashFlowIssueKind.Error)
+                .ToList();
+            if (preflightErrors.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    "BOOT 流程校验未通过：" + Environment.NewLine
+                    + string.Join(Environment.NewLine, preflightErrors.Select(issue => "  - " + issue)));
+            }
+
+            foreach (var warning in preflightIssues.Where(issue => issue.Kind == FlashFlowIssueKind.Warning))
+            {
+                AppendLog($"流程提示：{warning}");
+            }
+
             var firmwareSet = LoadFirmwareSet(SelectedProject, bootConfig);
 
             var options = new DiagnosticTransportOptions
@@ -1626,6 +1861,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             return;
         }
 
+        if (ReferenceEquals(_editingProject, _draftFlowProject))
+        {
+            SetStatus("请先在流程配置页保存空白项目", DiagnosticStatusKind.Warning);
+            return;
+        }
+
         var index = Projects.IndexOf(_editingProject);
         if (index < 0)
         {
@@ -1698,7 +1939,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private void DeleteSelectedProject()
     {
-        if (SelectedProject is null)
+        if (SelectedProject is null || ReferenceEquals(SelectedProject, _draftFlowProject))
         {
             return;
         }
@@ -1711,6 +1952,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private void SaveProjects()
     {
+        if (_draftFlowProject is not null)
+        {
+            SetStatus("请先在流程配置页保存空白项目", DiagnosticStatusKind.Warning);
+            return;
+        }
+
         var validation = ValidateProjects(Projects);
         if (!string.IsNullOrWhiteSpace(validation))
         {
@@ -1751,115 +1998,452 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         return string.Join(Environment.NewLine, issues.Distinct());
     }
 
+    private void ReloadFlowFromSelected()
+    {
+        if (!ConfirmUnsavedFlowChanges("重新加载当前配置"))
+        {
+            return;
+        }
+
+        LoadFlowFromSelected();
+    }
+
     private void LoadFlowFromSelected()
     {
+        CloseAddFlowStepDialog();
         FlowRows.Clear();
         _loadedFlowConfig = null;
+        _flowBaselineFingerprint = null;
         SelectedFlowStep = null;
+
+        if (SelectedProject is null)
+        {
+            FlowValidationText = "未选择项目。";
+            RefreshFlowAlgorithmOptions();
+            MarkFlowAsBaseline();
+            return;
+        }
 
         if (string.IsNullOrWhiteSpace(SelectedBootConfig))
         {
-            FlowValidationText = "未选择 BOOT 配置文件。";
+            FlowValidationText = $"项目“{SelectedProject.ProjectName}”未配置 BOOT 配置文件。";
             RefreshFlowAlgorithmOptions();
+            MarkFlowAsBaseline();
             return;
         }
 
         try
         {
-            _loadedFlowConfig = _bootConfigRepository.Load(SelectedBootConfig);
-            foreach (var step in _loadedFlowConfig.Flow.OrderBy(step => step.Id))
-            {
-                FlowRows.Add(FlowStepEditorRow.FromConfig(step));
-            }
+            _loadedFlowConfig = ReferenceEquals(SelectedProject, _draftFlowProject)
+                ? _draftFlowConfig ?? throw new InvalidOperationException("配置草稿不存在。")
+                : _bootConfigRepository.Load(SelectedBootConfig);
 
-            SelectedFlowStep = FlowRows.FirstOrDefault();
-            RefreshFlowAlgorithmOptions();
-            ValidateFlowConfig();
-            AppendLog($"Flow loaded: {SelectedBootConfig}, steps={FlowRows.Count}");
+            PopulateFlowRows(_loadedFlowConfig);
+            var source = ReferenceEquals(SelectedProject, _draftFlowProject) ? "draft" : SelectedBootConfig;
+            AppendLog($"Flow loaded: {source}, steps={FlowRows.Count}");
         }
         catch (Exception ex)
         {
             FlowValidationText = ex.Message;
             RefreshFlowAlgorithmOptions();
+            MarkFlowAsBaseline();
             AppendLog($"Flow load failed: {ex.Message}");
         }
     }
 
-    private void SaveFlowConfig()
+    private void SaveFlowConfig() => TrySaveFlowConfig();
+
+    private bool TrySaveFlowConfig()
     {
         if (string.IsNullOrWhiteSpace(SelectedBootConfig))
         {
-            return;
+            SetStatus("当前配置没有可保存的 BOOT 文件", DiagnosticStatusKind.Warning);
+            return false;
         }
 
         if (!ValidateFlowConfig())
         {
             SetStatus("Flow validation failed", DiagnosticStatusKind.Error);
+            return false;
+        }
+
+        try
+        {
+            var isDraft = ReferenceEquals(SelectedProject, _draftFlowProject);
+            var config = _loadedFlowConfig
+                ?? (isDraft
+                    ? _draftFlowConfig ?? throw new InvalidOperationException("配置草稿不存在。")
+                    : _bootConfigRepository.Load(SelectedBootConfig));
+
+            // 只更新 flow；scripts 及模型已承载的未编辑字段由已加载配置原样写回。
+            config.Flow = FlowRows.OrderBy(row => row.Id).Select(row => row.ToConfig()).ToList();
+            if (string.IsNullOrWhiteSpace(config.Name))
+            {
+                config.Name = Path.GetFileNameWithoutExtension(SelectedBootConfig);
+            }
+
+            if (isDraft)
+            {
+                PersistDraftFlowProject(config);
+            }
+            else
+            {
+                _bootConfigRepository.Save(SelectedBootConfig, config);
+            }
+
+            _loadedFlowConfig = config;
+            MarkFlowAsBaseline();
+            SetStatus(isDraft ? "配置已保存" : "流程已保存", DiagnosticStatusKind.Success);
+            AppendLog($"Flow saved: {SelectedBootConfig}, steps={FlowRows.Count}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            SetStatus("流程保存失败", DiagnosticStatusKind.Error);
+            AppendLog($"Flow save failed: {ex.Message}");
+            return false;
+        }
+    }
+
+    private void PopulateFlowRows(BootConfig config)
+    {
+        foreach (var step in config.Flow.OrderBy(step => step.Id))
+        {
+            FlowRows.Add(FlowStepEditorRow.FromConfig(step));
+        }
+
+        SelectedFlowStep = FlowRows.FirstOrDefault();
+        RefreshFlowAlgorithmOptions();
+        ValidateFlowConfig();
+        MarkFlowAsBaseline();
+    }
+
+    private void MarkFlowAsBaseline()
+    {
+        _flowBaselineFingerprint = CreateFlowFingerprint();
+    }
+
+    private string CreateFlowFingerprint() => JsonSerializer.Serialize(
+        FlowRows.OrderBy(row => row.Id).Select(row => row.ToConfig()).ToList());
+
+    private bool HasUnsavedFlowChanges()
+    {
+        if (SelectedProject is null)
+        {
+            return false;
+        }
+
+        if (ReferenceEquals(SelectedProject, _draftFlowProject))
+        {
+            return true;
+        }
+
+        return _flowBaselineFingerprint is not null
+            && !string.Equals(_flowBaselineFingerprint, CreateFlowFingerprint(), StringComparison.Ordinal);
+    }
+
+    private void OpenNewFlowProjectDialog()
+    {
+        if (!ConfirmUnsavedFlowChanges("新建配置"))
+        {
             return;
         }
 
-        // 只更新 flow；scripts 及模型已承载的未编辑字段由已加载配置原样写回。
-        var config = _loadedFlowConfig ?? _bootConfigRepository.Load(SelectedBootConfig);
-        config.Flow = FlowRows.OrderBy(row => row.Id).Select(row => row.ToConfig()).ToList();
-
-        if (string.IsNullOrWhiteSpace(config.Name))
-        {
-            config.Name = Path.GetFileNameWithoutExtension(SelectedBootConfig);
-        }
-
-        _bootConfigRepository.Save(SelectedBootConfig, config);
-        _loadedFlowConfig = config;
-        SetStatus("Flow saved", DiagnosticStatusKind.Success);
-        AppendLog($"Flow saved: {SelectedBootConfig}, steps={FlowRows.Count}");
+        CloseAddFlowStepDialog();
+        NewFlowProjectName = string.Empty;
+        SelectedFlowProjectTemplate = BootConfigFiles.FirstOrDefault();
+        CreateFlowProjectFromTemplate = SelectedFlowProjectTemplate is not null;
+        NewFlowProjectValidationText = string.Empty;
+        OnPropertyChanged(nameof(HasBootConfigTemplates));
+        IsNewFlowProjectDialogVisible = true;
     }
 
-    private void CreateNewFlowConfig()
+    private void DiscardDraftFlowProject(bool selectFallback = true)
     {
-        Directory.CreateDirectory(FlowConfigDirectory);
-        var dialog = new Microsoft.Win32.SaveFileDialog
+        if (_draftFlowProject is null)
         {
-            Title = "新增流程配置",
-            Filter = "BOOT 配置文件 (*.json)|*.json|所有文件 (*.*)|*.*",
-            DefaultExt = ".json",
-            AddExtension = true,
-            FileName = "新建流程.json",
-            InitialDirectory = FlowConfigDirectory
-        };
+            return;
+        }
 
-        if (dialog.ShowDialog() != true)
+        var draft = _draftFlowProject;
+        var index = Projects.IndexOf(draft);
+        var wasSelected = ReferenceEquals(SelectedProject, draft);
+        _suppressFlowSelectionPrompt = true;
+        try
         {
+            _draftFlowProject = null;
+            _draftFlowConfig = null;
+            _draftFlowTemplateSnapshotJson = null;
+            _loadedFlowConfig = null;
+            _flowBaselineFingerprint = null;
+            FlowRows.Clear();
+            SelectedFlowStep = null;
+            if (index >= 0)
+            {
+                Projects.RemoveAt(index);
+            }
+
+            if (wasSelected && selectFallback)
+            {
+                SelectedProject = Projects.ElementAtOrDefault(
+                    Math.Clamp(index, 0, Math.Max(0, Projects.Count - 1)));
+            }
+        }
+        finally
+        {
+            _suppressFlowSelectionPrompt = false;
+        }
+
+        RaiseCommandStates();
+        AppendLog($"Flow configuration draft discarded: {draft.ProjectName}");
+    }
+
+    private bool ConfirmUnsavedFlowChanges(
+        string action,
+        bool selectFallbackWhenDiscardingDraft = true)
+    {
+        if (!HasUnsavedFlowChanges())
+        {
+            return true;
+        }
+
+        var configName = SelectedProject?.ProjectName ?? SelectedBootConfig ?? "当前配置";
+        var result = MessageBox.Show(
+            $"配置“{configName}”存在未保存的修改。{action}前是否保存？\n\n"
+            + "选择“是”保存修改，选择“否”放弃修改，选择“取消”继续编辑。",
+            "未保存的修改",
+            MessageBoxButton.YesNoCancel,
+            MessageBoxImage.Warning);
+
+        if (result == MessageBoxResult.Cancel)
+        {
+            return false;
+        }
+
+        if (result == MessageBoxResult.Yes)
+        {
+            return TrySaveFlowConfig();
+        }
+
+        if (ReferenceEquals(SelectedProject, _draftFlowProject))
+        {
+            DiscardDraftFlowProject(selectFallbackWhenDiscardingDraft);
+        }
+        else
+        {
+            LoadFlowFromSelected();
+        }
+
+        return true;
+    }
+
+    private void CloseNewFlowProjectDialog()
+    {
+        IsNewFlowProjectDialogVisible = false;
+        NewFlowProjectName = string.Empty;
+        SelectedFlowProjectTemplate = null;
+        NewFlowProjectValidationText = string.Empty;
+    }
+
+    private void ConfirmNewFlowProject()
+    {
+        var projectName = NewFlowProjectName.Trim();
+        var configFileName = $"{projectName}.json";
+        var validation = ValidateNewFlowProject(projectName, configFileName);
+        if (!string.IsNullOrWhiteSpace(validation))
+        {
+            NewFlowProjectValidationText = validation;
             return;
         }
 
         try
         {
-            var path = Path.GetFullPath(dialog.FileName);
-            var config = new BootConfig
-            {
-                Name = Path.GetFileNameWithoutExtension(path)
-            };
-            _bootConfigRepository.Save(path, config);
+            var project = CreateFlowProjectEntry(projectName, configFileName);
+            var templateSource = CreateFlowProjectFromTemplate
+                ? SelectedFlowProjectTemplate!
+                : null;
+            var templateSnapshotJson = templateSource is null
+                ? null
+                : _bootConfigRepository.CreateSnapshotJson(templateSource, projectName);
+            var config = templateSource is null
+                ? new BootConfig()
+                : _bootConfigRepository.Load(templateSource);
+            config.Name = projectName;
 
-            var isInConfiguredDirectory = string.Equals(
-                Path.GetDirectoryName(path),
-                Path.GetFullPath(FlowConfigDirectory),
-                StringComparison.OrdinalIgnoreCase);
-            var configReference = isInConfiguredDirectory ? Path.GetFileName(path) : path;
+            _draftFlowProject = project;
+            _draftFlowConfig = config;
+            _draftFlowTemplateSnapshotJson = templateSnapshotJson;
+            Projects.Add(project);
+            SelectedProject = project;
+            SetStatus("已创建配置草稿，保存后写入文件", DiagnosticStatusKind.Neutral);
+            AppendLog(templateSource is null
+                ? $"Blank flow configuration draft created: {projectName}"
+                : $"Flow configuration draft created: {projectName}, source={templateSource}");
 
-            if (!BootConfigFiles.Contains(configReference, StringComparer.OrdinalIgnoreCase))
-            {
-                BootConfigFiles.Add(configReference);
-            }
-
-            SelectedBootConfig = configReference;
-            SetStatus("已新增流程配置", DiagnosticStatusKind.Success);
-            AppendLog($"Flow created: {configReference}");
+            CloseNewFlowProjectDialog();
+            RaiseCommandStates();
         }
         catch (Exception ex)
         {
-            SetStatus("新增流程配置失败", DiagnosticStatusKind.Error);
-            AppendLog($"Flow creation failed: {ex.Message}");
+            NewFlowProjectValidationText = ex.Message;
+            SetStatus("新建配置失败", DiagnosticStatusKind.Error);
+            AppendLog($"Flow configuration creation failed: {ex.Message}");
         }
+    }
+
+    private string ValidateNewFlowProject(string projectName, string configFileName)
+    {
+        if (string.IsNullOrWhiteSpace(projectName))
+        {
+            return "配置名称不能为空。";
+        }
+
+        if (projectName is "." or ".."
+            || projectName.EndsWith('.')
+            || projectName.EndsWith(' ')
+            || projectName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+        {
+            return "配置名称包含不能用于文件名的字符。";
+        }
+
+        if (Projects.Any(project => string.Equals(
+                project.ProjectName,
+                projectName,
+                StringComparison.OrdinalIgnoreCase)))
+        {
+            return $"配置“{projectName}”已存在。";
+        }
+
+        var targetPath = Path.Combine(FlowConfigDirectory, configFileName);
+        if (File.Exists(targetPath)
+            || Projects.Any(project => BootConfigReferencesSameFile(project.BootConfigFile, configFileName)))
+        {
+            return $"配置文件“{configFileName}”已被使用。";
+        }
+
+        if (CreateFlowProjectFromTemplate && string.IsNullOrWhiteSpace(SelectedFlowProjectTemplate))
+        {
+            return "请选择一个已有 BOOT 配置。";
+        }
+
+        return string.Empty;
+    }
+
+    private ProjectConfigEntry CreateFlowProjectEntry(string projectName, string configFileName)
+    {
+        var nextNo = Projects.Count == 0 ? 1 : Projects.Max(project => project.ProjectNo) + 1;
+        return new ProjectConfigEntry
+        {
+            ProjectName = projectName,
+            ProjectNo = nextNo,
+            BaudRate = "500K",
+            PhysicalRequestId = "0x18DA5535",
+            FunctionalRequestId = "0x18DA55FF",
+            ResponseAddressId = "0x18DA3555",
+            BootConfigFile = configFileName
+        };
+    }
+
+    private void PersistDraftFlowProject(BootConfig config)
+    {
+        if (_draftFlowProject is null || !ReferenceEquals(SelectedProject, _draftFlowProject))
+        {
+            throw new InvalidOperationException("当前配置不是未保存草稿。");
+        }
+
+        var draftProject = _draftFlowProject;
+        var templateSnapshotJson = _draftFlowTemplateSnapshotJson;
+        var validation = ValidateProjects(Projects);
+        if (!string.IsNullOrWhiteSpace(validation))
+        {
+            throw new InvalidOperationException(validation);
+        }
+
+        SaveNewBootConfigAndProjects(
+            draftProject.BootConfigFile,
+            () =>
+            {
+                if (templateSnapshotJson is not null)
+                {
+                    _bootConfigRepository.SaveSnapshotJson(
+                        draftProject.BootConfigFile,
+                        templateSnapshotJson);
+                }
+
+                _bootConfigRepository.Save(draftProject.BootConfigFile, config);
+            },
+            Projects);
+        AddBootConfigFile(draftProject.BootConfigFile);
+        _draftFlowProject = null;
+        _draftFlowConfig = null;
+        _draftFlowTemplateSnapshotJson = null;
+        RaiseCommandStates();
+    }
+
+    private void SaveNewBootConfigAndProjects(
+        string configFileName,
+        Action saveBootConfig,
+        IEnumerable<ProjectConfigEntry> projects)
+    {
+        var targetPath = Path.Combine(FlowConfigDirectory, configFileName);
+        if (File.Exists(targetPath))
+        {
+            throw new IOException($"配置文件已存在：{targetPath}");
+        }
+
+        try
+        {
+            saveBootConfig();
+            _projectRepository.SaveAll(projects);
+        }
+        catch
+        {
+            try
+            {
+                File.Delete(targetPath);
+            }
+            catch (Exception rollbackException)
+            {
+                AppendLog($"Project creation rollback failed: {rollbackException.Message}");
+            }
+
+            throw;
+        }
+    }
+
+    private void AddBootConfigFile(string configFileName)
+    {
+        if (BootConfigFiles.Contains(configFileName, StringComparer.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var insertIndex = 0;
+        while (insertIndex < BootConfigFiles.Count
+               && StringComparer.OrdinalIgnoreCase.Compare(BootConfigFiles[insertIndex], configFileName) < 0)
+        {
+            insertIndex++;
+        }
+
+        BootConfigFiles.Insert(insertIndex, configFileName);
+        OnPropertyChanged(nameof(HasBootConfigTemplates));
+    }
+
+    private bool BootConfigReferencesSameFile(string configReference, string configFileName)
+    {
+        if (string.IsNullOrWhiteSpace(configReference))
+        {
+            return false;
+        }
+
+        var existingPath = Path.IsPathRooted(configReference)
+            ? configReference
+            : Path.Combine(FlowConfigDirectory, configReference);
+        var targetPath = Path.Combine(FlowConfigDirectory, configFileName);
+        return string.Equals(
+            Path.GetFullPath(existingPath),
+            Path.GetFullPath(targetPath),
+            StringComparison.OrdinalIgnoreCase);
     }
 
     private bool ValidateFlowConfig()
@@ -1910,7 +2494,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 Flow = FlowRows.OrderBy(row => row.Id).Select(row => row.ToConfig()).ToList()
             };
 
-            foreach (var issue in FlashFlowValidator.Validate(draft, _seedKeyAlgorithmRegistry))
+            foreach (var issue in ValidateAppFlow(draft))
             {
                 if (issue.Kind == FlashFlowIssueKind.Error)
                 {
@@ -1934,20 +2518,108 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         return issues.Count == 0;
     }
 
-    private void AddFlowStep()
+    private IReadOnlyList<FlashFlowIssue> ValidateAppFlow(BootConfig config)
     {
-        var nextId = FlowRows.Count == 0 ? 1 : FlowRows.Max(row => row.Id) + 1;
-        var row = new FlowStepEditorRow
+        var policyIssues = BuiltInFlowTemplateValidator.Validate(config).ToList();
+        foreach (var issue in FlashFlowValidator.Validate(config, _seedKeyAlgorithmRegistry))
         {
-            Id = nextId,
-            Name = $"新增节点 {nextId}",
-            AddressingMode = "physical"
-        };
+            if (!IsCoveredByTemplatePolicy(issue, policyIssues))
+            {
+                policyIssues.Add(issue);
+            }
+        }
 
-        FlowRows.Add(row);
-        SelectedFlowStep = row;
+        return policyIssues;
+    }
+
+    private static bool IsCoveredByTemplatePolicy(
+        FlashFlowIssue executionIssue,
+        IReadOnlyList<FlashFlowIssue> policyIssues)
+    {
+        ReadOnlySpan<string> constraintNames = ["crcAlgorithm", "securityAlgorithm", "algorithmParams"];
+        foreach (var constraintName in constraintNames)
+        {
+            if (executionIssue.Message.Contains(constraintName, StringComparison.OrdinalIgnoreCase)
+                && policyIssues.Any(policyIssue =>
+                    policyIssue.StepId == executionIssue.StepId
+                    && policyIssue.Message.Contains(constraintName, StringComparison.OrdinalIgnoreCase)))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void OpenAddFlowStepDialog()
+    {
+        SetFlowStepTemplateDialogMode(false);
+        SelectedFlowStepTemplate = null;
+        IsAddFlowStepDialogVisible = true;
+    }
+
+    private void OpenReplaceFlowStepDialog()
+    {
+        if (SelectedFlowStep is null)
+        {
+            return;
+        }
+
+        SetFlowStepTemplateDialogMode(true);
+        SelectedFlowStepTemplate = null;
+        IsAddFlowStepDialogVisible = true;
+    }
+
+    private void ConfirmSelectedFlowStepTemplate()
+    {
+        if (SelectedFlowStepTemplate is null)
+        {
+            return;
+        }
+
+        if (IsReplacingFlowStepTemplate)
+        {
+            if (SelectedFlowStep is null)
+            {
+                return;
+            }
+
+            SelectedFlowStep.ApplyTemplate(SelectedFlowStepTemplate.Definition, preserveCompatibleValues: true);
+        }
+        else
+        {
+            var nextId = FlowRows.Count == 0 ? 1 : FlowRows.Max(row => row.Id) + 1;
+            var row = SelectedFlowStepTemplate.CreateRow(nextId);
+
+            FlowRows.Add(row);
+            SelectedFlowStep = row;
+        }
+
+        CloseAddFlowStepDialog();
         RefreshFlowAlgorithmOptions();
         ValidateFlowConfig();
+    }
+
+    private void CloseAddFlowStepDialog()
+    {
+        IsAddFlowStepDialogVisible = false;
+        SelectedFlowStepTemplate = null;
+        SetFlowStepTemplateDialogMode(false);
+    }
+
+    private void SetFlowStepTemplateDialogMode(bool isReplacing)
+    {
+        if (_isReplacingFlowStepTemplate == isReplacing)
+        {
+            return;
+        }
+
+        _isReplacingFlowStepTemplate = isReplacing;
+        OnPropertyChanged(nameof(IsReplacingFlowStepTemplate));
+        OnPropertyChanged(nameof(FlowStepTemplateDialogTitle));
+        OnPropertyChanged(nameof(FlowStepTemplateDialogDescription));
+        OnPropertyChanged(nameof(FlowStepTemplateDialogConfirmText));
+        ConfirmAddFlowStepCommand.RaiseCanExecuteChanged();
     }
 
     private void DeleteSelectedFlowStep()
@@ -2009,12 +2681,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     {
         if (SelectedProject is null)
         {
+            SelectedBootConfig = null;
             return;
         }
 
         SelectedBootConfig = string.IsNullOrWhiteSpace(SelectedProject.BootConfigFile)
-            ? BootConfigFiles.FirstOrDefault()
-            : SelectedProject.BootConfigFile;
+            ? null
+            : SelectedProject.BootConfigFile.Trim();
         SelectedBaudRate = SelectedProject.BaudRate;
         DriverFilePath = SelectedProject.DriveFilePath;
         ApplicationFilePath = SelectedProject.FlashFilePath;
@@ -2573,13 +3246,25 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         StartFlashCommand.RaiseCanExecuteChanged();
         CancelFlashCommand.RaiseCanExecuteChanged();
         DeleteProjectCommand.RaiseCanExecuteChanged();
+        SaveProjectsCommand.RaiseCanExecuteChanged();
+        AddProjectCommand.RaiseCanExecuteChanged();
+        NewProjectCommand.RaiseCanExecuteChanged();
         RaiseProjectEditorCommandStates();
         LoadFlowCommand.RaiseCanExecuteChanged();
         SaveFlowCommand.RaiseCanExecuteChanged();
+        NewFlowCommand.RaiseCanExecuteChanged();
+        RaiseAddFlowStepCommandStates();
+        ReplaceFlowStepTemplateCommand.RaiseCanExecuteChanged();
         DeleteFlowStepCommand.RaiseCanExecuteChanged();
         MoveFlowStepUpCommand.RaiseCanExecuteChanged();
         MoveFlowStepDownCommand.RaiseCanExecuteChanged();
         SendManualFrameCommand.RaiseCanExecuteChanged();
+    }
+
+    private void RaiseAddFlowStepCommandStates()
+    {
+        ConfirmAddFlowStepCommand.RaiseCanExecuteChanged();
+        CancelAddFlowStepCommand.RaiseCanExecuteChanged();
     }
 
     private void RaiseProjectEditorCommandStates()
