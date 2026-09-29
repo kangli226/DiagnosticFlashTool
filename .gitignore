@@ -39,6 +39,7 @@ packages/
 !packages/build/
 
 # Test and coverage output
+/tests/
 TestResults/
 *.trx
 *.coverage
