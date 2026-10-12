@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
+using DiagnosticFlashTool.App.Views;
 using DiagnosticFlashTool.Core.Algorithms;
 using DiagnosticFlashTool.Core.Can;
 using DiagnosticFlashTool.Core.Configuration;
@@ -163,7 +164,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         NewFlowCommand = new RelayCommand(OpenNewFlowProjectDialog);
         ConfirmNewFlowProjectCommand = new RelayCommand(
             ConfirmNewFlowProject,
-            () => IsNewFlowProjectDialogVisible);
+            () => IsNewFlowProjectDialogVisible
+                && !string.IsNullOrWhiteSpace(NewFlowProjectName)
+                && (!CreateFlowProjectFromTemplate
+                    || !string.IsNullOrWhiteSpace(SelectedFlowProjectTemplate)));
         CancelNewFlowProjectCommand = new RelayCommand(
             CloseNewFlowProjectDialog,
             () => IsNewFlowProjectDialogVisible);
@@ -311,6 +315,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             if (SetProperty(ref _newFlowProjectName, value))
             {
                 NewFlowProjectValidationText = string.Empty;
+                ConfirmNewFlowProjectCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -324,6 +329,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             {
                 OnPropertyChanged(nameof(CreateBlankFlowProject));
                 NewFlowProjectValidationText = string.Empty;
+                ConfirmNewFlowProjectCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -348,6 +354,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             if (SetProperty(ref _selectedFlowProjectTemplate, value))
             {
                 NewFlowProjectValidationText = string.Empty;
+                ConfirmNewFlowProjectCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -2208,19 +2215,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
 
         var configName = SelectedProject?.ProjectName ?? SelectedBootConfig ?? "当前配置";
-        var result = MessageBox.Show(
-            $"配置“{configName}”存在未保存的修改。{action}前是否保存？\n\n"
-            + "选择“是”保存修改，选择“否”放弃修改，选择“取消”继续编辑。",
-            "未保存的修改",
-            MessageBoxButton.YesNoCancel,
-            MessageBoxImage.Warning);
-
-        if (result == MessageBoxResult.Cancel)
+        var dialog = new UnsavedChangesDialog(configName, action);
+        _ = dialog.ShowDialog();
+        if (dialog.Choice == UnsavedChangesChoice.Cancel)
         {
             return false;
         }
 
-        if (result == MessageBoxResult.Yes)
+        if (dialog.Choice == UnsavedChangesChoice.Save)
         {
             return TrySaveFlowConfig();
         }

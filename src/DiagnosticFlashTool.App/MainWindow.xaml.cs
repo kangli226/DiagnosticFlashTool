@@ -10,6 +10,7 @@ using System.Windows.Interop;
 using DiagnosticFlashTool.App.ViewModels;
 using Drawing = System.Drawing;
 using Forms = System.Windows.Forms;
+using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 
 namespace DiagnosticFlashTool.App;
 
@@ -18,6 +19,9 @@ public partial class MainWindow : Window
     private const int WmGetMinMaxInfo = 0x0024;
     private const int DwmWindowCornerPreferenceAttribute = 33;
     private Forms.NotifyIcon? _notifyIcon;
+    private System.Windows.Point? _newFlowProjectDialogDragStart;
+    private Vector _newFlowProjectDialogStartOffset;
+    private IInputElement? _newFlowProjectDialogPreviousFocus;
     private bool _exitRequested;
 
     public MainWindow()
@@ -157,11 +161,88 @@ public partial class MainWindow : Window
         object sender,
         DependencyPropertyChangedEventArgs e)
     {
-        if (e.NewValue is true)
+        if (e.NewValue is not true)
         {
-            Dispatcher.BeginInvoke(
-                System.Windows.Threading.DispatcherPriority.Input,
-                new Action(() => NewFlowProjectNameTextBox.Focus()));
+            EndNewFlowProjectDialogDrag(NewFlowProjectDialogHeader);
+            var previousFocus = _newFlowProjectDialogPreviousFocus;
+            _newFlowProjectDialogPreviousFocus = null;
+            if (previousFocus is not null)
+            {
+                Dispatcher.BeginInvoke(
+                    System.Windows.Threading.DispatcherPriority.Input,
+                    new Action(() =>
+                    {
+                        if (previousFocus is UIElement { IsVisible: true, IsEnabled: true } element)
+                        {
+                            element.Focus();
+                        }
+                    }));
+            }
+
+            return;
+        }
+
+        _newFlowProjectDialogPreviousFocus = Keyboard.FocusedElement;
+        NewFlowProjectDialogTransform.X = 0;
+        NewFlowProjectDialogTransform.Y = 0;
+        Dispatcher.BeginInvoke(
+            System.Windows.Threading.DispatcherPriority.Input,
+            new Action(() => NewFlowProjectNameTextBox.Focus()));
+    }
+
+    private void NewFlowProjectDialogHeader_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed || sender is not UIElement header)
+        {
+            return;
+        }
+
+        _newFlowProjectDialogDragStart = e.GetPosition(NewFlowProjectDialogOverlay);
+        _newFlowProjectDialogStartOffset = new Vector(
+            NewFlowProjectDialogTransform.X,
+            NewFlowProjectDialogTransform.Y);
+        header.CaptureMouse();
+        e.Handled = true;
+    }
+
+    private void NewFlowProjectDialogHeader_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (_newFlowProjectDialogDragStart is null || e.LeftButton != MouseButtonState.Pressed)
+        {
+            EndNewFlowProjectDialogDrag(sender);
+            return;
+        }
+
+        var currentPosition = e.GetPosition(NewFlowProjectDialogOverlay);
+        var horizontalLimit = Math.Max(
+            0,
+            (NewFlowProjectDialogOverlay.ActualWidth - NewFlowProjectDialogPanel.ActualWidth) / 2 - 16);
+        var verticalLimit = Math.Max(
+            0,
+            (NewFlowProjectDialogOverlay.ActualHeight - NewFlowProjectDialogPanel.ActualHeight) / 2 - 16);
+
+        NewFlowProjectDialogTransform.X = Math.Clamp(
+            _newFlowProjectDialogStartOffset.X + currentPosition.X - _newFlowProjectDialogDragStart.Value.X,
+            -horizontalLimit,
+            horizontalLimit);
+        NewFlowProjectDialogTransform.Y = Math.Clamp(
+            _newFlowProjectDialogStartOffset.Y + currentPosition.Y - _newFlowProjectDialogDragStart.Value.Y,
+            -verticalLimit,
+            verticalLimit);
+    }
+
+    private void NewFlowProjectDialogHeader_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        EndNewFlowProjectDialogDrag(sender);
+        e.Handled = true;
+    }
+
+    private void EndNewFlowProjectDialogDrag(object sender)
+    {
+        _newFlowProjectDialogDragStart = null;
+        if (sender is UIElement header && header.IsMouseCaptured)
+        {
+            header.ReleaseMouseCapture();
         }
     }
 

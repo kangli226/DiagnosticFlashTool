@@ -232,7 +232,8 @@
                           DragLeave="FlowDataGrid_DragLeave"
                           Drop="FlowDataGrid_Drop"
                           CellStyle="{StaticResource FlowConfigDataGridCellStyle}"
-                          Style="{StaticResource FlowConfigDataGridStyle}">
+                          Style="{StaticResource FlowConfigDataGridStyle}"
+                          ScrollViewer.VerticalScrollBarVisibility="Hidden">
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="ID" Width="76" IsReadOnly="True">
                             <DataGridTemplateColumn.CellTemplate>
