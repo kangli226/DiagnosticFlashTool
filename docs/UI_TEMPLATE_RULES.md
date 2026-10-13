@@ -97,7 +97,10 @@ AI 在编辑 UI 文件前必须完成以下步骤：
         <RowDefinition Height="*" />
     </Grid.RowDefinitions>
 
-    <controls:PageHeader Grid.Row="0">
+    <controls:PageHeader Grid.Row="0"
+                         Breadcrumb="页面分组"
+                         Title="页面标题"
+                         BadgeText="{Binding OptionalPageIdText}">
         <controls:PageHeader.Actions>
             <controls:PageHelpDocumentButton />
         </controls:PageHeader.Actions>
@@ -112,7 +115,8 @@ AI 在编辑 UI 文件前必须完成以下步骤：
 骨架规则：
 
 - 根布局使用 `PageRootGridStyle`；页头行和间隔分别使用 `PageHeaderRowStyle`、`PageHeaderGapRowStyle`。
-- `PageHeader` 的上下文默认绑定 `MainViewModel.CurrentPageContextText`。不要在页头重复左侧导航中已有的页面名称。
+- `PageHeader` 左侧按“分组 > 页面”显示路径导航，分隔符使用共享 Chevron 右箭头；页面标题使用正常字重。工作台可在页面名后显示当前项目标签。右侧放置帮助入口和必要的页面元信息；页头为无卡片背景的轻量操作行。
+- `PageHeader.Actions` 可放帮助按钮和必要的页面元信息；帮助按钮使用共享 `PageHelpDocumentButton`，默认透明无边框、仅显示文字，悬停/键盘聚焦时显示轻量背景反馈。无页头操作时保留相同行高，维持各页主体对齐。
 - 多区块间距优先使用 `PageSectionGapRowStyle`、`PageColumnGapStyle`、`PageCardBottomGap` 等资源。
 - 内容超出可用高度时，在主体内容层使用纵向 `ScrollViewer`；不要让整个 Shell 或固定页头一起滚动。
 - `Auto` 用于由内容决定的尺寸，`*` 用于分配剩余空间。固定宽高只用于稳定工具栏、状态卡、协议字段等确有格式要求的区域。
@@ -186,8 +190,8 @@ AI 在编辑 UI 文件前必须完成以下步骤：
 新页面除创建 `Views/<Name>View.xaml` 和对应代码隐藏外，还必须同步检查：
 
 - 在 `MainWindow.xaml` 的 Shell 导航和 `TabControl` 中按同一顺序接入。
-- 更新 `MainViewModel.SelectedShellIndex` 相关命令、索引分支和 `CurrentPageContextText`。
-- 为页面上下文、帮助入口、权限或可见性提供所需状态。
+- 更新 `MainViewModel.SelectedShellIndex` 相关命令和索引分支；页面标题及帮助入口应与导航一致。
+- 为页面标题、帮助入口、权限或可见性提供所需状态。
 - 复用现有 ViewModel 装配方式，不引入 DI 容器。
 - 若页面引入可复用控件或资源，将其放入 `Views/Controls/` 或对应 `Styles/` 分类并更新本文索引。
 

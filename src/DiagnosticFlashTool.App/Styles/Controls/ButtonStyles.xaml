@@ -129,9 +129,31 @@
         </Style.Triggers>
     </Style>
 
-    <Style x:Key="Button.HelpDocument" TargetType="Button" BasedOn="{StaticResource Button.ConnectionAction}">
-        <Setter Property="Width" Value="112" />
+    <Style x:Key="Button.HelpDocument" TargetType="Button" BasedOn="{StaticResource Button.Base}">
+        <Setter Property="Width" Value="88" />
+        <Setter Property="Height" Value="28" />
+        <Setter Property="Padding" Value="8,0" />
+        <Setter Property="FontSize" Value="12" />
         <Setter Property="Margin" Value="0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource PrimarySoftBrush}" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter Property="Background" Value="{StaticResource PrimarySoftBrush}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{StaticResource PrimaryPressedBrush}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Foreground" Value="{StaticResource DisabledTextBrush}" />
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <Style x:Key="Button.ConnectionPrimaryAction" TargetType="Button" BasedOn="{StaticResource Button.Primary}">
@@ -254,6 +276,11 @@
         <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
         <Setter Property="Margin" Value="8,0,0,0" />
         <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="Button.HelpDocumentLabel" TargetType="TextBlock" BasedOn="{StaticResource Button.IconLabel}">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Margin" Value="0" />
     </Style>
 
     <Style x:Key="Button.IconLabel.Inverse" TargetType="TextBlock" BasedOn="{StaticResource Button.IconLabel}">

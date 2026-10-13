@@ -21,7 +21,7 @@ dotnet build DiagnosticFlashTool.slnx -c Debug
 ```
 
 产物：`src/DiagnosticFlashTool.App/bin/Debug/net8.0-windows/DiagnosticFlashTool.exe`。
-方案为 `.slnx` 格式（新版 XML 方案，非传统 `.sln`）。
+方案为 `.slnx` 格式（新版 XML 方案，非传统 `.sln`）。·
 
 ## 架构约定
 

@@ -12,7 +12,10 @@
             <RowDefinition Style="{StaticResource PageSummaryRowStyle}" />
         </Grid.RowDefinitions>
 
-        <controls:PageHeader Grid.Row="0">
+        <controls:PageHeader Grid.Row="0"
+                             Breadcrumb="刷写中心"
+                             Title="固件刷写"
+                             BadgeText="{Binding FlashPageProjectIdText}">
             <controls:PageHeader.Actions>
                 <controls:PageHelpDocumentButton />
             </controls:PageHeader.Actions>

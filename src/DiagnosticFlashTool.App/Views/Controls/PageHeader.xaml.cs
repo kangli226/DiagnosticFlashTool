@@ -5,9 +5,20 @@ namespace DiagnosticFlashTool.App.Views.Controls;
 
 public partial class PageHeader : UserControl
 {
-    /// <summary>页头单行上下文文本；为空时页头仅显示操作区。</summary>
-    public static readonly DependencyProperty ContextProperty = DependencyProperty.Register(
-        nameof(Context),
+    public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(
+        nameof(Title),
+        typeof(string),
+        typeof(PageHeader),
+        new PropertyMetadata(string.Empty));
+
+    public static readonly DependencyProperty BreadcrumbProperty = DependencyProperty.Register(
+        nameof(Breadcrumb),
+        typeof(string),
+        typeof(PageHeader),
+        new PropertyMetadata(string.Empty));
+
+    public static readonly DependencyProperty BadgeTextProperty = DependencyProperty.Register(
+        nameof(BadgeText),
         typeof(string),
         typeof(PageHeader),
         new PropertyMetadata(string.Empty));
@@ -23,10 +34,22 @@ public partial class PageHeader : UserControl
         InitializeComponent();
     }
 
-    public string Context
+    public string Title
     {
-        get => (string)GetValue(ContextProperty);
-        set => SetValue(ContextProperty, value);
+        get => (string)GetValue(TitleProperty);
+        set => SetValue(TitleProperty, value);
+    }
+
+    public string Breadcrumb
+    {
+        get => (string)GetValue(BreadcrumbProperty);
+        set => SetValue(BreadcrumbProperty, value);
+    }
+
+    public string BadgeText
+    {
+        get => (string)GetValue(BadgeTextProperty);
+        set => SetValue(BadgeTextProperty, value);
     }
 
     public object? Actions
