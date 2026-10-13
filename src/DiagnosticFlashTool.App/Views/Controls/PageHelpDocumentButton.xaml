@@ -1,9 +1,7 @@
 <UserControl x:Class="DiagnosticFlashTool.App.Views.Controls.PageHelpDocumentButton"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Name="Root"
-             HorizontalAlignment="Right"
-             VerticalAlignment="Center">
+             x:Name="Root">
     <Button Style="{StaticResource Button.HelpDocument}"
             ToolTip="{Binding ToolTip, ElementName=Root}">
         <TextBlock Text="{Binding Text, ElementName=Root}"

@@ -98,11 +98,12 @@ AI 在编辑 UI 文件前必须完成以下步骤：
     </Grid.RowDefinitions>
 
     <controls:PageHeader Grid.Row="0"
+                         Style="{StaticResource PageHeader.Standard}"
                          Breadcrumb="页面分组"
                          Title="页面标题"
                          BadgeText="{Binding OptionalPageIdText}">
         <controls:PageHeader.Actions>
-            <controls:PageHelpDocumentButton />
+            <controls:PageHelpDocumentButton Style="{StaticResource PageHelpDocumentButton.Standard}" />
         </controls:PageHeader.Actions>
     </controls:PageHeader>
 
@@ -114,9 +115,9 @@ AI 在编辑 UI 文件前必须完成以下步骤：
 
 骨架规则：
 
-- 根布局使用 `PageRootGridStyle`；页头行和间隔分别使用 `PageHeaderRowStyle`、`PageHeaderGapRowStyle`。
-- `PageHeader` 左侧按“分组 > 页面”显示路径导航，分隔符使用共享 Chevron 右箭头；页面标题使用正常字重。工作台可在页面名后显示当前项目标签。右侧放置帮助入口和必要的页面元信息；页头为无卡片背景的轻量操作行。
-- `PageHeader.Actions` 可放帮助按钮和必要的页面元信息；帮助按钮使用共享 `PageHelpDocumentButton`，默认透明无边框、仅显示文字，悬停/键盘聚焦时显示轻量背景反馈。无页头操作时保留相同行高，维持各页主体对齐。
+- 根布局使用 `PageRootGridStyle`，统一外边距为 `16,8,16,16`；页头行和间隔分别使用 `PageHeaderRowStyle`、`PageHeaderGapRowStyle`，统一高度为 32 和 8。所有页面必须直接复用这三个全局样式，不得为单页重复定义同值覆盖。
+- `PageHeader` 必须显式使用 `PageHeader.Standard`；该样式调用 `PageHeaderContentMargin=4,0`。页头左侧按“分组 > 页面”显示路径导航，右侧放置帮助入口和必要元信息；与页面根左右边距 16 叠加后，左侧路径文字和右侧末端文字距 Shell 内容区边界均为 20 DIP。页面不得重复硬编码该边距。
+- `PageHeader.Actions` 可放帮助按钮和必要的页面元信息；帮助按钮必须显式使用 `PageHelpDocumentButton.Standard`。内部 `Button.HelpDocument` 保留 `88 x 28` 点击热区，文字右对齐且右内边距为 0，保证“帮助文档”文字最右侧遵循 20 DIP 页头边界；悬停/键盘聚焦时显示轻量背景反馈。无页头操作时保留相同行高，维持各页主体对齐。
 - 多区块间距优先使用 `PageSectionGapRowStyle`、`PageColumnGapStyle`、`PageCardBottomGap` 等资源。
 - 内容超出可用高度时，在主体内容层使用纵向 `ScrollViewer`；不要让整个 Shell 或固定页头一起滚动。
 - `Auto` 用于由内容决定的尺寸，`*` 用于分配剩余空间。固定宽高只用于稳定工具栏、状态卡、协议字段等确有格式要求的区域。

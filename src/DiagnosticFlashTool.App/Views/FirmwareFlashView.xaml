@@ -3,21 +3,30 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+    <UserControl.Resources>
+        <Style x:Key="FirmwareFlashSectionGapRowStyle"
+               TargetType="RowDefinition"
+               BasedOn="{StaticResource PageSectionGapRowStyle}">
+            <Setter Property="Height" Value="8" />
+        </Style>
+    </UserControl.Resources>
+
     <Grid Style="{StaticResource PageRootGridStyle}">
         <Grid.RowDefinitions>
             <RowDefinition Style="{StaticResource PageHeaderRowStyle}" />
             <RowDefinition Style="{StaticResource PageHeaderGapRowStyle}" />
             <RowDefinition Height="*" />
-            <RowDefinition Style="{StaticResource PageSectionGapRowStyle}" />
+            <RowDefinition Style="{StaticResource FirmwareFlashSectionGapRowStyle}" />
             <RowDefinition Style="{StaticResource PageSummaryRowStyle}" />
         </Grid.RowDefinitions>
 
         <controls:PageHeader Grid.Row="0"
+                             Style="{StaticResource PageHeader.Standard}"
                              Breadcrumb="刷写中心"
                              Title="固件刷写"
                              BadgeText="{Binding FlashPageProjectIdText}">
             <controls:PageHeader.Actions>
-                <controls:PageHelpDocumentButton />
+                <controls:PageHelpDocumentButton Style="{StaticResource PageHelpDocumentButton.Standard}" />
             </controls:PageHeader.Actions>
         </controls:PageHeader>
 

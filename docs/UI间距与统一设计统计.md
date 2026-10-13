@@ -8,9 +8,10 @@
 
 | 区域/令牌 | 值 | 来源与说明 |
 |---|---:|---|
-| 页面根外边距 `PageMargin` | 16 四边 | `PageRootGridStyle` 继承 |
-| 页面页头行 `PageHeaderRowStyle` | 高 40 | 所有页面统一（无卡片背景的标题与操作栏） |
-| 页头后间距 `PageHeaderGapRowStyle` | 高 16 | 继承 `PageSectionGapRowStyle` |
+| 页面根外边距 `PageMargin` | `16,8,16,16` | 所有业务页面通过 `PageRootGridStyle` 统一调用 |
+| 页头内容边距 `PageHeaderContentMargin` | `4,0` | 与页面根左右边距叠加，页头两端文字距 Shell 内容区边界均为 20 DIP |
+| 页面页头行 `PageHeaderRowStyle` | 高 32 | 所有页面统一（无卡片背景的标题与操作栏） |
+| 页头后间距 `PageHeaderGapRowStyle` | 高 8 | 继承区块间距样式后统一覆盖 |
 | 页面区块间距 `PageSectionGapRowStyle` | 高 16 | 多卡片页面使用 |
 | 页面列间距 `PageColumnGapStyle` | 宽 12 | 两列/三列布局使用 |
 | 页面摘要行 `PageSummaryRowStyle` | 高 122 | 固件刷写、刷写监控 |
@@ -20,8 +21,8 @@
 | 内容顶部/底部令牌 | `0,12,0,0` / `0,0,0,12` | `PageContentTopGap` / `PageContentBottomGap` |
 | 标签后辅助文字偏移 | `90,0,0,0` | `FormAssistTextAfterLabelMargin`，与标签列对齐 |
 
-> 页头结构：`PageHeader` 左侧显示“分组 > 页面”路径，使用 Chevron 右箭头分隔；页面标题为 14px 正常字重；工作台可附当前项目标签。右侧显示帮助按钮及必要元信息。整体为无卡片背景的轻量操作栏。
-> 页头资源（路径文字、Chevron 分隔图标、项目标签、操作栏行高、元信息文字）位于 `Styles/Controls/PageHeaderStyles.xaml`；页面通过 `<controls:PageHeader Grid.Row="0" Breadcrumb="..." Title="...">` 和 `PageHeader.Actions` 声明路径与操作。帮助入口统一使用 `PageHelpDocumentButton`。
+> 页头结构：`PageHeader` 左侧显示“分组 > 页面”路径，使用 Chevron 右箭头分隔；页面标题为 14px 正常字重；工作台可附当前项目标签。右侧显示帮助按钮及必要元信息。整体为无卡片背景的轻量操作栏。页头模板统一应用 `PageHeaderContentMargin=4,0`，叠加页面根左右边距 16 后，两端文字边缘距 Shell 内容区边界均为 20 DIP。
+> 页头资源（`PageHeader.Standard`、`PageHelpDocumentButton.Standard`、内容边距、路径文字、Chevron 分隔图标、项目标签、操作栏行高、元信息文字）位于 `Styles/Controls/PageHeaderStyles.xaml`；所有页面显式引用两个 Standard 样式，不得在页面内重复设置水平对齐或右内边距。
 
 ## 2. 统一控件与模板
 
@@ -60,7 +61,7 @@
 | `Button.Compact` | `72 x 32` | `Padding=8,0`；`Margin=8,0,0,0` | 紧凑操作 |
 | `Button.ConnectionAction` | 高 32 | `Padding=12,0`；`Margin=8,0,0,0` | 固件页连接按钮 |
 | `Button.ConnectionPrimaryAction` | 高 36 | `Padding=14,0`；`Margin=0` | 系统设置连接按钮 |
-| `Button.HelpDocument` | 宽 88、高 28、内边距 `8,0`、字号 12 | `Margin=0` | 页头紧凑帮助按钮 |
+| `Button.HelpDocument` | 宽 88、高 28、内边距 `0`、字号 12，内容右对齐 | `Margin=0` | 保留点击热区，文字最右侧对齐统一页头边界 |
 | `Button.PathAction` | 高 30，最小宽 52 | `Padding=8,0`；`Margin=6,0,0,0` | 路径打开/选择 |
 | `Button.DialogSecondary` | `78 x 32` | `Margin=0,0,8,0` | 对话框取消 |
 | `Button.DialogPrimary` | 高 32 | `Margin=0` | 对话框确认 |
@@ -115,8 +116,8 @@
 
 | 对象 | 内部布局与间距 |
 |---|---|
-| `PageHeader` | 无卡片背景；左侧分组路径与当前页名垂直居中，文字超长省略；工作台当前项目显示为紧凑标签，右侧操作内容右对齐、垂直居中。 |
-| `PageHelpDocumentButton` | 控件本身右对齐、垂直居中；内部 `Button.HelpDocument` 为 `88 x 28`、`Padding=8,0`、无外边距；默认透明无边框，仅显示帮助文档文字，悬停/键盘聚焦时使用 `PrimarySoftBrush` 背景，按下时使用 `PrimaryPressedBrush`。 |
+| `PageHeader` | 无卡片背景；模板统一使用 `PageHeaderContentMargin=4,0`；左侧分组路径与当前页名垂直居中，文字超长省略；工作台当前项目显示为紧凑标签，右侧操作内容右对齐、垂直居中。 |
+| `PageHelpDocumentButton` | 控件本身右对齐、垂直居中；内部 `Button.HelpDocument` 为 `88 x 28`、`Padding=0`、内容右对齐、无外边距；默认透明无边框，仅显示帮助文档文字，文字最右侧距 Shell 内容区右边界 20 DIP，悬停/键盘聚焦时使用 `PrimarySoftBrush` 背景，按下时使用 `PrimaryPressedBrush`。 |
 | `ShellContentTabControlStyle` | 无边框；内容 Presenter 只呈现当前 Tab 的 `SelectedContent`，页面自身负责 16 的外边距。 |
 | `ShellNavGroupTextStyle` | 宽 256、高 28；外边距 `0,14,0,4`；内边距 `22,0,16,0`。 |
 | `ShellNavRadioButtonStyle` | 宽 256、高 42；模板列 `4 / 26 / 34 / *`；图标 `18 x 18`，活动轨为第 0 列宽 4。 |
@@ -143,7 +144,7 @@
 
 ### 3.1 `FirmwareFlashView.xaml` 固件刷写
 
-- 根：`PageRootGridStyle`，外边距 16；行依次为页头 40、间距 16、主体 `*`、间距 16、摘要 122。
+- 根：直接复用全局 `PageRootGridStyle=16,8,16,16`；行依次为全局页头 32、全局页头间距 8、主体 `*`、局部区块间距 8、摘要 122。页头水平位置复用 `PageHeaderContentMargin` 与 `PageHelpDocumentButton` 模板，两端文字边缘均距 Shell 内容区边界 20 DIP；该页仅保留上下业务面板之间的 8 DIP 局部间距。
 - 主体（第 2 行）：三列 `1* / 12 / 1*`，左右两张卡片等宽，列间 12。
 - 左卡“设备配置”：`CardStyle`；标题行高 50；标题左右 22；内容 `Margin=22,12,22,12`。
   - 内容行：高 74 + 间距 14 + 当前配置 `Auto` + 余量 `*`。
@@ -158,14 +159,14 @@
 
 ### 3.2 `FlashMonitorView.xaml` 刷写监控
 
-- 根：外边距 16；页头 40 + 16；摘要行 122；摘要与表格间 12；表格占余量。
+- 根：外边距 `16,8,16,16`；页头 32 + 8；摘要行 122；摘要与表格间 12；表格占余量。
 - 摘要区三列 `1* / 12 / 1* / 12 / 1*`；每张 `PageSummaryCardStyle` 无额外内边距，内容 StackPanel 左右 18、垂直居中。
 - 每张摘要卡内部：标签；主状态值上边距 10、字号 22；次级文字上边距 6。进度卡的进度网格使用 `PageContentTopGap=0,12,0,0`，进度条高 24。
 - 底部 DataGrid：`Card.Compact` 内边距 16；表格基线行高 40、表头 38。列宽 `Time=120, Dir=70, Ch=70, ID=140, DLC=70, Data=*`。
 
 ### 3.3 `FlashHistoryView.xaml` 历史记录
 
-- 根：外边距 16；页头 40 + 16；主体 `*`。
+- 根：外边距 `16,8,16,16`；页头 32 + 8；主体 `*`。
 - 主卡 `Card.Standard`，内边距 16。
 - 空状态 Border 页面显式：内边距 20、边框 1、圆角 8，填充 Surface；居中 StackPanel。
 - 空状态标题 `EmptyStateTitleTextStyle`（字号 22）；说明文字上边距 8，水平居中。
@@ -177,7 +178,7 @@
 
 ### 3.5 `ProjectConfigView.xaml` 项目配置
 
-- 根：外边距 16；页头 40 + 16；主体 `*`。
+- 根：外边距 `16,8,16,16`；页头 32 + 8；主体 `*`。
 - 页头操作：Add `80`、Delete `80`、Save `90`；均横向排列，工具栏按钮间默认右边距 8（Save 仍继承主按钮基线，页面未额外改 Margin）。
 - 主卡 `Card.Compact`（内边距 16）包住 DataGrid；表格基线行高 40、表头 38、左右内边距 10。
 - 列宽：`Project=160, No=70, Baud=80, Physical ID=130, Functional ID=130, Response ID=130, BOOT=120, Driver file=220, Application file=*`。
@@ -185,13 +186,13 @@
 
 ### 3.6 `RecipeConfigView.xaml` 配方配置
 
-- 布局与 `ProjectConfigView` 完全相同：根外边距 16、页头 40 + 16、主卡 `Card.Compact` 内边距 16。
+- 布局与 `ProjectConfigView` 完全相同：根外边距 `16,8,16,16`、页头 32 + 8、主卡 `Card.Compact` 内边距 16。
 - 页头操作宽度 `80 / 80 / 90`，按钮间距遵循工具栏/主按钮样式。
 - DataGrid 列宽同样为 `160 / 70 / 80 / 130 / 130 / 130 / 120 / 220 / *`；页面未定义独立配方列模板，属于复用项目表格模板。
 
 ### 3.7 `FlowConfigView.xaml` 流程配置
 
-- 根：外边距 16；页头 40 + 16；右侧帮助入口；工具卡 `Auto`；表格 `*`；底部验证卡固定高 110。
+- 根：外边距 `16,8,16,16`；页头 32 + 8；右侧帮助入口；工具卡 `Auto`；表格 `*`；底部验证卡固定高 110。
 - 工具卡 `PageLeadStandardCardStyle`（继承 `Card.Form`，内边距 16，底部间距 12），内部 DockPanel 左右两组。
   - 左组：标签右边距 8；ComboBox 显式宽 180；按钮 `Load=80, Validate=90, Save=90`；工具栏按钮默认右边距 8。
   - 右组：`Add Step=100, Delete=86, Up=70, Down=70`；横向排列，最后按钮仍可能继承工具栏右边距 8。
@@ -200,14 +201,14 @@
 
 ### 3.8 `AlgorithmConfigView.xaml` 算法配置
 
-- 根：外边距 16；页头 40 + 16；主体 `*`。
+- 根：外边距 `16,8,16,16`；页头 32 + 8；主体 `*`。
 - 页头右侧元信息显示算法数量与脚本根路径（`PageHeaderMetaTextStyle` 字号 13、半粗）。
 - 主卡 `Card.Compact` 内边距 16，DataGrid 只读；基线行高 40、表头 38。
 - 列宽：`Category=150, Name=180, Status=110, Source=*`；单元格左右内边距 10。
 
 ### 3.9 `DeveloperOptionsView.xaml` 开发者选项
 
-- 根：外边距 16；页头 40 + 16；内容区先为自适应高度的表单卡，再占余量主体。
+- 根：外边距 `16,8,16,16`；页头 32 + 8；内容区先为自适应高度的表单卡，再占余量主体。
 - 刷写配置卡：采用 `Card.Form` + `CardContentPanel`，标题后 10、内容行间 12；标签列 `Auto`，ComboBox 列 `*`（页面显式 `Width=Auto`、拉伸），列间固定 12，开始刷写按钮显式宽 118、样式 `Button.Primary`。
 - 主体左右比例 `7* / 12 / 13*`，中间间距 12（星号为比例而非像素）。
 - 左列：上部下载进度卡固定高 108（标题后 10、进度条 24）；下部下载信息卡占余量，标题后 10；内嵌 TextBox 页面显式 `Height=Auto, Margin=0, Padding=0`。
@@ -220,7 +221,7 @@
 
 ### 3.10 `SystemSettingsView.xaml` 系统设置
 
-- 根：外边距 16；页头 40 + 16；内容为垂直 ScrollViewer，卡片顺序固定，卡片均 `PageLeadStandardCardStyle`（继承 `Card.Form`，内边距 16，底部间距 12）。
+- 根：外边距 `16,8,16,16`；页头 32 + 8；内容为垂直 ScrollViewer，卡片顺序固定，卡片均 `PageLeadStandardCardStyle`（继承 `Card.Form`，内边距 16，底部间距 12）。
 - “基础设置”卡：采用 `Card.Form` + `CardContentPanel`，标题后 10、数据行间 12、末行不追加间距；内容两列 `* / 24 / *`。每列内部标签列 90、开关 `44 x 24`、开关后间距 12、状态辅助文字字号 12。
 - “CAN 适配器设置”卡：采用 `CardContentPanel`，设备类型、设备通道、自动连接三行均按 12 间隔排列；标签列 90，开关后间距 12，状态辅助文字字号 12。
 - “运行配置管理”卡：采用 `CardContentPanel`，标题操作区使用无外边距的面板标题样式；标题后 10、三条路径行之间 12；导入按钮高 32、右边距 8，清空按钮高 32、Margin 0。标签列 90，路径框高 32，路径操作统一 `Button.PathAction`（高 30、左边距 6、最小宽 52）。
@@ -230,7 +231,7 @@
 
 ### 3.11 `SystemLogView.xaml` 日志
 
-- 根：外边距 16；页头 40 + 16；主体为 `PageLeadStandardCardStyle`（内边距 16）。
+- 根：外边距 `16,8,16,16`；页头 32 + 8；主体为 `PageLeadStandardCardStyle`（内边距 16）。
 - 主卡内部行：标题区 `Auto`、间距 12、工具栏 `Auto`、间距 10、日志列表 `*`。
 - 标题区：标题使用 `CardHeaderTextStyle`；标题与状态/路径行之间 `CardContentTitleGapRowStyle=10`。
 - 状态/路径行列：状态框最小宽 148；状态框与路径框间 10；路径框与右侧过滤汇总间 12；路径框高度 32、内边距 10/0。
@@ -258,7 +259,7 @@
 | 类别 | 统一资源 |
 |---|---|
 | 页面骨架 | `PageRootGridStyle`、`PageHeaderRowStyle`、`PageHeaderGapRowStyle`、`PageSectionGapRowStyle`、`PageSummaryRowStyle`、`PageColumnGapStyle`、`FormLabelColumnStyle` |
-| 页头与复用控件 | `PageHeader`、`PageHeaderStyles.xaml`（`PageHeaderRowStyle`、`PageHeaderTitleTextStyle`、`PageHeaderBreadcrumbTextStyle`、`PageHeaderBadgeStyle`、`PageHeaderMetaTextStyle`）、`PageHelpDocumentButton` |
+| 页头与复用控件 | `PageHeader`、`PageHeader.Standard`、`PageHelpDocumentButton`、`PageHelpDocumentButton.Standard`、`PageHeaderContentMargin` 及页头文字/标签样式 |
 | 卡片与面板 | `CardStyle`、`Card.Compact`、`Card.Standard`、`Card.Form`、`Card.FormContent`、`CardContentPanel`、`Card.Elevated`、`DialogPanelStyle`、`SettingGroupPanelStyle`、`PanelHeaderStyle`、`PanelContentGridStyle`、`PanelContentGroupStyle`、`CardContentPanelTitleTextStyle` |
 | 按钮 | `Button.Base`、`Button.Normal`、`Button.Primary`、`Button.Danger`、`Button.ToolBar`、`Button.Compact`、`Button.PathAction`、`Button.ConnectionAction`、`Button.ConnectionPrimaryAction`、`Button.HelpDocument`、`Button.Icon`、对话框/窗口按钮样式 |
 | 输入与反馈 | `SoftTextBoxStyle`、`PathTextBoxStyle`、`PathDisplayBorderStyle`、`StandardComboBoxStyle`、ComboBoxItem 模板、`SoftSwitchStyle`、`SoftProgressBarStyle`、`InlineStatusValueBorderStyle` |
@@ -285,7 +286,7 @@
 
 | 统一资源 | 显式引用次数 | 覆盖范围 |
 |---|---:|---|
-| `PageRootGridStyle`、`PageHeaderRowStyle`、`PageHeaderGapRowStyle` | 各 8 | 当前 8 个业务页面 |
+| `PageRootGridStyle`、`PageHeaderRowStyle`、`PageHeaderGapRowStyle` | 各 8 | 当前 8 个业务页面统一使用 `16,8,16,16`、32、8 |
 | `Button.ToolBar` | 17 | 7 个页面/壳层 |
 | `FieldLabelStyle` | 27 | 5 个表单型页面 |
 | `FormLabelColumnStyle` | 19 | 4 个复杂表单页面 |
@@ -296,10 +297,10 @@
 | `PanelHeaderRowStyle` / `PanelHeaderStyle` | 各 4 | 固件表格 |
 | `StandardComboBoxStyle` | 10 | 5 个页面 |
 | `SoftSwitchStyle` | 7 | 系统设置、系统日志 |
-| `PageHeader` 控件 | 8 | 当前 8 个业务页面 |
+| `PageHeader.Standard` / `PageHelpDocumentButton.Standard` | 各 8 | 当前 8 个业务页面显式调用，页头左右文字边缘统一为 20 DIP |
 | `ShellNavRadioButtonStyle` | 10 | 主窗口 10 个导航入口 |
 
-- 所有页面全部复用 `PageRootGridStyle`、页头行、页头间距和 `PageHeader`（左侧分组路径、右侧操作、无卡片背景），页面外框一致。
+- 所有页面全部复用 `PageRootGridStyle`、`PageHeaderRowStyle`、`PageHeaderGapRowStyle` 和 `PageHeader`，统一使用顶部 8、页头高 32、页头后间距 8；`PageHeader` 模板调用 `PageHeaderContentMargin`，`PageHelpDocumentButton` 模板控制帮助文字右对齐，因此 8 个业务页面无需重复设置页头骨架与 20 DIP 水平边界。固件刷写页仅保留上下业务面板区块间距 8 的局部差异。
 - 卡片、面板标题、表单标签、按钮、输入框、ComboBox、开关、进度条和 DataGrid 均已有资源级基线；新页面优先组合这些资源。
 - 自定义主要集中在业务列定义、页面专用固定高度/列宽、复杂嵌套网格和管理员弹窗；这些是内容层差异，不应回写为全局模板，除非出现至少两个页面的同形复用需求。
 

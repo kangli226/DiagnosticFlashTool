@@ -5,7 +5,7 @@
         <ResourceDictionary Source="CardStyles.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <Thickness x:Key="PageMargin">16</Thickness>
+    <Thickness x:Key="PageMargin">16,8,16,16</Thickness>
     <Thickness x:Key="PageCardBottomGap">0,0,0,16</Thickness>
     <Thickness x:Key="PageCardTopGap">0,16,0,0</Thickness>
     <Thickness x:Key="PageContentBottomGap">0,0,0,12</Thickness>
@@ -22,7 +22,9 @@
 
     <Style x:Key="PageHeaderGapRowStyle"
            TargetType="RowDefinition"
-           BasedOn="{StaticResource PageSectionGapRowStyle}" />
+           BasedOn="{StaticResource PageSectionGapRowStyle}">
+        <Setter Property="Height" Value="8" />
+    </Style>
 
     <Style x:Key="PageSummaryRowStyle" TargetType="RowDefinition">
         <Setter Property="Height" Value="122" />

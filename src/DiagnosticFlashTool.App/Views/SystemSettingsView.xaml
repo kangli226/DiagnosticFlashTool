@@ -10,9 +10,9 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <controls:PageHeader Grid.Row="0" Breadcrumb="系统" Title="系统设置">
+        <controls:PageHeader Grid.Row="0" Style="{StaticResource PageHeader.Standard}" Breadcrumb="系统" Title="系统设置">
             <controls:PageHeader.Actions>
-                <controls:PageHelpDocumentButton />
+                <controls:PageHelpDocumentButton Style="{StaticResource PageHelpDocumentButton.Standard}" />
             </controls:PageHeader.Actions>
         </controls:PageHeader>
 

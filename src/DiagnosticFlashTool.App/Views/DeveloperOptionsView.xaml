@@ -10,9 +10,9 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <controls:PageHeader Grid.Row="0" Breadcrumb="刷写中心" Title="开发者选项">
+        <controls:PageHeader Grid.Row="0" Style="{StaticResource PageHeader.Standard}" Breadcrumb="刷写中心" Title="开发者选项">
             <controls:PageHeader.Actions>
-                <controls:PageHelpDocumentButton />
+                <controls:PageHelpDocumentButton Style="{StaticResource PageHelpDocumentButton.Standard}" />
             </controls:PageHeader.Actions>
         </controls:PageHeader>
 
