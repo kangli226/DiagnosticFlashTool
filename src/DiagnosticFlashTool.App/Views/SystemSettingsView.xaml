@@ -126,7 +126,7 @@
                 </controls:HeaderedCard>
 
                 <controls:HeaderedCard Header="运行配置管理"
-                                       Style="{StaticResource HeaderedCard.Form.Lead}">
+                                       Style="{StaticResource HeaderedCard.Form.Actions.Lead}">
                     <controls:HeaderedCard.Actions>
                         <StackPanel Orientation="Horizontal">
                             <Button Command="{Binding ImportBuiltinConfigurationCommand}"

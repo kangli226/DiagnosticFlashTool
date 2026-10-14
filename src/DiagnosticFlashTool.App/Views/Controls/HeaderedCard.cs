@@ -15,13 +15,19 @@ public sealed class HeaderedCard : HeaderedContentControl
         nameof(HeaderHeight),
         typeof(GridLength),
         typeof(HeaderedCard),
-        new PropertyMetadata(new GridLength(50)));
+        new PropertyMetadata(new GridLength(44)));
 
     public static readonly DependencyProperty HeaderPaddingProperty = DependencyProperty.Register(
         nameof(HeaderPadding),
         typeof(Thickness),
         typeof(HeaderedCard),
         new PropertyMetadata(new Thickness(16, 0, 16, 0)));
+
+    public static readonly DependencyProperty BodyPaddingProperty = DependencyProperty.Register(
+        nameof(BodyPadding),
+        typeof(Thickness),
+        typeof(HeaderedCard),
+        new PropertyMetadata(new Thickness(16, 0, 16, 16)));
 
     public object? Actions
     {
@@ -39,5 +45,15 @@ public sealed class HeaderedCard : HeaderedContentControl
     {
         get => (Thickness)GetValue(HeaderPaddingProperty);
         set => SetValue(HeaderPaddingProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the spacing around the card body. Use this property instead
+    /// of the inherited Padding property so the header and body remain independent.
+    /// </summary>
+    public Thickness BodyPadding
+    {
+        get => (Thickness)GetValue(BodyPaddingProperty);
+        set => SetValue(BodyPaddingProperty, value);
     }
 }

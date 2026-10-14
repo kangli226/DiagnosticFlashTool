@@ -89,8 +89,8 @@
 
                     <controls:HeaderedCard Grid.Row="0"
                                            Header="下载进度"
-                                           Style="{StaticResource HeaderedCard.Panel.Lead}">
-                        <Grid VerticalAlignment="Center">
+                                           Style="{StaticResource HeaderedCard.Panel.Centered.Lead}">
+                        <Grid>
                             <ProgressBar Minimum="0"
                                          Maximum="100"
                                          Value="{Binding Progress}"
@@ -184,7 +184,7 @@
 
                     <controls:HeaderedCard Grid.Row="1"
                                            Header="报文接收区"
-                                           Style="{StaticResource HeaderedCard.Data}">
+                                           Style="{StaticResource HeaderedCard.Data.Actions}">
                         <controls:HeaderedCard.Actions>
                             <StackPanel Orientation="Horizontal">
                                 <Button Width="98"

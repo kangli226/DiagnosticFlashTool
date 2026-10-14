@@ -160,7 +160,7 @@
 
         <controls:HeaderedCard Grid.Row="4"
                                Header="流程节点"
-                               Style="{StaticResource HeaderedCard.Data}">
+                               Style="{StaticResource HeaderedCard.Data.Actions}">
             <controls:HeaderedCard.Actions>
                 <StackPanel Orientation="Horizontal">
                         <Button Command="{Binding AddFlowStepCommand}"

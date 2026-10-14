@@ -7,13 +7,19 @@
         <ResourceDictionary Source="PageStyles.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
+    <GridLength x:Key="HeaderedCardHeaderHeight">44</GridLength>
+    <GridLength x:Key="HeaderedCardActionHeaderHeight">52</GridLength>
+    <Thickness x:Key="HeaderedCardHeaderBodyGap">0,0,0,12</Thickness>
+    <Thickness x:Key="HeaderedCardBodyPadding">16,0,16,16</Thickness>
+    <Thickness x:Key="HeaderedCardCenteredBodyPadding">16,0</Thickness>
+
     <Style x:Key="HeaderedCard.Base" TargetType="{x:Type controls:HeaderedCard}">
-        <Setter Property="HeaderHeight" Value="50" />
+        <Setter Property="HeaderHeight" Value="{StaticResource HeaderedCardHeaderHeight}" />
         <Setter Property="HeaderPadding" Value="{StaticResource CardHeaderContentPadding}" />
+        <Setter Property="BodyPadding" Value="{StaticResource HeaderedCardBodyPadding}" />
         <Setter Property="Background" Value="{StaticResource PanelBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Padding" Value="{StaticResource CardContentPadding}" />
         <Setter Property="Effect" Value="{StaticResource CardShadowEffect}" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Stretch" />
@@ -47,7 +53,8 @@
                                     </Grid.ColumnDefinitions>
                                     <ContentPresenter Grid.Column="0"
                                                       ContentSource="Header"
-                                                      VerticalAlignment="Center" />
+                                                      Margin="{StaticResource HeaderedCardHeaderBodyGap}"
+                                                      VerticalAlignment="Bottom" />
                                     <ContentPresenter Grid.Column="1"
                                                       Content="{TemplateBinding Actions}"
                                                       VerticalAlignment="Center" />
@@ -55,7 +62,7 @@
                             </Border>
 
                             <ContentPresenter Grid.Row="1"
-                                              Margin="{TemplateBinding Padding}"
+                                              Margin="{TemplateBinding BodyPadding}"
                                               HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                               VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                         </Grid>
@@ -72,10 +79,7 @@
 
     <Style x:Key="HeaderedCard.Form"
            TargetType="{x:Type controls:HeaderedCard}"
-           BasedOn="{StaticResource HeaderedCard.Base}">
-        <Setter Property="HeaderHeight" Value="44" />
-        <Setter Property="Padding" Value="16,0,16,16" />
-    </Style>
+           BasedOn="{StaticResource HeaderedCard.Base}" />
 
     <Style x:Key="HeaderedCard.Form.Lead"
            TargetType="{x:Type controls:HeaderedCard}"
@@ -83,11 +87,21 @@
         <Setter Property="Margin" Value="{StaticResource PageCardBottomGap}" />
     </Style>
 
+    <Style x:Key="HeaderedCard.Form.Actions"
+           TargetType="{x:Type controls:HeaderedCard}"
+           BasedOn="{StaticResource HeaderedCard.Form}">
+        <Setter Property="HeaderHeight" Value="{StaticResource HeaderedCardActionHeaderHeight}" />
+    </Style>
+
+    <Style x:Key="HeaderedCard.Form.Actions.Lead"
+           TargetType="{x:Type controls:HeaderedCard}"
+           BasedOn="{StaticResource HeaderedCard.Form.Actions}">
+        <Setter Property="Margin" Value="{StaticResource PageCardBottomGap}" />
+    </Style>
+
     <Style x:Key="HeaderedCard.Panel"
            TargetType="{x:Type controls:HeaderedCard}"
-           BasedOn="{StaticResource HeaderedCard.Base}">
-        <Setter Property="Padding" Value="16,12,16,12" />
-    </Style>
+           BasedOn="{StaticResource HeaderedCard.Base}" />
 
     <Style x:Key="HeaderedCard.Panel.Lead"
            TargetType="{x:Type controls:HeaderedCard}"
@@ -95,10 +109,33 @@
         <Setter Property="Margin" Value="{StaticResource PageCardBottomGap}" />
     </Style>
 
+    <Style x:Key="HeaderedCard.Panel.Centered"
+           TargetType="{x:Type controls:HeaderedCard}"
+           BasedOn="{StaticResource HeaderedCard.Panel}">
+        <Setter Property="BodyPadding" Value="{StaticResource HeaderedCardCenteredBodyPadding}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="HeaderedCard.Panel.Centered.Lead"
+           TargetType="{x:Type controls:HeaderedCard}"
+           BasedOn="{StaticResource HeaderedCard.Panel.Centered}">
+        <Setter Property="Margin" Value="{StaticResource PageCardBottomGap}" />
+    </Style>
+
     <Style x:Key="HeaderedCard.Data"
            TargetType="{x:Type controls:HeaderedCard}"
-           BasedOn="{StaticResource HeaderedCard.Base}">
-        <Setter Property="Padding" Value="{StaticResource CardDataContentMargin}" />
+           BasedOn="{StaticResource HeaderedCard.Base}" />
+
+    <Style x:Key="HeaderedCard.Data.Actions"
+           TargetType="{x:Type controls:HeaderedCard}"
+           BasedOn="{StaticResource HeaderedCard.Data}">
+        <Setter Property="HeaderHeight" Value="{StaticResource HeaderedCardActionHeaderHeight}" />
+    </Style>
+
+    <Style x:Key="HeaderedCard.Data.Actions.Lead"
+           TargetType="{x:Type controls:HeaderedCard}"
+           BasedOn="{StaticResource HeaderedCard.Data.Actions}">
+        <Setter Property="Margin" Value="{StaticResource PageCardBottomGap}" />
     </Style>
 
     <Style x:Key="HeaderedCard.Data.Lead"

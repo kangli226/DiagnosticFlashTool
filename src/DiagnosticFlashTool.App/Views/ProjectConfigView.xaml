@@ -25,7 +25,7 @@
             <controls:HeaderedCard Grid.Column="0"
                                    MinWidth="500"
                                    Header="项目列表"
-                                   Style="{StaticResource HeaderedCard.Data}">
+                                   Style="{StaticResource HeaderedCard.Data.Actions}">
                 <controls:HeaderedCard.Actions>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                             <Button Command="{Binding RefreshProjectsCommand}"

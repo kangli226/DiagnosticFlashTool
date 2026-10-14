@@ -256,7 +256,7 @@
 
         <controls:HeaderedCard Grid.Row="4"
                                Header="下载进度"
-                               Style="{StaticResource HeaderedCard.Panel}">
+                               Style="{StaticResource HeaderedCard.Panel.Centered}">
                 <Grid>
                     <ProgressBar Minimum="0"
                                  Maximum="100"
