@@ -66,7 +66,7 @@
     <Style x:Key="PageSummaryCardStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}" />
 
     <Style x:Key="PageSummaryContentStyle" TargetType="StackPanel">
-        <Setter Property="Margin" Value="18,0" />
+        <Setter Property="Margin" Value="{StaticResource CardHorizontalContentPadding}" />
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 </ResourceDictionary>

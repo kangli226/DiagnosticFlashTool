@@ -20,10 +20,9 @@
                       HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <Border Style="{StaticResource PageLeadStandardCardStyle}">
-                    <controls:CardContentPanel Style="{StaticResource Card.FormContent}">
-                        <TextBlock Text="基础设置" Style="{StaticResource CardContentPanelTitleTextStyle}" />
-
+                <controls:HeaderedCard Header="基础设置"
+                                       Style="{StaticResource HeaderedCard.Form.Lead}">
+                    <controls:CardContentPanel Style="{StaticResource Card.FormRowsContent}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -75,12 +74,11 @@
                             </Grid>
                         </Grid>
                     </controls:CardContentPanel>
-                </Border>
+                </controls:HeaderedCard>
 
-                <Border Style="{StaticResource PageLeadStandardCardStyle}">
-                    <controls:CardContentPanel Style="{StaticResource Card.FormContent}">
-                        <TextBlock Text="CAN 适配器设置" Style="{StaticResource CardContentPanelTitleTextStyle}" />
-
+                <controls:HeaderedCard Header="CAN 适配器设置"
+                                       Style="{StaticResource HeaderedCard.Form.Lead}">
+                    <controls:CardContentPanel Style="{StaticResource Card.FormRowsContent}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
@@ -125,23 +123,14 @@
                                        Style="{StaticResource SettingAssistTextStyle}" />
                         </Grid>
                     </controls:CardContentPanel>
-                </Border>
+                </controls:HeaderedCard>
 
-                <Border Style="{StaticResource PageLeadStandardCardStyle}">
-                    <controls:CardContentPanel Style="{StaticResource Card.FormContent}">
-                        <Grid Style="{StaticResource CardContentPanelHeaderGridStyle}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0"
-                                       Text="运行配置管理"
-                                       Style="{StaticResource CardContentPanelTitleTextStyle}" />
-                            <Button Grid.Column="1"
-                                    Command="{Binding ImportBuiltinConfigurationCommand}"
+                <controls:HeaderedCard Header="运行配置管理"
+                                       Style="{StaticResource HeaderedCard.Form.Lead}">
+                    <controls:HeaderedCard.Actions>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Command="{Binding ImportBuiltinConfigurationCommand}"
                                     Style="{StaticResource Button.Normal}"
-                                    Height="32"
                                     Margin="0,0,8,0">
                                 <StackPanel Style="{StaticResource Button.InlineContent}">
                                     <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.CloudDownloadOutline}"
@@ -149,10 +138,8 @@
                                     <TextBlock Text="导入" Style="{StaticResource Button.IconLabel}" />
                                 </StackPanel>
                             </Button>
-                            <Button Grid.Column="2"
-                                    Command="{Binding ClearRuntimeConfigurationCommand}"
+                            <Button Command="{Binding ClearRuntimeConfigurationCommand}"
                                     Style="{StaticResource Button.Normal}"
-                                    Height="32"
                                     Margin="0">
                                 <StackPanel Style="{StaticResource Button.InlineContent}">
                                     <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.DeleteOutline}"
@@ -161,8 +148,10 @@
                                                Style="{StaticResource Button.IconLabel}" />
                                 </StackPanel>
                             </Button>
-                        </Grid>
+                        </StackPanel>
+                    </controls:HeaderedCard.Actions>
 
+                    <controls:CardContentPanel Style="{StaticResource Card.FormRowsContent}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
@@ -265,12 +254,11 @@
                             </Button>
                         </Grid>
                     </controls:CardContentPanel>
-                </Border>
+                </controls:HeaderedCard>
 
-                <Border Style="{StaticResource PageTrailingStandardCardStyle}">
-                    <controls:CardContentPanel Style="{StaticResource Card.FormContent}">
-                        <TextBlock Text="日志存储" Style="{StaticResource CardContentPanelTitleTextStyle}" />
-
+                <controls:HeaderedCard Header="日志存储"
+                                       Style="{StaticResource HeaderedCard.Form}">
+                    <controls:CardContentPanel Style="{StaticResource Card.FormRowsContent}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
@@ -365,7 +353,7 @@
                                        Style="{StaticResource SettingAssistTextStyle}" />
                         </Grid>
                     </controls:CardContentPanel>
-                </Border>
+                </controls:HeaderedCard>
 
             </StackPanel>
         </ScrollViewer>

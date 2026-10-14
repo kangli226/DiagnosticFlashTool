@@ -7,7 +7,7 @@
         <ResourceDictionary Source="Controls/InputStyles.xaml" />
         <ResourceDictionary Source="Controls/DataGridStyles.xaml" />
         <ResourceDictionary Source="Layout/CardStyles.xaml" />
-        <ResourceDictionary Source="Layout/PanelStyles.xaml" />
+        <ResourceDictionary Source="Layout/HeaderedCardStyles.xaml" />
         <ResourceDictionary Source="Layout/PageStyles.xaml" />
         <ResourceDictionary Source="Controls/PageHeaderStyles.xaml" />
         <ResourceDictionary Source="Shell/ShellStyles.xaml" />

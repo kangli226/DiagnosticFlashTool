@@ -22,19 +22,11 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" MinWidth="500" Style="{StaticResource Card.Compact}">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="12" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-
-                    <Grid Grid.Row="0" Style="{StaticResource CardContentPanelHeaderGridStyle}">
-                        <TextBlock Text="项目列表"
-                                   HorizontalAlignment="Center"
-                                   Style="{StaticResource CardHeaderTextStyle}" />
-
+            <controls:HeaderedCard Grid.Column="0"
+                                   MinWidth="500"
+                                   Header="项目列表"
+                                   Style="{StaticResource HeaderedCard.Data}">
+                <controls:HeaderedCard.Actions>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                             <Button Command="{Binding RefreshProjectsCommand}"
                                     Style="{StaticResource Button.ToolBar}"
@@ -57,12 +49,11 @@
                                 </StackPanel>
                             </Button>
                         </StackPanel>
-                    </Grid>
+                </controls:HeaderedCard.Actions>
 
-                    <DataGrid Grid.Row="2"
-                              ItemsSource="{Binding Projects}"
-                              SelectedItem="{Binding SelectedProject, Mode=TwoWay}"
-                              IsReadOnly="True">
+                <DataGrid ItemsSource="{Binding Projects}"
+                          SelectedItem="{Binding SelectedProject, Mode=TwoWay}"
+                          IsReadOnly="True">
                         <DataGrid.Resources>
                             <Style x:Key="ProjectConfigCellTextStyle" TargetType="TextBlock">
                                 <Setter Property="HorizontalAlignment" Value="Left" />
@@ -90,13 +81,16 @@
                             <DataGridTextColumn Header="驱动文件" Binding="{Binding DriveFilePath}" Width="180" ElementStyle="{StaticResource ProjectConfigCellTextStyle}" />
                             <DataGridTextColumn Header="应用文件" Binding="{Binding FlashFilePath}" Width="*" ElementStyle="{StaticResource ProjectConfigCellTextStyle}" />
                         </DataGrid.Columns>
-                    </DataGrid>
-                </Grid>
-            </Border>
+                </DataGrid>
+            </controls:HeaderedCard>
 
-            <Border Grid.Column="1" Width="400" Margin="16,0,0,0">
-                <Border.Style>
-                    <Style TargetType="Border" BasedOn="{StaticResource Card.Compact}">
+            <controls:HeaderedCard Grid.Column="1"
+                                   Width="400"
+                                   Margin="16,0,0,0"
+                                   Header="{Binding ProjectEditorTitle}">
+                <controls:HeaderedCard.Style>
+                    <Style TargetType="{x:Type controls:HeaderedCard}"
+                           BasedOn="{StaticResource HeaderedCard.Form}">
                         <Setter Property="Visibility" Value="Collapsed" />
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsProjectEditorVisible}" Value="True">
@@ -104,34 +98,23 @@
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
-                </Border.Style>
+                </controls:HeaderedCard.Style>
+                <controls:HeaderedCard.Actions>
+                    <Button Command="{Binding CancelProjectEditorCommand}"
+                            Style="{StaticResource Button.Icon}"
+                            ToolTip="关闭">
+                        <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Close}"
+                                                 Style="{StaticResource Button.PackIcon.Current}" />
+                    </Button>
+                </controls:HeaderedCard.Actions>
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="12" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="16" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <Grid Grid.Row="0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   Text="{Binding ProjectEditorTitle}"
-                                   Style="{StaticResource CardHeaderTextStyle}" />
-                        <Button Grid.Column="1"
-                                Command="{Binding CancelProjectEditorCommand}"
-                                Style="{StaticResource Button.Icon}"
-                                ToolTip="关闭">
-                            <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Close}"
-                                                     Style="{StaticResource Button.PackIcon.Current}" />
-                        </Button>
-                    </Grid>
-
-                    <ScrollViewer Grid.Row="2"
+                    <ScrollViewer Grid.Row="0"
                                   HorizontalScrollBarVisibility="Disabled"
                                   VerticalScrollBarVisibility="Auto">
                         <StackPanel>
@@ -283,7 +266,7 @@
                         </StackPanel>
                     </ScrollViewer>
 
-                    <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Content="取消"
                                 Command="{Binding CancelProjectEditorCommand}"
                                 Style="{StaticResource Button.DialogSecondary}" />
@@ -311,7 +294,7 @@
                         </Button>
                     </StackPanel>
                 </Grid>
-            </Border>
+            </controls:HeaderedCard>
         </Grid>
     </Grid>
 </UserControl>

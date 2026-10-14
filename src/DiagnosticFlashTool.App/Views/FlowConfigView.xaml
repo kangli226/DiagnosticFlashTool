@@ -96,7 +96,7 @@
                 <ScrollViewer Grid.Row="0"
                               HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Disabled">
-                    <Grid MinWidth="780" Margin="14,0">
+                    <Grid MinWidth="780" Margin="{StaticResource CardHorizontalContentPadding}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="320" />
@@ -158,21 +158,11 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="4" Style="{StaticResource CardStyle}">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="42" />
-                    <RowDefinition Height="1" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-
-                <Grid Grid.Row="0" Margin="14,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="流程节点" Style="{StaticResource CardHeaderTextStyle}" />
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+        <controls:HeaderedCard Grid.Row="4"
+                               Header="流程节点"
+                               Style="{StaticResource HeaderedCard.Data}">
+            <controls:HeaderedCard.Actions>
+                <StackPanel Orientation="Horizontal">
                         <Button Command="{Binding AddFlowStepCommand}"
                                 ToolTip="从模板添加节点"
                                 Style="{StaticResource FlowConfigToolbarButtonStyle}">
@@ -218,13 +208,9 @@
                                 <TextBlock Text="下移" Style="{StaticResource Button.IconLabel}" />
                             </StackPanel>
                         </Button>
-                    </StackPanel>
-                </Grid>
-                <Border Grid.Row="1" Background="{StaticResource DividerBrush}" />
-
-                <DataGrid x:Name="FlowDataGrid"
-                          Grid.Row="2"
-                          Margin="12,0,12,12"
+                </StackPanel>
+            </controls:HeaderedCard.Actions>
+            <DataGrid x:Name="FlowDataGrid"
                           ItemsSource="{Binding FlowRows}"
                           SelectedItem="{Binding SelectedFlowStep, Mode=TwoWay}"
                           AutoGenerateColumns="False"
@@ -358,12 +344,11 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
-                </DataGrid>
-            </Grid>
-        </Border>
+            </DataGrid>
+        </controls:HeaderedCard>
 
         <Border Grid.Row="6" Style="{StaticResource CardStyle}">
-            <Grid Margin="14,0">
+            <Grid Margin="{StaticResource CardHorizontalContentPadding}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="10" />

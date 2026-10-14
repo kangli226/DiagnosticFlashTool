@@ -5,10 +5,10 @@
         <ResourceDictionary Source="../Brushes.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <Thickness x:Key="CardHeaderContentPadding">22,0</Thickness>
-    <Thickness x:Key="PageCardContentPadding">16</Thickness>
-    <Thickness x:Key="CardFormContentPadding">16</Thickness>
-    <Thickness x:Key="CardContentTitleMargin">0,0,0,10</Thickness>
+    <Thickness x:Key="CardContentPadding">16</Thickness>
+    <Thickness x:Key="CardHorizontalContentPadding">16,0</Thickness>
+    <Thickness x:Key="CardDataContentMargin">16,0,16,12</Thickness>
+    <Thickness x:Key="CardHeaderContentPadding">16,0</Thickness>
     <DropShadowEffect x:Key="CardShadowEffect"
                       Color="#0F172A"
                       Direction="270"
@@ -41,23 +41,30 @@
     </Style>
 
     <Style x:Key="Card.Compact" TargetType="Border" BasedOn="{StaticResource CardStyle}">
-        <Setter Property="Padding" Value="{StaticResource PageCardContentPadding}" />
+        <Setter Property="Padding" Value="{StaticResource CardContentPadding}" />
     </Style>
 
     <Style x:Key="Card.Standard" TargetType="Border" BasedOn="{StaticResource CardStyle}">
-        <Setter Property="Padding" Value="{StaticResource PageCardContentPadding}" />
+        <Setter Property="Padding" Value="{StaticResource CardContentPadding}" />
     </Style>
 
     <!-- Card.Form fixes the title-to-card and last-row-to-card distances via padding. -->
     <Style x:Key="Card.Form" TargetType="Border" BasedOn="{StaticResource Card.Standard}">
-        <Setter Property="Padding" Value="{StaticResource CardFormContentPadding}" />
+        <Setter Property="Padding" Value="{StaticResource CardContentPadding}" />
     </Style>
 
     <!-- Standard form card rhythm: title gap 10, row gap 12, no extra last-row gap. -->
     <Style x:Key="Card.FormContent" TargetType="{x:Type controls:CardContentPanel}">
+        <Setter Property="FirstChildIsHeader" Value="True" />
         <Setter Property="HeaderSpacing" Value="10" />
         <Setter Property="RowSpacing" Value="12" />
         <Setter Property="LastRowBottomSpacing" Value="0" />
+    </Style>
+
+    <Style x:Key="Card.FormRowsContent"
+           TargetType="{x:Type controls:CardContentPanel}"
+           BasedOn="{StaticResource Card.FormContent}">
+        <Setter Property="FirstChildIsHeader" Value="False" />
     </Style>
 
     <Style x:Key="DialogPanelStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}">
@@ -71,7 +78,7 @@
     </Style>
 
     <Style x:Key="SettingGroupPanelStyle" TargetType="Border">
-        <Setter Property="Padding" Value="14" />
+        <Setter Property="Padding" Value="{StaticResource CardContentPadding}" />
         <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
         <Setter Property="BorderThickness" Value="1" />
@@ -83,33 +90,6 @@
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{StaticResource CardTitleTextBrush}" />
         <Setter Property="VerticalAlignment" Value="Center" />
-    </Style>
-
-    <Style x:Key="CardContentTitleTextStyle"
-           TargetType="TextBlock"
-           BasedOn="{StaticResource CardHeaderTextStyle}">
-        <Setter Property="Margin" Value="{StaticResource CardContentTitleMargin}" />
-        <Setter Property="VerticalAlignment" Value="Top" />
-    </Style>
-
-    <!-- Used inside CardContentPanel; the panel owns the title-to-first-row gap. -->
-    <Style x:Key="CardContentPanelTitleTextStyle"
-           TargetType="TextBlock"
-           BasedOn="{StaticResource CardHeaderTextStyle}">
-        <Setter Property="Margin" Value="0" />
-        <Setter Property="VerticalAlignment" Value="Top" />
-    </Style>
-
-    <Style x:Key="CardContentPanelHeaderGridStyle" TargetType="Grid">
-        <Setter Property="Margin" Value="0" />
-    </Style>
-
-    <Style x:Key="CardContentHeaderGridStyle" TargetType="Grid">
-        <Setter Property="Margin" Value="{StaticResource CardContentTitleMargin}" />
-    </Style>
-
-    <Style x:Key="CardContentTitleGapRowStyle" TargetType="RowDefinition">
-        <Setter Property="Height" Value="10" />
     </Style>
 
     <Style x:Key="FieldLabelStyle" TargetType="TextBlock">

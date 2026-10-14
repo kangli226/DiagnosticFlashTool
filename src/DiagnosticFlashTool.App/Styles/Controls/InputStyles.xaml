@@ -37,7 +37,7 @@
                         <ScrollViewer x:Name="PART_ContentHost"
                                       HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                                       VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                                      VerticalAlignment="Center" />
+                                      VerticalAlignment="Stretch" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">

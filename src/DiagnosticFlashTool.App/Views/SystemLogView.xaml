@@ -16,8 +16,9 @@
             </controls:PageHeader.Actions>
         </controls:PageHeader>
 
-        <Border Grid.Row="2"
-                Style="{StaticResource PageTrailingStandardCardStyle}">
+        <controls:HeaderedCard Grid.Row="2"
+                               Header="运行日志"
+                               Style="{StaticResource HeaderedCard.Panel}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -28,46 +29,34 @@
                 </Grid.RowDefinitions>
 
                 <Grid Grid.Row="0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Style="{StaticResource CardContentTitleGapRowStyle}" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                    <TextBlock Grid.Row="0"
-                               Text="运行日志"
-                               Style="{StaticResource CardHeaderTextStyle}" />
+                    <Border Grid.Column="0"
+                            MinWidth="148"
+                            Tag="{Binding LogFileStatusKind}"
+                            Style="{StaticResource PathDisplayBorderStyle}">
+                        <TextBlock Text="{Binding LogFileStatusText}"
+                                   Style="{StaticResource StatusBadgeTextStyle}" />
+                    </Border>
 
-                    <Grid Grid.Row="2">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="10" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="12" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                    <Border Grid.Column="2"
+                            Style="{StaticResource PathDisplayBorderStyle}"
+                            ToolTip="{Binding LogFileStatusPathText}">
+                        <TextBlock Text="{Binding LogFileStatusPathText}"
+                                   Style="{StaticResource PathDisplayTextStyle}" />
+                    </Border>
 
-                        <Border Grid.Column="0"
-                                MinWidth="148"
-                                Tag="{Binding LogFileStatusKind}"
-                                Style="{StaticResource PathDisplayBorderStyle}">
-                            <TextBlock Text="{Binding LogFileStatusText}"
-                                       Style="{StaticResource StatusBadgeTextStyle}" />
-                        </Border>
-
-                        <Border Grid.Column="2"
-                                Style="{StaticResource PathDisplayBorderStyle}"
-                                ToolTip="{Binding LogFileStatusPathText}">
-                            <TextBlock Text="{Binding LogFileStatusPathText}"
-                                       Style="{StaticResource PathDisplayTextStyle}" />
-                        </Border>
-
-                        <TextBlock Grid.Column="4"
-                                   Text="{Binding LogFilterSummaryText}"
-                                   Style="{StaticResource SettingAssistTextStyle}"
-                                   VerticalAlignment="Center"
-                                   HorizontalAlignment="Right" />
-                    </Grid>
+                    <TextBlock Grid.Column="4"
+                               Text="{Binding LogFilterSummaryText}"
+                               Style="{StaticResource SettingAssistTextStyle}"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Right" />
                 </Grid>
 
                 <DockPanel Grid.Row="2"
@@ -187,6 +176,6 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
             </Grid>
-        </Border>
+        </controls:HeaderedCard>
     </Grid>
 </UserControl>

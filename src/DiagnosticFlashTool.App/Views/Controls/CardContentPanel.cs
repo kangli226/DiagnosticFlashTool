@@ -9,12 +9,17 @@ using WpfVisibility = System.Windows.Visibility;
 namespace DiagnosticFlashTool.App.Views.Controls;
 
 /// <summary>
-/// Lays out a card title followed by its data rows using the shared card rhythm.
-/// The first visible child is treated as the title; the remaining visible
-/// children are data rows. Card padding is supplied by the containing Border.
+/// Lays out card children using the shared card rhythm. The first visible child
+/// can be treated as a title; card padding is supplied by the containing card.
 /// </summary>
 public sealed class CardContentPanel : WpfPanel
 {
+    public static readonly DependencyProperty FirstChildIsHeaderProperty = DependencyProperty.Register(
+        nameof(FirstChildIsHeader),
+        typeof(bool),
+        typeof(CardContentPanel),
+        new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsMeasure));
+
     public static readonly DependencyProperty HeaderSpacingProperty = DependencyProperty.Register(
         nameof(HeaderSpacing),
         typeof(double),
@@ -51,6 +56,12 @@ public sealed class CardContentPanel : WpfPanel
         set => SetValue(LastRowBottomSpacingProperty, value);
     }
 
+    public bool FirstChildIsHeader
+    {
+        get => (bool)GetValue(FirstChildIsHeaderProperty);
+        set => SetValue(FirstChildIsHeaderProperty, value);
+    }
+
     protected override WpfSize MeasureOverride(WpfSize availableSize)
     {
         var visibleChildren = GetVisibleChildren();
@@ -71,7 +82,7 @@ public sealed class CardContentPanel : WpfPanel
                 desiredHeight += GetAdditionalSpacing(
                     visibleChildren[index - 1],
                     child,
-                    index == 1 ? HeaderSpacing : RowSpacing);
+                    index == 1 && FirstChildIsHeader ? HeaderSpacing : RowSpacing);
             }
         }
 
@@ -103,7 +114,7 @@ public sealed class CardContentPanel : WpfPanel
                 offset += GetAdditionalSpacing(
                     visibleChildren[index - 1],
                     child,
-                    index == 1 ? HeaderSpacing : RowSpacing);
+                    index == 1 && FirstChildIsHeader ? HeaderSpacing : RowSpacing);
             }
 
             child.Arrange(new WpfRect(0, offset, finalSize.Width, child.DesiredSize.Height));

@@ -20,7 +20,7 @@
                     BorderBrush="{StaticResource DividerBrush}"
                     BorderThickness="1"
                     CornerRadius="{StaticResource CornerRadius.Card}"
-                    Padding="20">
+                    Padding="{StaticResource CardContentPadding}">
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                     <TextBlock Text="暂无历史记录"
                                Style="{StaticResource EmptyStateTitleTextStyle}" />

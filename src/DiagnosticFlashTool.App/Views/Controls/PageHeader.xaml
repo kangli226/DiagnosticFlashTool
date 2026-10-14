@@ -26,21 +26,6 @@
                        Text="{Binding Title, ElementName=Root}"
                        Style="{StaticResource PageHeaderTitleTextStyle}"
                        TextTrimming="CharacterEllipsis" />
-            <Border Margin="10,0,0,0"
-                    Padding="8,3"
-                    Grid.Column="3">
-                <Border.Style>
-                    <Style TargetType="Border" BasedOn="{StaticResource PageHeaderBadgeStyle}">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding BadgeText, ElementName=Root}" Value="">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
-                <TextBlock Text="{Binding BadgeText, ElementName=Root}"
-                           Style="{StaticResource PageHeaderBadgeTextStyle}" />
-            </Border>
         </Grid>
         <ContentControl Grid.Column="1"
                         Content="{Binding Actions, ElementName=Root}"
