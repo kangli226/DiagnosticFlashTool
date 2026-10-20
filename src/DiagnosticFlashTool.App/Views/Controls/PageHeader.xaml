@@ -1,7 +1,7 @@
 <UserControl x:Class="DiagnosticFlashTool.App.Views.Controls.PageHeader"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:local="clr-namespace:DiagnosticFlashTool.App.Views.Controls"
              x:Name="Root">
     <Grid Margin="{Binding Padding, ElementName=Root}">
         <Grid.ColumnDefinitions>
@@ -19,9 +19,9 @@
                        Text="{Binding Breadcrumb, ElementName=Root}"
                        Style="{StaticResource PageHeaderBreadcrumbTextStyle}"
                        TextTrimming="CharacterEllipsis" />
-            <materialDesign:PackIcon Grid.Column="1"
-                                     Kind="{x:Static materialDesign:PackIconKind.ChevronRight}"
-                                     Style="{StaticResource PageHeaderSeparatorIconStyle}" />
+            <local:FluentIcon Grid.Column="1"
+                              Kind="ChevronRight"
+                              Style="{StaticResource PageHeaderSeparatorIconStyle}" />
             <TextBlock Grid.Column="2"
                        Text="{Binding Title, ElementName=Root}"
                        Style="{StaticResource PageHeaderTitleTextStyle}"

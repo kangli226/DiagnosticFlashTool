@@ -19,10 +19,10 @@
     <SolidColorBrush x:Key="InputBackgroundBrush" Color="{StaticResource Color.Card.Background}" />
     <SolidColorBrush x:Key="InputBorderBrush" Color="{StaticResource Color.Border.Input}" />
     <SolidColorBrush x:Key="PrimarySoftBorderBrush" Color="{StaticResource Color.Border.PrimarySoft}" />
-    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Color.Primary}" />
-    <SolidColorBrush x:Key="PrimaryActiveBrush" Color="{StaticResource Color.Primary.Hover}" />
-    <SolidColorBrush x:Key="PrimaryStrongBrush" Color="{StaticResource Color.Primary.Pressed}" />
-    <SolidColorBrush x:Key="PrimarySoftBrush" Color="{StaticResource Color.Primary.Soft}" />
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{DynamicResource {x:Static SystemColors.AccentColorKey}}" />
+    <SolidColorBrush x:Key="PrimaryActiveBrush" Color="{DynamicResource {x:Static SystemColors.AccentColorDark1Key}}" />
+    <SolidColorBrush x:Key="PrimaryStrongBrush" Color="{DynamicResource {x:Static SystemColors.AccentColorDark2Key}}" />
+    <SolidColorBrush x:Key="PrimarySoftBrush" Color="{DynamicResource {x:Static SystemColors.AccentColorLight3Key}}" />
     <SolidColorBrush x:Key="PrimaryPressedBrush" Color="{StaticResource Color.Primary.SoftPressed}" />
     <SolidColorBrush x:Key="BrandNavigationBrush" Color="{StaticResource Color.Brand.Navigation}" />
     <SolidColorBrush x:Key="TextBrush" Color="{StaticResource Color.Text.Primary}" />

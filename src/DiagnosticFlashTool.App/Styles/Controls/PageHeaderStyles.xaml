@@ -2,7 +2,6 @@
      单独成文件后，页头相关样式无需再翻 Layout/PageStyles.xaml。 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                     xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="../Brushes.xaml" />
@@ -39,9 +38,10 @@
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
-    <Style x:Key="PageHeaderSeparatorIconStyle" TargetType="{x:Type materialDesign:PackIcon}">
+    <Style x:Key="PageHeaderSeparatorIconStyle" TargetType="{x:Type controls:FluentIcon}">
         <Setter Property="Width" Value="16" />
         <Setter Property="Height" Value="16" />
+        <Setter Property="FontSize" Value="12" />
         <Setter Property="Foreground" Value="{StaticResource DividerBrush}" />
         <Setter Property="Margin" Value="8,0" />
         <Setter Property="VerticalAlignment" Value="Center" />

@@ -1,13 +1,24 @@
 <Application x:Class="DiagnosticFlashTool.Product.EcuX.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ThemeMode="Light"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
+        <!-- Pin the Fluent accent palette to the EcuX product color. -->
+        <Color x:Key="{x:Static SystemColors.AccentColorKey}">#1D5D8F</Color>
+        <Color x:Key="{x:Static SystemColors.AccentColorDark1Key}">#16496F</Color>
+        <Color x:Key="{x:Static SystemColors.AccentColorDark2Key}">#123C5B</Color>
+        <Color x:Key="{x:Static SystemColors.AccentColorLight1Key}">#4B7FA7</Color>
+        <Color x:Key="{x:Static SystemColors.AccentColorLight2Key}">#A9C2D5</Color>
+        <Color x:Key="{x:Static SystemColors.AccentColorLight3Key}">#EAF1F6</Color>
+
         <SolidColorBrush x:Key="WindowBrush" Color="#F4F6F8" />
         <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF" />
         <SolidColorBrush x:Key="BorderBrush" Color="#D8DEE6" />
-        <SolidColorBrush x:Key="PrimaryBrush" Color="#1D5D8F" />
-        <SolidColorBrush x:Key="PrimaryHoverBrush" Color="#16496F" />
+        <SolidColorBrush x:Key="PrimaryBrush"
+                         Color="{DynamicResource {x:Static SystemColors.AccentColorKey}}" />
+        <SolidColorBrush x:Key="PrimaryHoverBrush"
+                         Color="{DynamicResource {x:Static SystemColors.AccentColorDark1Key}}" />
         <SolidColorBrush x:Key="TextBrush" Color="#263442" />
         <SolidColorBrush x:Key="MutedTextBrush" Color="#657487" />
         <SolidColorBrush x:Key="WarningBrush" Color="#A65B00" />

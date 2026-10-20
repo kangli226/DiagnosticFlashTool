@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
@@ -14,7 +14,10 @@
     <ProjectReference Include="..\DiagnosticFlashTool.Core\DiagnosticFlashTool.Core.csproj" />
     <ProjectReference Include="..\DiagnosticFlashTool.Infrastructure\DiagnosticFlashTool.Infrastructure.csproj" />
     <ProjectReference Include="..\DiagnosticFlashTool.Application\DiagnosticFlashTool.Application.csproj" />
-    <ProjectReference Include="..\DiagnosticFlashTool.SeedKeyWorker\DiagnosticFlashTool.SeedKeyWorker.csproj" ReferenceOutputAssembly="false" />
+    <!-- 主程序的发布架构不得覆盖固定为 x86 的算法子进程。 -->
+    <ProjectReference Include="..\DiagnosticFlashTool.SeedKeyWorker\DiagnosticFlashTool.SeedKeyWorker.csproj"
+                      ReferenceOutputAssembly="false"
+                      GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishSingleFile;PublishTrimmed;PublishReadyToRun" />
   </ItemGroup>
 
   <ItemGroup>
@@ -28,21 +31,21 @@
 
   <Target Name="CopySeedKeyWorker" AfterTargets="Build">
     <ItemGroup>
-      <WorkerFiles Include="..\DiagnosticFlashTool.SeedKeyWorker\bin\$(Configuration)\net8.0\win-x86\DiagnosticFlashTool.SeedKeyWorker.exe" />
-      <WorkerFiles Include="..\DiagnosticFlashTool.SeedKeyWorker\bin\$(Configuration)\net8.0\win-x86\DiagnosticFlashTool.SeedKeyWorker.dll" />
-      <WorkerFiles Include="..\DiagnosticFlashTool.SeedKeyWorker\bin\$(Configuration)\net8.0\win-x86\DiagnosticFlashTool.SeedKeyWorker.deps.json" />
-      <WorkerFiles Include="..\DiagnosticFlashTool.SeedKeyWorker\bin\$(Configuration)\net8.0\win-x86\DiagnosticFlashTool.SeedKeyWorker.runtimeconfig.json" />
+      <WorkerFiles Include="..\DiagnosticFlashTool.SeedKeyWorker\bin\$(Configuration)\net10.0\win-x86\DiagnosticFlashTool.SeedKeyWorker.exe" />
+      <WorkerFiles Include="..\DiagnosticFlashTool.SeedKeyWorker\bin\$(Configuration)\net10.0\win-x86\DiagnosticFlashTool.SeedKeyWorker.dll" />
+      <WorkerFiles Include="..\DiagnosticFlashTool.SeedKeyWorker\bin\$(Configuration)\net10.0\win-x86\DiagnosticFlashTool.SeedKeyWorker.deps.json" />
+      <WorkerFiles Include="..\DiagnosticFlashTool.SeedKeyWorker\bin\$(Configuration)\net10.0\win-x86\DiagnosticFlashTool.SeedKeyWorker.runtimeconfig.json" />
     </ItemGroup>
-    <Copy SourceFiles="@(WorkerFiles)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" Condition="Exists('%(WorkerFiles.Identity)')" />
+    <Copy SourceFiles="@(WorkerFiles)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
   </Target>
 
   <Target Name="CopySeedKeyWorkerToPublish" AfterTargets="Publish">
     <ItemGroup>
-      <WorkerPublishFiles Include="..\DiagnosticFlashTool.SeedKeyWorker\bin\$(Configuration)\net8.0\win-x86\DiagnosticFlashTool.SeedKeyWorker.exe" />
-      <WorkerPublishFiles Include="..\DiagnosticFlashTool.SeedKeyWorker\bin\$(Configuration)\net8.0\win-x86\DiagnosticFlashTool.SeedKeyWorker.dll" />
-      <WorkerPublishFiles Include="..\DiagnosticFlashTool.SeedKeyWorker\bin\$(Configuration)\net8.0\win-x86\DiagnosticFlashTool.SeedKeyWorker.deps.json" />
-      <WorkerPublishFiles Include="..\DiagnosticFlashTool.SeedKeyWorker\bin\$(Configuration)\net8.0\win-x86\DiagnosticFlashTool.SeedKeyWorker.runtimeconfig.json" />
+      <WorkerPublishFiles Include="..\DiagnosticFlashTool.SeedKeyWorker\bin\$(Configuration)\net10.0\win-x86\DiagnosticFlashTool.SeedKeyWorker.exe" />
+      <WorkerPublishFiles Include="..\DiagnosticFlashTool.SeedKeyWorker\bin\$(Configuration)\net10.0\win-x86\DiagnosticFlashTool.SeedKeyWorker.dll" />
+      <WorkerPublishFiles Include="..\DiagnosticFlashTool.SeedKeyWorker\bin\$(Configuration)\net10.0\win-x86\DiagnosticFlashTool.SeedKeyWorker.deps.json" />
+      <WorkerPublishFiles Include="..\DiagnosticFlashTool.SeedKeyWorker\bin\$(Configuration)\net10.0\win-x86\DiagnosticFlashTool.SeedKeyWorker.runtimeconfig.json" />
     </ItemGroup>
-    <Copy SourceFiles="@(WorkerPublishFiles)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" Condition="Exists('%(WorkerPublishFiles.Identity)')" />
+    <Copy SourceFiles="@(WorkerPublishFiles)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
   </Target>
 </Project>

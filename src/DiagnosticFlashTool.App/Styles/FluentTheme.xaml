@@ -1,0 +1,24 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        .NET 10 WPF Fluent uses the SystemColors accent palette. Keep the
+        desktop theme Fluent while pinning the product accent to the stable
+        diagnostic-tool brand palette instead of the operator's OS accent.
+    -->
+    <Color x:Key="{x:Static SystemColors.AccentColorKey}">#3568B8</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorDark1Key}">#2E5B9E</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorDark2Key}">#274D86</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorDark3Key}">#203F70</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorLight1Key}">#6F95C8</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorLight2Key}">#B8CAE5</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorLight3Key}">#EDF3FC</Color>
+
+    <SolidColorBrush x:Key="FluentAccentBrush"
+                     Color="{DynamicResource {x:Static SystemColors.AccentColorKey}}" />
+    <SolidColorBrush x:Key="FluentAccentHoverBrush"
+                     Color="{DynamicResource {x:Static SystemColors.AccentColorDark1Key}}" />
+    <SolidColorBrush x:Key="FluentAccentPressedBrush"
+                     Color="{DynamicResource {x:Static SystemColors.AccentColorDark2Key}}" />
+    <SolidColorBrush x:Key="FluentAccentSoftBrush"
+                     Color="{DynamicResource {x:Static SystemColors.AccentColorLight3Key}}" />
+</ResourceDictionary>

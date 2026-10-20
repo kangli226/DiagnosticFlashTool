@@ -1,6 +1,8 @@
 # DiagnosticFlashTool
 
-.NET 8 WPF/MVVM rewrite of the diagnostic boot flashing tool.
+.NET 10 WPF/MVVM rewrite of the diagnostic boot flashing tool.
+
+The desktop UI uses the official WPF Fluent light theme with a stable product accent. Shared icons use Segoe Fluent Icons with Segoe MDL2 Assets fallback; no third-party UI theme package is required.
 
 ## Projects
 
@@ -26,12 +28,22 @@ dotnet build DiagnosticFlashTool.slnx -c Debug
 The executable is generated at:
 
 ```text
-src/DiagnosticFlashTool.App/bin/Debug/net8.0-windows/DiagnosticFlashTool.exe
+src/DiagnosticFlashTool.App/bin/Debug/net10.0-windows/DiagnosticFlashTool.exe
 ```
+
+## Publish
+
+```powershell
+dotnet publish src/DiagnosticFlashTool.App/DiagnosticFlashTool.App.csproj -c Release -p:PublishProfile=Folder-win-x64
+dotnet publish src/DiagnosticFlashTool.Product.EcuX/DiagnosticFlashTool.Product.EcuX.csproj -c Release -p:PublishProfile=Folder-win-x64
+```
+
+The framework-dependent x64 packages are generated under `artifacts/publish/DiagnosticFlashTool/` and `artifacts/publish/DiagnosticFlashTool.Product.EcuX/`. Both need the x64 .NET 10 Desktop Runtime; ECU-X also needs the x86 .NET 10 Runtime for its SeedKey worker. See the migration and publishing notes below for validation coverage.
 
 ## Documentation
 
 - [软件功能说明](docs/软件功能说明.md): current functional baseline for development, testing and acceptance.
+- [Fluent 迁移与发布说明](docs/Fluent迁移与发布说明.md): migration batches, publishing profiles, local verification and remaining acceptance checks.
 - [ECU 专用烧写工具配置说明](docs/ECU专用烧写工具配置说明.md): ECU-X publishing, Seed&Key DLL and vehicle integration notes.
 - [管理员模式功能说明](docs/管理员模式功能说明.md): administrator-mode behavior and current permission boundary.
 

@@ -14,7 +14,9 @@
     <Thickness x:Key="InputDisplayContentPadding">9,0,9,0</Thickness>
     <Thickness x:Key="ComboBoxContentPadding">10,0,34,0</Thickness>
 
-    <Style x:Key="SoftTextBoxStyle" TargetType="TextBox">
+    <Style x:Key="SoftTextBoxStyle"
+           TargetType="TextBox"
+           BasedOn="{StaticResource DefaultTextBoxStyle}">
         <Setter Property="Height" Value="36" />
         <Setter Property="Padding" Value="{StaticResource EditableInputContentPadding}" />
         <Setter Property="Margin" Value="0" />
@@ -26,35 +28,11 @@
         <Setter Property="TextAlignment" Value="Left" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="TextBox">
-                    <Border x:Name="TextBoxBorder"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{StaticResource CornerRadius.Control}">
-                        <ScrollViewer x:Name="PART_ContentHost"
-                                      HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                      VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                                      VerticalAlignment="Stretch" />
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                            <Setter TargetName="TextBoxBorder" Property="BorderBrush" Value="{StaticResource PrimaryActiveBrush}" />
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Foreground" Value="{StaticResource DisabledTextBrush}" />
-                            <Setter TargetName="TextBoxBorder" Property="Background" Value="{StaticResource SurfaceBrush}" />
-                            <Setter TargetName="TextBoxBorder" Property="BorderBrush" Value="{StaticResource DividerBrush}" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
     </Style>
 
-    <Style x:Key="SoftPasswordBoxStyle" TargetType="PasswordBox">
+    <Style x:Key="SoftPasswordBoxStyle"
+           TargetType="PasswordBox"
+           BasedOn="{StaticResource DefaultPasswordBoxStyle}">
         <Setter Property="Height" Value="32" />
         <Setter Property="Padding" Value="{StaticResource EditableInputContentPadding}" />
         <Setter Property="Margin" Value="0" />
@@ -66,32 +44,6 @@
         <Setter Property="FontSize" Value="14" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="PasswordBox">
-                    <Border x:Name="PasswordBoxBorder"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{StaticResource CornerRadius.Control}">
-                        <ScrollViewer x:Name="PART_ContentHost"
-                                      HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                      VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                                      VerticalAlignment="Center" />
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                            <Setter TargetName="PasswordBoxBorder" Property="BorderBrush" Value="{StaticResource PrimaryActiveBrush}" />
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Foreground" Value="{StaticResource DisabledTextBrush}" />
-                            <Setter TargetName="PasswordBoxBorder" Property="Background" Value="{StaticResource SurfaceBrush}" />
-                            <Setter TargetName="PasswordBoxBorder" Property="BorderBrush" Value="{StaticResource DividerBrush}" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
     </Style>
 
     <Style x:Key="DialogPasswordBoxStyle"
@@ -165,22 +117,8 @@
 
     <Style x:Key="SoftProgressBarStyle" TargetType="ProgressBar">
         <Setter Property="Height" Value="32" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="ProgressBar">
-                    <Grid ClipToBounds="True">
-                        <Border x:Name="PART_Track"
-                                Background="{StaticResource ProgressTrackBrush}"
-                                CornerRadius="{StaticResource CornerRadius.Control}" />
-                        <Decorator x:Name="PART_Indicator"
-                                   HorizontalAlignment="Left">
-                            <Border Background="{StaticResource PrimaryActiveBrush}"
-                                    CornerRadius="{StaticResource CornerRadius.Control}" />
-                        </Decorator>
-                    </Grid>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
+        <Setter Property="Background" Value="{StaticResource ProgressTrackBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource PrimaryActiveBrush}" />
     </Style>
 
     <Style TargetType="ProgressBar" BasedOn="{StaticResource SoftProgressBarStyle}" />
@@ -196,128 +134,19 @@
 
     <Style TargetType="PasswordBox" BasedOn="{StaticResource SoftPasswordBoxStyle}" />
 
-    <Style x:Key="StandardComboBoxItemStyle" TargetType="{x:Type ComboBoxItem}">
+    <Style x:Key="StandardComboBoxItemStyle"
+           TargetType="{x:Type ComboBoxItem}"
+           BasedOn="{StaticResource DefaultComboBoxItemStyle}">
         <Setter Property="MinHeight" Value="30" />
         <Setter Property="Padding" Value="10,5" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Foreground" Value="{StaticResource BodyTextBrush}" />
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="{x:Type ComboBoxItem}">
-                    <Border x:Name="ItemBorder"
-                            Margin="2,1"
-                            Padding="{TemplateBinding Padding}"
-                            Background="{TemplateBinding Background}"
-                            CornerRadius="{StaticResource CornerRadius.Compact}"
-                            SnapsToDevicePixels="True">
-                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                          SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsHighlighted" Value="True">
-                            <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource PrimarySoftBrush}" />
-                        </Trigger>
-                        <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource PrimaryPressedBrush}" />
-                            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Foreground" Value="{StaticResource DisabledTextBrush}" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
     </Style>
 
-    <ControlTemplate x:Key="StandardComboBoxTemplate" TargetType="{x:Type ComboBox}">
-        <Grid>
-            <ToggleButton x:Name="DropDownToggle"
-                          Background="{TemplateBinding Background}"
-                          BorderBrush="{TemplateBinding BorderBrush}"
-                          BorderThickness="{TemplateBinding BorderThickness}"
-                          ClickMode="Press"
-                          Focusable="False"
-                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
-                <ToggleButton.Template>
-                    <ControlTemplate TargetType="{x:Type ToggleButton}">
-                        <Border x:Name="ComboBorder"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="{StaticResource CornerRadius.Control}"
-                                SnapsToDevicePixels="True" />
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ComboBorder" Property="Background" Value="{StaticResource PrimarySoftBrush}" />
-                                <Setter TargetName="ComboBorder" Property="BorderBrush" Value="{StaticResource PrimaryBrush}" />
-                            </Trigger>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="ComboBorder" Property="BorderBrush" Value="{StaticResource PrimaryActiveBrush}" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </ToggleButton.Template>
-            </ToggleButton>
-
-            <ContentPresenter x:Name="ContentSite"
-                              Margin="{TemplateBinding Padding}"
-                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                              IsHitTestVisible="False"
-                              Content="{TemplateBinding SelectionBoxItem}"
-                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                              ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
-                              RecognizesAccessKey="True" />
-
-            <Path x:Name="DropDownArrow"
-                  Width="8"
-                  Height="4"
-                  Margin="0,0,12,0"
-                  HorizontalAlignment="Right"
-                  VerticalAlignment="Center"
-                  Data="M 0 0 L 4 4 L 8 0 Z"
-                  Fill="{StaticResource IconDefaultBrush}"
-                  Stretch="Fill" />
-
-            <Popup x:Name="PART_Popup"
-                   AllowsTransparency="True"
-                   Focusable="False"
-                   IsOpen="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}}"
-                   Placement="Bottom"
-                   PopupAnimation="Slide">
-                <Grid MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
-                      MaxHeight="{TemplateBinding MaxDropDownHeight}"
-                      SnapsToDevicePixels="True">
-                    <Border Background="{StaticResource PanelBrush}"
-                            BorderBrush="{StaticResource InputBorderBrush}"
-                            BorderThickness="1"
-                            CornerRadius="{StaticResource CornerRadius.Control}" />
-                    <ScrollViewer Margin="2"
-                                  CanContentScroll="True"
-                                  SnapsToDevicePixels="True">
-                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained" />
-                    </ScrollViewer>
-                </Grid>
-            </Popup>
-        </Grid>
-        <ControlTemplate.Triggers>
-            <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                <Setter TargetName="DropDownToggle" Property="BorderBrush" Value="{StaticResource PrimaryActiveBrush}" />
-            </Trigger>
-            <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Foreground" Value="{StaticResource DisabledTextBrush}" />
-                <Setter TargetName="DropDownToggle" Property="Background" Value="{StaticResource SurfaceBrush}" />
-                <Setter TargetName="DropDownToggle" Property="BorderBrush" Value="{StaticResource DividerBrush}" />
-                <Setter TargetName="DropDownArrow" Property="Fill" Value="{StaticResource DisabledTextBrush}" />
-            </Trigger>
-        </ControlTemplate.Triggers>
-    </ControlTemplate>
-
-    <Style x:Key="StandardComboBoxStyle" TargetType="{x:Type ComboBox}">
+    <Style x:Key="StandardComboBoxStyle"
+           TargetType="{x:Type ComboBox}"
+           BasedOn="{StaticResource DefaultComboBoxStyle}">
         <Setter Property="Width" Value="280" />
         <Setter Property="Height" Value="32" />
         <Setter Property="Margin" Value="0" />
@@ -331,7 +160,6 @@
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="MaxDropDownHeight" Value="260" />
         <Setter Property="ItemContainerStyle" Value="{StaticResource StandardComboBoxItemStyle}" />
-        <Setter Property="Template" Value="{StaticResource StandardComboBoxTemplate}" />
     </Style>
 
     <Style x:Key="SoftComboBoxStyle" TargetType="{x:Type ComboBox}" BasedOn="{StaticResource StandardComboBoxStyle}" />

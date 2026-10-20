@@ -14,10 +14,12 @@
 发布命令：
 
 ```powershell
-dotnet publish src/DiagnosticFlashTool.Product.EcuX/DiagnosticFlashTool.Product.EcuX.csproj -c Release
+dotnet publish src/DiagnosticFlashTool.Product.EcuX/DiagnosticFlashTool.Product.EcuX.csproj -c Release -p:PublishProfile=Folder-win-x64
 ```
 
-默认发布目录为 `src/DiagnosticFlashTool.Product.EcuX/bin/Release/net8.0-windows/publish/`。发布后应保留主程序、`DiagnosticFlashTool.SeedKeyWorker.exe`、`resources/product/` 和 `resources/native/` 的相对位置。
+该配置的发布目录为 `artifacts/publish/DiagnosticFlashTool.Product.EcuX/`。应交付完整目录，保留主程序、Worker 的 EXE/DLL/依赖清单/运行时清单、共享程序集、`resources/product/` 和 `resources/native/` 的相对位置。
+
+主程序固定为 x64，Worker 固定为 x86；主程序的 `-r win-x64` 参数不会覆盖 Worker 的架构。构建或发布缺少 Worker 必需文件时会报错。通用主程序发布命令及本机验证范围见 [Fluent 迁移与发布说明](Fluent迁移与发布说明.md)。
 
 ## Seed&Key DLL
 
@@ -29,7 +31,7 @@ dotnet publish src/DiagnosticFlashTool.Product.EcuX/DiagnosticFlashTool.Product.
 
 当前 Worker 固定为 x86，以兼容历史算法 DLL。选择 x64 DLL 时会在调用前给出位数不匹配错误；如目标算法只提供 x64 版本，应另建 x64 Worker 发布变体。
 
-当前发布为 framework-dependent：目标机需要安装 x64 .NET 8 Desktop Runtime，调用 x86 算法 DLL 时还需要安装 x86 .NET 8 Runtime。若交付环境不允许安装运行时，应在正式打包阶段把主程序和 Worker 分别制作为对应架构的 self-contained 发布物。
+当前发布配置与 Worker 均采用 framework-dependent：目标机需要安装 x64 .NET 10 Desktop Runtime，调用 x86 算法 DLL 时还需要安装 x86 .NET 10 Runtime。免运行时安装的交付方式尚未实现；后续需要分别处理主程序和 Worker 的 self-contained 发布、依赖目录与子进程路径，不能只修改主程序的 `SelfContained` 开关。
 
 ## 实车接入检查
 

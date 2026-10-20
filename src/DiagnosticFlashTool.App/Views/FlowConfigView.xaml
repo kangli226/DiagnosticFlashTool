@@ -1,8 +1,7 @@
 <UserControl x:Class="DiagnosticFlashTool.App.Views.FlowConfigView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls"
-             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+             xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls">
     <UserControl.Resources>
         <Style x:Key="FlowConfigToolbarButtonStyle"
                TargetType="Button"
@@ -120,8 +119,8 @@
                                     ToolTip="重新加载当前流程配置"
                                     Style="{StaticResource FlowConfigToolbarButtonStyle}">
                                 <StackPanel Style="{StaticResource Button.InlineContent}">
-                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Refresh}"
-                                                             Style="{StaticResource Button.PackIcon.Current}" />
+                                    <controls:FluentIcon Kind="Refresh"
+                                                             Style="{StaticResource Button.Glyph.Current}" />
                                     <TextBlock Text="重新加载" Style="{StaticResource Button.IconLabel}" />
                                 </StackPanel>
                             </Button>
@@ -129,8 +128,8 @@
                                     ToolTip="校验当前流程配置"
                                     Style="{StaticResource FlowConfigToolbarButtonStyle}">
                                 <StackPanel Style="{StaticResource Button.InlineContent}">
-                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.CheckCircleOutline}"
-                                                             Style="{StaticResource Button.PackIcon.Current}" />
+                                    <controls:FluentIcon Kind="CheckCircleOutline"
+                                                             Style="{StaticResource Button.Glyph.Current}" />
                                     <TextBlock Text="校验" Style="{StaticResource Button.IconLabel}" />
                                 </StackPanel>
                             </Button>
@@ -138,8 +137,8 @@
                                     ToolTip="新建流程配置"
                                     Style="{StaticResource FlowConfigToolbarButtonStyle}">
                                 <StackPanel Style="{StaticResource Button.InlineContent}">
-                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Plus}"
-                                                             Style="{StaticResource Button.PackIcon.Current}" />
+                                    <controls:FluentIcon Kind="Plus"
+                                                             Style="{StaticResource Button.Glyph.Current}" />
                                     <TextBlock Text="新建配置" Style="{StaticResource Button.IconLabel}" />
                                 </StackPanel>
                             </Button>
@@ -147,8 +146,8 @@
                                     ToolTip="保存流程配置"
                                     Style="{StaticResource FlowConfigPrimaryButtonStyle}">
                                 <StackPanel Style="{StaticResource Button.InlineContent}">
-                                    <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.ContentSaveOutline}"
-                                                             Style="{StaticResource Button.PackIcon.Current}" />
+                                    <controls:FluentIcon Kind="ContentSaveOutline"
+                                                             Style="{StaticResource Button.Glyph.Current}" />
                                     <TextBlock Text="保存" Style="{StaticResource Button.IconLabel}" />
                                 </StackPanel>
                             </Button>
@@ -167,8 +166,8 @@
                                 ToolTip="从模板添加节点"
                                 Style="{StaticResource FlowConfigToolbarButtonStyle}">
                             <StackPanel Style="{StaticResource Button.InlineContent}">
-                                <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Plus}"
-                                                         Style="{StaticResource Button.PackIcon.Current}" />
+                                <controls:FluentIcon Kind="Plus"
+                                                         Style="{StaticResource Button.Glyph.Current}" />
                                 <TextBlock Text="添加节点" Style="{StaticResource Button.IconLabel}" />
                             </StackPanel>
                         </Button>
@@ -176,8 +175,8 @@
                                 ToolTip="更换选中节点的模板并清除不兼容配置"
                                 Style="{StaticResource FlowConfigToolbarButtonStyle}">
                             <StackPanel Style="{StaticResource Button.InlineContent}">
-                                <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.Refresh}"
-                                                         Style="{StaticResource Button.PackIcon.Current}" />
+                                <controls:FluentIcon Kind="Refresh"
+                                                         Style="{StaticResource Button.Glyph.Current}" />
                                 <TextBlock Text="更换模板" Style="{StaticResource Button.IconLabel}" />
                             </StackPanel>
                         </Button>
@@ -185,8 +184,8 @@
                                 ToolTip="删除选中节点"
                                 Style="{StaticResource FlowConfigToolbarButtonStyle}">
                             <StackPanel Style="{StaticResource Button.InlineContent}">
-                                <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.DeleteOutline}"
-                                                         Style="{StaticResource Button.PackIcon.Current}" />
+                                <controls:FluentIcon Kind="DeleteOutline"
+                                                         Style="{StaticResource Button.Glyph.Current}" />
                                 <TextBlock Text="删除节点" Style="{StaticResource Button.IconLabel}" />
                             </StackPanel>
                         </Button>
@@ -194,8 +193,8 @@
                                 ToolTip="上移选中节点"
                                 Style="{StaticResource FlowConfigToolbarButtonStyle}">
                             <StackPanel Style="{StaticResource Button.InlineContent}">
-                                <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.HandPointingUp}"
-                                                         Style="{StaticResource Button.PackIcon.Current}" />
+                                <controls:FluentIcon Kind="HandPointingUp"
+                                                         Style="{StaticResource Button.Glyph.Current}" />
                                 <TextBlock Text="上移" Style="{StaticResource Button.IconLabel}" />
                             </StackPanel>
                         </Button>
@@ -203,8 +202,8 @@
                                 ToolTip="下移选中节点"
                                 Style="{StaticResource FlowConfigToolbarButtonStyle}">
                             <StackPanel Style="{StaticResource Button.InlineContent}">
-                                <materialDesign:PackIcon Kind="{x:Static materialDesign:PackIconKind.HandPointingDown}"
-                                                         Style="{StaticResource Button.PackIcon.Current}" />
+                                <controls:FluentIcon Kind="HandPointingDown"
+                                                         Style="{StaticResource Button.Glyph.Current}" />
                                 <TextBlock Text="下移" Style="{StaticResource Button.IconLabel}" />
                             </StackPanel>
                         </Button>
@@ -354,9 +353,9 @@
                     <ColumnDefinition Width="10" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <materialDesign:PackIcon Grid.Column="0"
-                                         Kind="{x:Static materialDesign:PackIconKind.CheckCircleOutline}"
-                                         Style="{StaticResource Button.PackIcon.Accent}" />
+                <controls:FluentIcon Grid.Column="0"
+                                         Kind="CheckCircleOutline"
+                                         Style="{StaticResource Button.Glyph.Accent}" />
                 <TextBlock Grid.Column="2"
                            Text="{Binding FlowValidationText}"
                            Foreground="{StaticResource BodyTextBrush}"

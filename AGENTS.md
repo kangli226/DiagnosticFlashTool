@@ -1,6 +1,6 @@
 # AGENTS.md
 
-.NET 8 WPF/MVVM 汽车 ECU BOOT 刷写工具（DiagnosticFlashTool）。本文件帮助 AI 编程代理快速理解代码库并高效工作。
+.NET 10 WPF/MVVM 汽车 ECU BOOT 刷写工具（DiagnosticFlashTool）。本文件帮助 AI 编程代理快速理解代码库并高效工作。
 
 ## 项目概览
 
@@ -8,9 +8,9 @@
 
 | 项目 | 说明 |
 |------|------|
-| `DiagnosticFlashTool.Core` | CAN 抽象、ISO-TP、UDS、固件解析、刷写流程执行（纯 net8.0 类库，无 UI/Windows 依赖） |
+| `DiagnosticFlashTool.Core` | CAN 抽象、ISO-TP、UDS、固件解析、刷写流程执行（纯 net10.0 类库，无 UI/Windows 依赖） |
 | `DiagnosticFlashTool.Infrastructure` | JSON 仓储、CAN 设备实现（Mock / ZLG 原生） |
-| `DiagnosticFlashTool.App` | WPF 桌面 UI + MVVM 状态（net8.0-windows，MaterialDesignThemes 5.3.0） |
+| `DiagnosticFlashTool.App` | WPF 桌面 UI + MVVM 状态（net10.0-windows，官方 Fluent 主题及共享 FluentIcon） |
 
 功能范围见 [README.md](README.md)（不要复制其中的内容）。
 
@@ -20,7 +20,7 @@
 dotnet build DiagnosticFlashTool.slnx -c Debug
 ```
 
-产物：`src/DiagnosticFlashTool.App/bin/Debug/net8.0-windows/DiagnosticFlashTool.exe`。
+产物：`src/DiagnosticFlashTool.App/bin/Debug/net10.0-windows/DiagnosticFlashTool.exe`。
 方案为 `.slnx` 格式（新版 XML 方案，非传统 `.sln`）。·
 
 ## 架构约定
@@ -82,10 +82,10 @@ dotnet build DiagnosticFlashTool.slnx -c Debug
 
 - 长时间操作走 `AsyncRelayCommand` + `CancellationToken`，不得阻塞 UI 线程。
 - 托盘（NotifyIcon）回调需用 `Dispatcher.Invoke` 切回 UI 线程（见 `MainWindow`）。
-- XAML 遵循 `Styles/` 主题（MaterialDesignThemes 5.3.0），避免硬编码颜色；资源在 `App.xaml` 合并 `Styles/AppStyles.xaml`。
+- XAML 使用 .NET 10 WPF 官方 Fluent 主题，遵循 `Styles/` 语义资源，避免硬编码颜色；资源在 `App.xaml` 合并 `Styles/AppStyles.xaml`。图标统一使用 `FluentIcon`（Segoe Fluent Icons，回退 Segoe MDL2 Assets），不得重新引入 MaterialDesign 控件主题或图标依赖。
 - `resources/**` 需保持 `CopyToOutputDirectory=PreserveNewest` 拷贝规则。
 
 ## 测试与验证
 
-- 无自动化测试项目；离线功能/流程验证使用设备类型 `Mock`。
+- 自动化测试位于 `tests/DiagnosticFlashTool.Application.Tests`，执行 `dotnet test DiagnosticFlashTool.slnx -c Debug`；离线功能/流程验证使用设备类型 `Mock`。
 - 修改 CAN/UDS/刷写逻辑后，建议用 Mock 设备跑通典型流程验证。
