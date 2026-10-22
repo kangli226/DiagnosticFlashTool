@@ -48,6 +48,11 @@
         <Setter Property="Padding" Value="{StaticResource CardContentPadding}" />
     </Style>
 
+    <!-- 工具条卡片：内容自带行高，仅提供与其他卡片一致的左右内边距。 -->
+    <Style x:Key="Card.Toolbar" TargetType="Border" BasedOn="{StaticResource CardStyle}">
+        <Setter Property="Padding" Value="{StaticResource CardHorizontalContentPadding}" />
+    </Style>
+
     <!-- Card.Form fixes the title-to-card and last-row-to-card distances via padding. -->
     <Style x:Key="Card.Form" TargetType="Border" BasedOn="{StaticResource Card.Standard}">
         <Setter Property="Padding" Value="{StaticResource CardContentPadding}" />

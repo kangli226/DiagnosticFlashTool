@@ -94,7 +94,7 @@
                             <Button Command="{Binding ImportBuiltinConfigurationCommand}"
                                     Style="{StaticResource Button.ToolBar}">
                                 <StackPanel Style="{StaticResource Button.InlineContent}">
-                                    <controls:FluentIcon Kind="CloudDownloadOutline"
+                                    <controls:FluentIcon Kind="Restore"
                                                              Style="{StaticResource Button.Glyph.Current}" />
                                     <TextBlock Text="恢复内置配置" Style="{StaticResource Button.IconLabel}" />
                                 </StackPanel>
@@ -186,6 +186,18 @@
 
                 <controls:HeaderedCard Header="日志存储"
                                        Style="{StaticResource HeaderedCard.Form}">
+                    <controls:HeaderedCard.Actions>
+                        <Button Command="{Binding RestoreDefaultLogStorageCommand}"
+                                Style="{StaticResource Button.ToolBar}"
+                                Margin="0">
+                            <StackPanel Style="{StaticResource Button.InlineContent}">
+                                <controls:FluentIcon Kind="Restore"
+                                                     Style="{StaticResource Button.Glyph.Current}" />
+                                <TextBlock Text="恢复默认" Style="{StaticResource Button.IconLabel}" />
+                            </StackPanel>
+                        </Button>
+                    </controls:HeaderedCard.Actions>
+
                     <controls:CardContentPanel Style="{StaticResource Card.FormRowsContent}">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -208,27 +220,19 @@
                                 <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="日志文件" Style="{StaticResource PathDisplayLabelStyle}" />
                             <Border Grid.Column="1"
                                     Tag="{Binding LogFileStatusKind}"
                                     Style="{StaticResource PathDisplayBorderStyle}"
-                                    ToolTip="{Binding LogFilePath}">
-                                <TextBlock Text="{Binding LogFilePath, Mode=OneWay}"
+                                    ToolTip="{Binding LogFilePathFullPath}">
+                                <TextBlock Text="{Binding LogFilePathDisplay, Mode=OneWay}"
                                            Style="{StaticResource PathDisplayTextStyle}" />
                             </Border>
                             <controls:PathActionSplitButton Grid.Column="2"
                                                             PrimaryCommand="{Binding OpenLogDirectoryCommand}"
                                                             ChangeCommand="{Binding ChooseLogFileCommand}"
                                                             ChangeLabel="更改文件…" />
-                            <Button Grid.Column="3"
-                                    Command="{Binding RestoreDefaultLogStorageCommand}"
-                                    Style="{StaticResource Button.PathAction}">
-                                <TextBlock Text="恢复默认"
-                                           FontWeight="Medium"
-                                           Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                            </Button>
                         </Grid>
 
                         <Grid>

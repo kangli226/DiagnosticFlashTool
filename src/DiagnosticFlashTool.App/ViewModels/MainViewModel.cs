@@ -127,9 +127,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 && !ReferenceEquals(SelectedProject, _draftFlowProject)
                 && !IsBusy);
         CancelFlashCommand = new RelayCommand(() => StartFlashCommand.Cancel(), () => StartFlashCommand.IsRunning);
-        RefreshLogCommand = new RelayCommand(ApplyLogFilters);
         ClearLogCommand = new RelayCommand(ClearLogs);
-        OpenLogFileCommand = new RelayCommand(OpenLogFile);
+        OpenLogFileCommand = new RelayCommand(OpenLogFile, () => LogFileEnabled);
         ExportLogCommand = new RelayCommand(ExportLog);
         ClearFramesCommand = new RelayCommand(ClearFrames);
         ToggleFrameCaptureCommand = new RelayCommand(ToggleFrameCapture);
@@ -198,6 +197,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         ChooseLogFileCommand = new RelayCommand(ChooseLogFile);
         RestoreDefaultLogStorageCommand = new RelayCommand(RestoreDefaultLogStorage);
         OpenRuntimeLogPageCommand = new RelayCommand(() => SelectedShellIndex = 7);
+        NavigateToLogSettingsCommand = new RelayCommand(() => SelectedShellIndex = 6);
         Refresh();
     }
 
@@ -226,7 +226,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public RelayCommand BrowseApplicationCommand { get; }
     public AsyncRelayCommand StartFlashCommand { get; }
     public RelayCommand CancelFlashCommand { get; }
-    public RelayCommand RefreshLogCommand { get; }
     public RelayCommand ClearLogCommand { get; }
     public RelayCommand OpenLogFileCommand { get; }
     public RelayCommand ExportLogCommand { get; }
@@ -271,6 +270,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public RelayCommand ChooseLogFileCommand { get; }
     public RelayCommand RestoreDefaultLogStorageCommand { get; }
     public RelayCommand OpenRuntimeLogPageCommand { get; }
+    public RelayCommand NavigateToLogSettingsCommand { get; }
     public bool IsProjectEditorVisible
     {
         get => _isProjectEditorVisible;
@@ -579,6 +579,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             {
                 OnPropertyChanged(nameof(LogFileStatusText));
                 OnPropertyChanged(nameof(LogFileStatusKind));
+                OnPropertyChanged(nameof(LogFilePathDisplay));
+                OpenLogFileCommand.RaiseCanExecuteChanged();
                 SaveAppSettings();
             }
         }
@@ -594,6 +596,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 OnPropertyChanged(nameof(LogFileStatusPathText));
                 OnPropertyChanged(nameof(LogFileStatusText));
                 OnPropertyChanged(nameof(LogFileStatusKind));
+                OnPropertyChanged(nameof(LogFilePathDisplay));
+                OnPropertyChanged(nameof(LogFilePathFullPath));
                 SaveAppSettings();
             }
         }
@@ -612,6 +616,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             : DiagnosticStatusKind.Warning;
 
     public string LogFileStatusPathText => LogFilePath;
+
+    public string LogFilePathFullPath => ResolveRuntimePath(LogFilePath);
+
+    public string LogFilePathDisplay => GetCompactLeafPathDisplay(LogFilePathFullPath, LogFileStatusKind);
 
     private string AppSettingsFilePath => _paths.SettingsFilePath;
 
@@ -664,6 +672,16 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     }
 
     public string LogFilterSummaryText => $"显示 {FilteredLogEntries.Count} / {LogEntries.Count} 条";
+
+    public bool IsLogListEmpty => FilteredLogEntries.Count == 0;
+
+    public string LogEmptyStateText => LogEntries.Count == 0
+        ? "暂无运行日志"
+        : "没有符合筛选条件的日志";
+
+    public string LogEmptyStateHintText => LogEntries.Count == 0
+        ? "连接设备、加载配置或执行刷写后，运行记录将显示在这里。"
+        : "调整级别、关键词或时间范围后再试。";
 
     public bool IsFrameCapturePaused
     {
@@ -983,6 +1001,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         OnPropertyChanged(nameof(ProjectConfigPathStatusKind));
         OnPropertyChanged(nameof(LogFileStatusText));
         OnPropertyChanged(nameof(LogFileStatusKind));
+        OnPropertyChanged(nameof(LogFilePathDisplay));
+        OnPropertyChanged(nameof(LogFilePathFullPath));
         AppendLog($"Configuration loaded: projects={Projects.Count}, boot={BootConfigFiles.Count}");
     }
 
@@ -2904,7 +2924,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             FilteredLogEntries.Add(entry);
         }
 
-        OnPropertyChanged(nameof(LogFilterSummaryText));
+        RaiseLogListStateProperties();
     }
 
     private bool LogEntryMatchesFilter(SystemLogEntry entry)
@@ -3105,11 +3125,28 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     }
 
     private string GetPathStatusDisplay(string path, DiagnosticStatusKind statusKind)
-    {
-        var displayPath = GetCompactPathDisplay(path);
-        return statusKind == DiagnosticStatusKind.Warning
+        => ApplyPathStatus(GetCompactPathDisplay(path), statusKind);
+
+    private string GetCompactLeafPathDisplay(string path, DiagnosticStatusKind statusKind)
+        => ApplyPathStatus(GetCompactLeafDisplay(path), statusKind);
+
+    private static string ApplyPathStatus(string displayPath, DiagnosticStatusKind statusKind)
+        => statusKind == DiagnosticStatusKind.Warning
             ? $"路径缺失 · {displayPath}"
             : displayPath;
+
+    private string GetCompactLeafDisplay(string path)
+    {
+        try
+        {
+            var fullPath = Path.GetFullPath(path);
+            var name = Path.GetFileName(fullPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            return string.IsNullOrWhiteSpace(name) ? fullPath : $"...{Path.DirectorySeparatorChar}{name}";
+        }
+        catch
+        {
+            return path;
+        }
     }
 
     private static bool IsLogFileLocationAvailable(string path)
@@ -3304,8 +3341,16 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         OnPropertyChanged(nameof(HasLogEntries));
         OnPropertyChanged(nameof(LatestLogText));
         OnPropertyChanged(nameof(LogEntryCountText));
-        OnPropertyChanged(nameof(LogFilterSummaryText));
+        RaiseLogListStateProperties();
         OnPropertyChanged(nameof(DownloadInfoText));
+    }
+
+    private void RaiseLogListStateProperties()
+    {
+        OnPropertyChanged(nameof(LogFilterSummaryText));
+        OnPropertyChanged(nameof(IsLogListEmpty));
+        OnPropertyChanged(nameof(LogEmptyStateText));
+        OnPropertyChanged(nameof(LogEmptyStateHintText));
     }
 
     private void RaiseDeviceStatusProperties()

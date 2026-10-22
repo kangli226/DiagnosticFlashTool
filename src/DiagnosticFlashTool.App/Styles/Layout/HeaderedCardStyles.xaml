@@ -8,8 +8,7 @@
     </ResourceDictionary.MergedDictionaries>
 
     <GridLength x:Key="HeaderedCardHeaderHeight">44</GridLength>
-    <GridLength x:Key="HeaderedCardActionHeaderHeight">52</GridLength>
-    <Thickness x:Key="HeaderedCardHeaderBodyGap">0,0,0,12</Thickness>
+    <Thickness x:Key="HeaderedCardHeaderTopInset">0,8,0,0</Thickness>
     <Thickness x:Key="HeaderedCardBodyPadding">16,0,16,16</Thickness>
     <Thickness x:Key="HeaderedCardCenteredBodyPadding">16,0</Thickness>
 
@@ -51,10 +50,11 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
+                                    <!-- 标题按距卡片顶部固定内缩定位，与标题栏高度解耦，避免各卡片标题顶边错位。 -->
                                     <ContentPresenter Grid.Column="0"
                                                       ContentSource="Header"
-                                                      Margin="{StaticResource HeaderedCardHeaderBodyGap}"
-                                                      VerticalAlignment="Bottom" />
+                                                      Margin="{StaticResource HeaderedCardHeaderTopInset}"
+                                                      VerticalAlignment="Top" />
                                     <ContentPresenter Grid.Column="1"
                                                       Content="{TemplateBinding Actions}"
                                                       VerticalAlignment="Center" />
@@ -87,11 +87,11 @@
         <Setter Property="Margin" Value="{StaticResource PageCardBottomGap}" />
     </Style>
 
+    <!-- .Actions 仅表达“标题栏含多个工具栏按钮”的语义；标题栏高度与标准一致，
+         避免标题顶边随操作区高度漂移。 -->
     <Style x:Key="HeaderedCard.Form.Actions"
            TargetType="{x:Type controls:HeaderedCard}"
-           BasedOn="{StaticResource HeaderedCard.Form}">
-        <Setter Property="HeaderHeight" Value="{StaticResource HeaderedCardActionHeaderHeight}" />
-    </Style>
+           BasedOn="{StaticResource HeaderedCard.Form}" />
 
     <Style x:Key="HeaderedCard.Form.Actions.Lead"
            TargetType="{x:Type controls:HeaderedCard}"
@@ -128,9 +128,7 @@
 
     <Style x:Key="HeaderedCard.Data.Actions"
            TargetType="{x:Type controls:HeaderedCard}"
-           BasedOn="{StaticResource HeaderedCard.Data}">
-        <Setter Property="HeaderHeight" Value="{StaticResource HeaderedCardActionHeaderHeight}" />
-    </Style>
+           BasedOn="{StaticResource HeaderedCard.Data}" />
 
     <Style x:Key="HeaderedCard.Data.Actions.Lead"
            TargetType="{x:Type controls:HeaderedCard}"

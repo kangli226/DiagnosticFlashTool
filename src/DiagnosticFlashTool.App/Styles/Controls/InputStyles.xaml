@@ -13,7 +13,12 @@
     -->
     <Thickness x:Key="EditableInputContentPadding">7,0,9,0</Thickness>
     <Thickness x:Key="InputDisplayContentPadding">9,0,9,0</Thickness>
-    <Thickness x:Key="ComboBoxContentPadding">10,0,34,0</Thickness>
+    <!--
+        The Fluent ComboBox template already reserves a dedicated column for the
+        drop-down glyph, so the content padding must not reserve the glyph width
+        again; doing so collapses narrow ComboBoxes to a few pixels.
+    -->
+    <Thickness x:Key="ComboBoxContentPadding">10,0,8,0</Thickness>
 
     <Style x:Key="SoftTextBoxStyle"
            TargetType="TextBox"
