@@ -3,6 +3,7 @@
                     xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="../Brushes.xaml" />
+        <ResourceDictionary Source="../Typography.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
     <Style x:Key="DataGrid.Base" TargetType="DataGrid">
@@ -23,16 +24,17 @@
         <Setter Property="RowHeight" Value="40" />
         <Setter Property="ColumnHeaderHeight" Value="38" />
         <Setter Property="RowHeaderWidth" Value="0" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
         <Setter Property="SelectionMode" Value="Single" />
         <Setter Property="SelectionUnit" Value="FullRow" />
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden" />
     </Style>
 
     <Style TargetType="DataGridColumnHeader">
         <Setter Property="Background" Value="{StaticResource TableHeaderBrush}" />
         <Setter Property="Foreground" Value="{StaticResource CardTitleTextBrush}" />
-        <Setter Property="FontSize" Value="13" />
-        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
+        <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />
         <Setter Property="Padding" Value="10,0" />
         <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
@@ -51,6 +53,13 @@
                 <Setter Property="Foreground" Value="{StaticResource BodyTextBrush}" />
             </Trigger>
         </Style.Triggers>
+    </Style>
+
+    <Style x:Key="DataGrid.MonoCellText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
     </Style>
 
     <Style TargetType="DataGrid" BasedOn="{StaticResource DataGrid.Base}" />

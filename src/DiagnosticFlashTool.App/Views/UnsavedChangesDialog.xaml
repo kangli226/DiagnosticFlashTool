@@ -12,6 +12,8 @@
         Background="Transparent"
         ShowInTaskbar="False"
         WindowStartupLocation="CenterOwner"
+        FontFamily="{StaticResource Font.UI}"
+        TextOptions.TextFormattingMode="Ideal"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True">
     <Border Margin="16"
@@ -42,16 +44,13 @@
                                          VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1"
                            Text="未保存的修改"
-                           FontSize="18"
-                           FontWeight="SemiBold"
-                           Foreground="{StaticResource CardTitleTextBrush}"
-                           VerticalAlignment="Center" />
+                           Style="{StaticResource DialogTitleTextStyle}" />
             </Grid>
 
             <Border Grid.Row="2" Style="{StaticResource SettingGroupPanelStyle}">
                 <StackPanel>
                     <TextBlock x:Name="PromptTextBlock"
-                               FontSize="14"
+                               FontSize="{StaticResource FontSize.Body}"
                                Foreground="{StaticResource TextBrush}"
                                TextWrapping="Wrap" />
                     <TextBlock Margin="0,10,0,0"

@@ -4,6 +4,7 @@
                     xmlns:vm="clr-namespace:DiagnosticFlashTool.App.ViewModels">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="../Brushes.xaml" />
+        <ResourceDictionary Source="../Typography.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
     <Style x:Key="StatusValueTextStyle" TargetType="TextBlock">
@@ -77,8 +78,8 @@
 
     <Style x:Key="StatusBadgeTextStyle" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{StaticResource StatusNeutralBrush}" />
-        <Setter Property="FontSize" Value="13" />
-        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Caption}" />
+        <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="TextAlignment" Value="Center" />
@@ -96,6 +97,14 @@
                 <Setter Property="Foreground" Value="{StaticResource StatusErrorBrush}" />
             </DataTrigger>
         </Style.Triggers>
+    </Style>
+
+    <Style x:Key="ProgressValueTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource FontSize.CardTitle}" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
     <Style x:Key="StatusDotStyle" TargetType="Ellipse">

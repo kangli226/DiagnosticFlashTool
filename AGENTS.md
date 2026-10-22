@@ -67,7 +67,7 @@ dotnet build DiagnosticFlashTool.slnx -c Debug
 - 配置模型用 `[JsonPropertyName("...")]` 显式映射；注意 `ProjectConfigEntry` 的属性名大小写与 JSON 键并不一致，务必以 `JsonPropertyName` 为准。
 - 序列化选项约定：`PropertyNameCaseInsensitive = true`、`WriteIndented = true`；BOOT 配置额外开启 `ReadCommentHandling = JsonCommentHandling.Skip`、`AllowTrailingCommas = true`。
 - **保存 BOOT JSON 时必须保留 scripts 及未编辑字段**，只重写 `flow` 数组（`JsonBootConfigRepository.Save`）。
-- 配置路径统一经 `AppConfigurationPaths`：默认 `resources/configs`（`projects.json`、`BOOT/`、`FormulaDatabase/`、`Scripts/`）；应用设置 `settings.json` 在 `%LocalAppData%\DiagnosticFlashTool\`。
+- 配置路径统一经 `AppConfigurationPaths`：默认 `%AppData%\DOTRUST\AP_BTMSV02`（`projects.json`、`BOOT/`、`Scripts/`）；系统设置可切换应用数据根目录，未独立指定的配置路径随之切换，原目录保留；固定默认目录中的 `data-location.json` 仅用于记录根目录入口；安装包内 `resources/configs` 仅作内置配置来源，初始化只补充缺失文件；应用设置 `settings.json` 与运行配置同目录。
 
 ## CAN / UDS / 刷写（Core）
 

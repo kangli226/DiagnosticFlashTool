@@ -24,53 +24,18 @@
                     <controls:CardContentPanel Style="{StaticResource Card.FormRowsContent}">
                         <Grid>
                             <Grid.ColumnDefinitions>
+                                <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-
-                            <Grid Grid.Column="0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="管理模式" Style="{StaticResource FieldLabelStyle}" />
-                                <ToggleButton Grid.Column="1"
-                                              IsChecked="{Binding AdminModeEnabled, Mode=OneWay}"
-                                              Command="{Binding ToggleAdminModeCommand}"
-                                              Style="{StaticResource SoftSwitchStyle}" />
-                                <TextBlock Grid.Column="3"
-                                           Text="{Binding AdminModeStatusText}">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock" BasedOn="{StaticResource SettingAssistTextStyle}">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding AdminModeEnabled}" Value="True">
-                                                    <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
-                                                    <Setter Property="FontWeight" Value="Medium" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                            </Grid>
-
-                            <Grid Grid.Column="2">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="后台运行" Style="{StaticResource FieldLabelStyle}" />
-                                <ToggleButton Grid.Column="1"
-                                              IsChecked="{Binding KeepRunningInTray, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                              Style="{StaticResource SoftSwitchStyle}" />
-                                <TextBlock Grid.Column="3"
-                                           Text="{Binding KeepRunningInTrayStatusText}"
-                                           Style="{StaticResource SettingAssistTextStyle}" />
-                            </Grid>
+                            <TextBlock Grid.Column="0" Text="后台运行" Style="{StaticResource FieldLabelStyle}" />
+                            <ToggleButton Grid.Column="1"
+                                          IsChecked="{Binding KeepRunningInTray, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          Style="{StaticResource SoftSwitchStyle}" />
+                            <TextBlock Grid.Column="3"
+                                       Text="{Binding KeepRunningInTrayStatusText}"
+                                       Style="{StaticResource SettingAssistTextStyle}" />
                         </Grid>
                     </controls:CardContentPanel>
                 </controls:HeaderedCard>
@@ -127,20 +92,19 @@
                     <controls:HeaderedCard.Actions>
                         <StackPanel Orientation="Horizontal">
                             <Button Command="{Binding ImportBuiltinConfigurationCommand}"
-                                    Style="{StaticResource Button.Normal}"
-                                    Margin="0,0,8,0">
+                                    Style="{StaticResource Button.ToolBar}">
                                 <StackPanel Style="{StaticResource Button.InlineContent}">
                                     <controls:FluentIcon Kind="CloudDownloadOutline"
-                                                             Style="{StaticResource Button.Glyph.Accent}" />
+                                                             Style="{StaticResource Button.Glyph.Current}" />
                                     <TextBlock Text="导入" Style="{StaticResource Button.IconLabel}" />
                                 </StackPanel>
                             </Button>
                             <Button Command="{Binding ClearRuntimeConfigurationCommand}"
-                                    Style="{StaticResource Button.Normal}"
+                                    Style="{StaticResource Button.DestructiveToolBar}"
                                     Margin="0">
                                 <StackPanel Style="{StaticResource Button.InlineContent}">
                                     <controls:FluentIcon Kind="DeleteOutline"
-                                                             Style="{StaticResource Button.Glyph.Accent}" />
+                                                             Style="{StaticResource Button.Glyph.Current}" />
                                     <TextBlock Text="清空"
                                                Style="{StaticResource Button.IconLabel}" />
                                 </StackPanel>
@@ -150,105 +114,72 @@
 
                     <controls:CardContentPanel Style="{StaticResource Card.FormRowsContent}">
                         <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="应用数据" Style="{StaticResource PathDisplayLabelStyle}" />
+                            <Border Grid.Row="0" Grid.Column="1"
+                                    Tag="{Binding ApplicationDataDirectoryStatusKind}"
+                                    Style="{StaticResource PathDisplayBorderStyle}"
+                                    ToolTip="{Binding ApplicationDataDirectory}">
+                                <TextBlock Text="{Binding ApplicationDataDirectoryDisplay, Mode=OneWay}"
+                                           Style="{StaticResource PathDisplayTextStyle}" />
+                            </Border>
+                            <controls:PathActionSplitButton Grid.Row="0" Grid.Column="2"
+                                                            PrimaryCommand="{Binding OpenApplicationDataDirectoryCommand}"
+                                                            ChangeCommand="{Binding ChooseApplicationDataDirectoryCommand}"
+                                                            ChangeLabel="更改目录…" />
+                            <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                                       Text="更改后，未单独指定的项目、流程及脚本配置随目录切换；原目录内容保留，新目录仅补充缺失的内置配置。"
+                                       Style="{StaticResource SettingAssistTextStyle}"
+                                       Margin="0,4,0,0"
+                                       TextWrapping="Wrap" />
+                        </Grid>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
+                                <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="流程配置" Style="{StaticResource PathDisplayLabelStyle}" />
                             <Border Grid.Column="1"
+                                    Tag="{Binding FlowConfigDirectoryStatusKind}"
                                     Style="{StaticResource PathDisplayBorderStyle}"
                                     ToolTip="{Binding FlowConfigDirectory}">
                                 <TextBlock Text="{Binding FlowConfigDirectoryDisplay, Mode=OneWay}"
                                            Style="{StaticResource PathDisplayTextStyle}" />
                             </Border>
-                            <Button Grid.Column="2"
-                                    Command="{Binding OpenFlowConfigDirectoryCommand}"
-                                    Style="{StaticResource Button.PathAction}">
-                                <StackPanel Style="{StaticResource Button.InlineContent}">
-                                    <controls:FluentIcon Kind="FolderOpenOutline"
-                                                             Style="{StaticResource Button.PathActionIcon}" />
-                                    <TextBlock Text="打开" Style="{StaticResource Button.PathActionLabel}" />
-                                </StackPanel>
-                            </Button>
-                            <Button Grid.Column="3"
-                                    Command="{Binding ChooseFlowConfigDirectoryCommand}"
-                                    Style="{StaticResource Button.PathAction}">
-                                <StackPanel Style="{StaticResource Button.InlineContent}">
-                                    <controls:FluentIcon Kind="FolderCogOutline"
-                                                             Style="{StaticResource Button.PathActionIcon}" />
-                                    <TextBlock Text="选择" Style="{StaticResource Button.PathActionLabel}" />
-                                </StackPanel>
-                            </Button>
+                            <controls:PathActionSplitButton Grid.Column="2"
+                                                            PrimaryCommand="{Binding OpenFlowConfigDirectoryCommand}"
+                                                            ChangeCommand="{Binding ChooseFlowConfigDirectoryCommand}"
+                                                            ChangeLabel="更改目录…" />
                         </Grid>
 
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
                                 <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="配方数据库" Style="{StaticResource PathDisplayLabelStyle}" />
-                            <Border Grid.Column="1"
-                                    Style="{StaticResource PathDisplayBorderStyle}"
-                                    ToolTip="{Binding FormulaDatabaseDirectory}">
-                                <TextBlock Text="{Binding FormulaDatabaseDirectoryDisplay, Mode=OneWay}"
-                                           Style="{StaticResource PathDisplayTextStyle}" />
-                            </Border>
-                            <Button Grid.Column="2"
-                                    Command="{Binding OpenFormulaDatabaseDirectoryCommand}"
-                                    Style="{StaticResource Button.PathAction}">
-                                <StackPanel Style="{StaticResource Button.InlineContent}">
-                                    <controls:FluentIcon Kind="FolderOpenOutline"
-                                                             Style="{StaticResource Button.PathActionIcon}" />
-                                    <TextBlock Text="打开" Style="{StaticResource Button.PathActionLabel}" />
-                                </StackPanel>
-                            </Button>
-                            <Button Grid.Column="3"
-                                    Command="{Binding ChooseFormulaDatabaseDirectoryCommand}"
-                                    Style="{StaticResource Button.PathAction}">
-                                <StackPanel Style="{StaticResource Button.InlineContent}">
-                                    <controls:FluentIcon Kind="FolderCogOutline"
-                                                             Style="{StaticResource Button.PathActionIcon}" />
-                                    <TextBlock Text="选择" Style="{StaticResource Button.PathActionLabel}" />
-                                </StackPanel>
-                            </Button>
-                        </Grid>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="项目配置" Style="{StaticResource PathDisplayLabelStyle}" />
                             <Border Grid.Column="1"
+                                    Tag="{Binding ProjectConfigPathStatusKind}"
                                     Style="{StaticResource PathDisplayBorderStyle}"
                                     ToolTip="{Binding ProjectConfigPath}">
                                 <TextBlock Text="{Binding ProjectConfigPathDisplay, Mode=OneWay}"
                                            Style="{StaticResource PathDisplayTextStyle}" />
                             </Border>
-                            <Button Grid.Column="2"
-                                    Command="{Binding OpenProjectConfigDirectoryCommand}"
-                                    Style="{StaticResource Button.PathAction}">
-                                <StackPanel Style="{StaticResource Button.InlineContent}">
-                                    <controls:FluentIcon Kind="FolderOpenOutline"
-                                                             Style="{StaticResource Button.PathActionIcon}" />
-                                    <TextBlock Text="打开" Style="{StaticResource Button.PathActionLabel}" />
-                                </StackPanel>
-                            </Button>
-                            <Button Grid.Column="3"
-                                    Command="{Binding ChooseProjectConfigFileCommand}"
-                                    Style="{StaticResource Button.PathAction}">
-                                <StackPanel Style="{StaticResource Button.InlineContent}">
-                                    <controls:FluentIcon Kind="FolderCogOutline"
-                                                             Style="{StaticResource Button.PathActionIcon}" />
-                                    <TextBlock Text="选择" Style="{StaticResource Button.PathActionLabel}" />
-                                </StackPanel>
-                            </Button>
+                            <controls:PathActionSplitButton Grid.Column="2"
+                                                            PrimaryCommand="{Binding OpenProjectConfigDirectoryCommand}"
+                                                            ChangeCommand="{Binding ChooseProjectConfigFileCommand}"
+                                                            ChangeLabel="更改文件…" />
                         </Grid>
                     </controls:CardContentPanel>
                 </controls:HeaderedCard>
@@ -278,34 +209,20 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="日志文件" Style="{StaticResource PathDisplayLabelStyle}" />
                             <Border Grid.Column="1"
+                                    Tag="{Binding LogFileStatusKind}"
                                     Style="{StaticResource PathDisplayBorderStyle}"
                                     ToolTip="{Binding LogFilePath}">
                                 <TextBlock Text="{Binding LogFilePath, Mode=OneWay}"
                                            Style="{StaticResource PathDisplayTextStyle}" />
                             </Border>
-                            <Button Grid.Column="2"
-                                    Command="{Binding OpenLogDirectoryCommand}"
-                                    Style="{StaticResource Button.PathAction}">
-                                <StackPanel Style="{StaticResource Button.InlineContent}">
-                                    <controls:FluentIcon Kind="FolderOpenOutline"
-                                                             Style="{StaticResource Button.PathActionIcon}" />
-                                    <TextBlock Text="打开目录" Style="{StaticResource Button.PathActionLabel}" />
-                                </StackPanel>
-                            </Button>
+                            <controls:PathActionSplitButton Grid.Column="2"
+                                                            PrimaryCommand="{Binding OpenLogDirectoryCommand}"
+                                                            ChangeCommand="{Binding ChooseLogFileCommand}"
+                                                            ChangeLabel="更改文件…" />
                             <Button Grid.Column="3"
-                                    Command="{Binding ChooseLogFileCommand}"
-                                    Style="{StaticResource Button.PathAction}">
-                                <StackPanel Style="{StaticResource Button.InlineContent}">
-                                    <controls:FluentIcon Kind="FolderCogOutline"
-                                                             Style="{StaticResource Button.PathActionIcon}" />
-                                    <TextBlock Text="选择文件" Style="{StaticResource Button.PathActionLabel}" />
-                                </StackPanel>
-                            </Button>
-                            <Button Grid.Column="4"
                                     Command="{Binding RestoreDefaultLogStorageCommand}"
                                     Style="{StaticResource Button.PathAction}">
                                 <TextBlock Text="恢复默认"
@@ -354,61 +271,5 @@
 
             </StackPanel>
         </ScrollViewer>
-
-        <Border Grid.RowSpan="3">
-            <Border.Style>
-                <Style TargetType="Border" BasedOn="{StaticResource DialogOverlayStyle}">
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding AdminPasswordPromptVisible}" Value="True">
-                            <Setter Property="Visibility" Value="Visible" />
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </Border.Style>
-            <Border Width="280"
-                    Padding="20"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Style="{StaticResource DialogPanelStyle}">
-                <StackPanel>
-                    <TextBlock Text="启动管理员模式"
-                               Style="{StaticResource CardHeaderTextStyle}"
-                               Margin="0,0,0,8" />
-                    <TextBlock Text="{Binding AdminPasswordMessage}"
-                               Style="{StaticResource HintTextStyle}"
-                               Margin="0,0,0,8" />
-                    <PasswordBox Style="{StaticResource DialogPasswordBoxStyle}"
-                                 Margin="0,0,0,12"
-                                 controls:PasswordBoxBinding.BoundPassword="{Binding AdminPassword, Mode=TwoWay}">
-                        <PasswordBox.InputBindings>
-                            <KeyBinding Key="Enter" Command="{Binding SubmitAdminPasswordCommand}" />
-                            <KeyBinding Key="Escape" Command="{Binding CancelAdminPasswordCommand}" />
-                        </PasswordBox.InputBindings>
-                    </PasswordBox>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Command="{Binding SubmitAdminPasswordCommand}"
-                                Style="{StaticResource Button.DialogPrimary}"
-                                Width="88"
-                                Margin="0,0,8,0">
-                            <StackPanel Style="{StaticResource Button.InlineContent}">
-                                <controls:FluentIcon Kind="ShieldAccountOutline"
-                                                         Style="{StaticResource Button.Glyph.Current}" />
-                                <TextBlock Text="启动" Style="{StaticResource Button.IconLabel}" />
-                            </StackPanel>
-                        </Button>
-                        <Button Command="{Binding CancelAdminPasswordCommand}"
-                                Style="{StaticResource Button.DialogSecondary}"
-                                Width="88"
-                                Margin="0">
-                            <StackPanel Style="{StaticResource Button.InlineContent}">
-                                <controls:FluentIcon Kind="CloseCircleOutline"
-                                                         Style="{StaticResource Button.Glyph.Current}" />
-                                <TextBlock Text="取消" Style="{StaticResource Button.IconLabel}" />
-                            </StackPanel>
-                        </Button>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-        </Border>
     </Grid>
 </UserControl>

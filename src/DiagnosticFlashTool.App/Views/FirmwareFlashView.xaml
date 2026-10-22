@@ -224,12 +224,12 @@
                             <StackPanel Grid.Column="0">
                                 <TextBlock Text="设备状态"
                                            HorizontalAlignment="Center"
-                                           FontSize="12"
+                                           FontSize="{StaticResource FontSize.Assist}"
                                            Foreground="{StaticResource SubtleTextBrush}" />
                                 <TextBlock Text="{Binding ConnectionSummaryText}"
                                            Margin="0,3,0,0"
                                            HorizontalAlignment="Center"
-                                           FontSize="13"
+                                           FontSize="{StaticResource FontSize.Body}"
                                            FontWeight="Medium"
                                            Foreground="{StaticResource TextBrush}"
                                            TextTrimming="CharacterEllipsis" />
@@ -238,12 +238,12 @@
                             <StackPanel Grid.Column="2">
                                 <TextBlock Text="下载状态"
                                            HorizontalAlignment="Center"
-                                           FontSize="12"
+                                           FontSize="{StaticResource FontSize.Assist}"
                                            Foreground="{StaticResource SubtleTextBrush}" />
                                 <TextBlock Text="{Binding DownloadMonitorDetailText}"
                                            Margin="0,3,0,0"
                                            HorizontalAlignment="Center"
-                                           FontSize="13"
+                                           FontSize="{StaticResource FontSize.Body}"
                                            FontWeight="Medium"
                                            Foreground="{StaticResource TextBrush}"
                                            TextTrimming="CharacterEllipsis" />
@@ -263,11 +263,7 @@
                                  Style="{StaticResource SoftProgressBarStyle}"
                                  VerticalAlignment="Center" />
                     <TextBlock Text="{Binding ProgressText}"
-                               FontSize="16"
-                               FontWeight="SemiBold"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center"
-                               Foreground="{StaticResource TextBrush}" />
+                               Style="{StaticResource ProgressValueTextStyle}" />
                 </Grid>
         </controls:HeaderedCard>
     </Grid>

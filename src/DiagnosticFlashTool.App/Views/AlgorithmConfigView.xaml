@@ -18,10 +18,7 @@
                                ToolTip="{Binding ScriptRootText}"
                                Margin="12,0,0,0"
                                MaxWidth="280"
-                               FontSize="12"
-                               Foreground="{StaticResource SubtleTextBrush}"
-                               TextTrimming="CharacterEllipsis"
-                               VerticalAlignment="Center" />
+                               Style="{StaticResource MonoAssistTextStyle}" />
                     <controls:PageHelpDocumentButton Margin="8,0,0,0"
                                                      Style="{StaticResource PageHelpDocumentButton.Standard}" />
                 </StackPanel>

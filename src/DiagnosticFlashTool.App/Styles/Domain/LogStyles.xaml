@@ -3,6 +3,7 @@
                     xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="../Brushes.xaml" />
+        <ResourceDictionary Source="../Typography.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
     <Style x:Key="LogListBoxStyle" TargetType="ListBox">
@@ -12,8 +13,9 @@
         <Setter Property="controls:CornerRadiusClipBehavior.CornerRadius"
                 Value="{StaticResource CornerRadius.Control}" />
         <Setter Property="Foreground" Value="{StaticResource LogTextBrush}" />
-        <Setter Property="FontFamily" Value="Consolas" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden" />
         <Setter Property="Padding" Value="12,10" />
         <Setter Property="ItemContainerStyle">
             <Setter.Value>
@@ -51,8 +53,8 @@
         <Setter Property="controls:CornerRadiusClipBehavior.CornerRadius"
                 Value="{StaticResource CornerRadius.Control}" />
         <Setter Property="Foreground" Value="{StaticResource LogTextBrush}" />
-        <Setter Property="FontFamily" Value="Consolas" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
         <Setter Property="Padding" Value="12,10" />
         <Setter Property="TextWrapping" Value="Wrap" />
         <Setter Property="AcceptsReturn" Value="True" />

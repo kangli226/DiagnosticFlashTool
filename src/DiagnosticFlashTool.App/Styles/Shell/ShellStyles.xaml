@@ -3,6 +3,7 @@
                     xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="../Brushes.xaml" />
+        <ResourceDictionary Source="../Typography.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
     <Style x:Key="ShellContentTabControlStyle" TargetType="TabControl">
@@ -24,7 +25,7 @@
         <Setter Property="Height" Value="28" />
         <Setter Property="Margin" Value="0,14,0,4" />
         <Setter Property="Padding" Value="22,0,16,0" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Assist}" />
         <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="Foreground" Value="{StaticResource SidebarMutedTextBrush}" />
         <Setter Property="VerticalAlignment" Value="Center" />
@@ -37,7 +38,7 @@
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{StaticResource SidebarTextBrush}" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
         <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="GroupName" Value="ShellNavigation" />
@@ -49,7 +50,7 @@
                             SnapsToDevicePixels="True">
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="4" />
+                                <ColumnDefinition Width="3" />
                                 <ColumnDefinition Width="26" />
                                 <ColumnDefinition Width="34" />
                                 <ColumnDefinition Width="*" />

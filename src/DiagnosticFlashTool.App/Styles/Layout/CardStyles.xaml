@@ -3,19 +3,20 @@
                     xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="../Brushes.xaml" />
+        <ResourceDictionary Source="../Typography.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
     <Thickness x:Key="CardContentPadding">16</Thickness>
     <Thickness x:Key="CardHorizontalContentPadding">16,0</Thickness>
     <Thickness x:Key="CardHeaderContentPadding">16,0</Thickness>
     <DropShadowEffect x:Key="CardShadowEffect"
-                      Color="#0F172A"
+                      Color="{StaticResource Color.Shadow}"
                       Direction="270"
                       ShadowDepth="1"
                       BlurRadius="2"
                       Opacity="0.04" />
     <DropShadowEffect x:Key="CardElevatedShadowEffect"
-                      Color="#0F172A"
+                      Color="{StaticResource Color.Shadow}"
                       Direction="270"
                       ShadowDepth="4"
                       BlurRadius="12"
@@ -72,7 +73,7 @@
     </Style>
 
     <Style x:Key="DialogOverlayStyle" TargetType="Border">
-        <Setter Property="Background" Value="#66000000" />
+        <Setter Property="Background" Value="{StaticResource OverlayBrush}" />
         <Setter Property="Visibility" Value="Collapsed" />
     </Style>
 
@@ -85,9 +86,9 @@
     </Style>
 
     <Style x:Key="CardHeaderTextStyle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="16" />
-        <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="LineHeight" Value="20" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.CardTitle}" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="LineHeight" Value="{StaticResource LineHeight.CardTitle}" />
         <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
         <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         <Setter Property="TextWrapping" Value="NoWrap" />
@@ -96,7 +97,7 @@
     </Style>
 
     <Style x:Key="FieldLabelStyle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
         <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="Foreground" Value="{StaticResource LabelTextBrush}" />
         <Setter Property="HorizontalAlignment" Value="Right" />

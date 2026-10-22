@@ -15,7 +15,7 @@
             <Setter Property="Height" Value="32" />
             <Setter Property="Padding" Value="12,0" />
             <Setter Property="Margin" Value="0" />
-            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
         </Style>
 
         <Style x:Key="FlowConfigDataGridStyle"
@@ -46,13 +46,13 @@
             <Setter Property="Margin" Value="0" />
             <Setter Property="Padding" Value="8,0" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
         </Style>
 
         <Style x:Key="FlowConfigReadOnlyCellTextStyle" TargetType="TextBlock">
             <Setter Property="Margin" Value="8,0" />
             <Setter Property="Foreground" Value="{StaticResource BodyTextBrush}" />
-            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
@@ -64,7 +64,7 @@
             <Setter Property="Height" Value="32" />
             <Setter Property="Margin" Value="0" />
             <Setter Property="HorizontalAlignment" Value="Stretch" />
-            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
         </Style>
 
     </UserControl.Resources>
@@ -243,7 +243,7 @@
                                                    VerticalAlignment="Center" />
                                         <TextBlock Grid.Column="1"
                                                    Text="{Binding Id}"
-                                                   FontWeight="SemiBold"
+                                                   FontWeight="Medium"
                                                    Foreground="{StaticResource LabelTextBrush}"
                                                    HorizontalAlignment="Center"
                                                    VerticalAlignment="Center" />
@@ -359,7 +359,7 @@
                 <TextBlock Grid.Column="2"
                            Text="{Binding FlowValidationText}"
                            Foreground="{StaticResource BodyTextBrush}"
-                           FontSize="13"
+                           FontSize="{StaticResource FontSize.Body}"
                            VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis"
                            ToolTip="{Binding FlowValidationText}" />

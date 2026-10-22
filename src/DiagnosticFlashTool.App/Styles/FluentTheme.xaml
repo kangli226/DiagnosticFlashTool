@@ -5,13 +5,13 @@
         desktop theme Fluent while pinning the product accent to the stable
         diagnostic-tool brand palette instead of the operator's OS accent.
     -->
-    <Color x:Key="{x:Static SystemColors.AccentColorKey}">#3568B8</Color>
-    <Color x:Key="{x:Static SystemColors.AccentColorDark1Key}">#2E5B9E</Color>
-    <Color x:Key="{x:Static SystemColors.AccentColorDark2Key}">#274D86</Color>
-    <Color x:Key="{x:Static SystemColors.AccentColorDark3Key}">#203F70</Color>
-    <Color x:Key="{x:Static SystemColors.AccentColorLight1Key}">#6F95C8</Color>
-    <Color x:Key="{x:Static SystemColors.AccentColorLight2Key}">#B8CAE5</Color>
-    <Color x:Key="{x:Static SystemColors.AccentColorLight3Key}">#EDF3FC</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorKey}">#2F6FEB</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorDark1Key}">#285FC7</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorDark2Key}">#1F4EAA</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorDark3Key}">#183E88</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorLight1Key}">#4C8DF6</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorLight2Key}">#AFC9F5</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorLight3Key}">#EAF2FF</Color>
 
     <SolidColorBrush x:Key="FluentAccentBrush"
                      Color="{DynamicResource {x:Static SystemColors.AccentColorKey}}" />

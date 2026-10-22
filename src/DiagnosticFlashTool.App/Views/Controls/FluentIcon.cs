@@ -50,6 +50,7 @@ public sealed class FluentIcon : TextBlock
         {
             FluentIconKind.ArrowRight => "\uE72A",
             FluentIconKind.CheckCircleOutline => "\uE930",
+            FluentIconKind.ChevronDown => "\uE70D",
             FluentIconKind.ChevronRight => "\uE76C",
             FluentIconKind.Close => "\uE8BB",
             FluentIconKind.CloseCircleOutline => "\uE711",
@@ -75,7 +76,6 @@ public sealed class FluentIcon : TextBlock
             FluentIconKind.PowerPlugOutline => "\uE839",
             FluentIconKind.Refresh => "\uE72C",
             FluentIconKind.SendOutline => "\uE724",
-            FluentIconKind.ShieldAccountOutline => "\uE83D",
             FluentIconKind.TextBoxOutline => "\uE8A5",
             FluentIconKind.WarningOutline => "\uE7BA",
             FluentIconKind.WindowMaximize => "\uE922",
@@ -89,6 +89,7 @@ public enum FluentIconKind
 {
     ArrowRight,
     CheckCircleOutline,
+    ChevronDown,
     ChevronRight,
     Close,
     CloseCircleOutline,
@@ -114,7 +115,6 @@ public enum FluentIconKind
     PowerPlugOutline,
     Refresh,
     SendOutline,
-    ShieldAccountOutline,
     TextBoxOutline,
     WarningOutline,
     WindowMaximize,

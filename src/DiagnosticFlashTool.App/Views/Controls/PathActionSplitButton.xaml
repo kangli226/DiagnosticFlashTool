@@ -1,0 +1,53 @@
+<UserControl x:Class="DiagnosticFlashTool.App.Views.Controls.PathActionSplitButton"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls"
+             x:Name="Root"
+             Focusable="False">
+    <Grid Margin="8,0,0,0">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="1" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <Button Grid.Column="0"
+                Command="{Binding PrimaryCommand, ElementName=Root}"
+                Style="{StaticResource Button.PathAction}"
+                Margin="0"
+                AutomationProperties.Name="{Binding PrimaryLabel, ElementName=Root}"
+                ToolTip="{Binding PrimaryLabel, ElementName=Root}">
+            <StackPanel Style="{StaticResource Button.InlineContent}">
+                <controls:FluentIcon Kind="FolderOpenOutline"
+                                     Style="{StaticResource Button.PathActionIcon}" />
+                <TextBlock Text="{Binding PrimaryLabel, ElementName=Root}"
+                           Style="{StaticResource Button.PathActionLabel}" />
+            </StackPanel>
+        </Button>
+
+        <Border Grid.Column="1"
+                Width="1"
+                Height="16"
+                VerticalAlignment="Center"
+                Background="{StaticResource DividerBrush}"
+                IsHitTestVisible="False" />
+
+        <Button x:Name="ChangeMenuButton"
+                Grid.Column="2"
+                Click="OnChangeMenuButtonClick"
+                Tag="{Binding ElementName=Root}"
+                Style="{StaticResource Button.PathActionDropdown}"
+                AutomationProperties.Name="{Binding ChangeLabel, ElementName=Root}"
+                ToolTip="{Binding ChangeLabel, ElementName=Root}">
+            <controls:FluentIcon Kind="ChevronDown"
+                                 Style="{StaticResource Button.PathActionIcon}" />
+            <Button.ContextMenu>
+                <ContextMenu Placement="Bottom"
+                             DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
+                    <MenuItem Header="{Binding ChangeLabel}"
+                              Command="{Binding ChangeCommand}" />
+                </ContextMenu>
+            </Button.ContextMenu>
+        </Button>
+    </Grid>
+</UserControl>

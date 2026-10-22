@@ -14,6 +14,7 @@
     <SolidColorBrush x:Key="AppBackgroundBrush" Color="{StaticResource Color.App.Background}" />
     <SolidColorBrush x:Key="PanelBrush" Color="{StaticResource Color.Card.Background}" />
     <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource Color.Surface.Background}" />
+    <SolidColorBrush x:Key="OverlayBrush" Color="{StaticResource Color.Surface.Overlay}" />
     <SolidColorBrush x:Key="CardBorderBrush" Color="{StaticResource Color.Border.Card}" />
     <SolidColorBrush x:Key="DividerBrush" Color="{StaticResource Color.Border.Divider}" />
     <SolidColorBrush x:Key="InputBackgroundBrush" Color="{StaticResource Color.Card.Background}" />
@@ -31,6 +32,7 @@
     <SolidColorBrush x:Key="LabelTextBrush" Color="{StaticResource Color.Text.Label}" />
     <SolidColorBrush x:Key="SubtleTextBrush" Color="{StaticResource Color.Text.Muted}" />
     <SolidColorBrush x:Key="DisabledTextBrush" Color="{StaticResource Color.Text.Disabled}" />
+    <SolidColorBrush x:Key="PlaceholderTextBrush" Color="{StaticResource Color.Text.Placeholder}" />
     <SolidColorBrush x:Key="InverseTextBrush" Color="{StaticResource Color.Text.Inverse}" />
     <SolidColorBrush x:Key="IconDefaultBrush" Color="{StaticResource Color.Icon.Default}" />
     <SolidColorBrush x:Key="IconPrimaryBrush" Color="{StaticResource Color.Icon.Primary}" />
@@ -68,10 +70,11 @@
     <SolidColorBrush x:Key="StatusNeutralBrush" Color="{StaticResource Color.Icon.Muted}" />
     <SolidColorBrush x:Key="StatusNeutralSoftBrush" Color="{StaticResource Color.Neutral.Soft}" />
     <SolidColorBrush x:Key="StatusNeutralBorderBrush" Color="{StaticResource Color.Neutral.Border}" />
-    <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource Color.Warning}" />
-    <SolidColorBrush x:Key="DangerActiveBrush" Color="{StaticResource Color.Warning.Hover}" />
-    <SolidColorBrush x:Key="DangerPressedBrush" Color="{StaticResource Color.Warning.Pressed}" />
-    <SolidColorBrush x:Key="DangerBorderBrush" Color="{StaticResource Color.Warning.Border}" />
-    <SolidColorBrush x:Key="DangerTextBrush" Color="{StaticResource Color.Warning.Text}" />
+    <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource Color.Danger}" />
+    <SolidColorBrush x:Key="DangerActiveBrush" Color="{StaticResource Color.Danger.Hover}" />
+    <SolidColorBrush x:Key="DangerPressedBrush" Color="{StaticResource Color.Danger.Pressed}" />
+    <SolidColorBrush x:Key="DangerSoftBrush" Color="{StaticResource Color.Danger.Soft}" />
+    <SolidColorBrush x:Key="DangerBorderBrush" Color="{StaticResource Color.Danger.Border}" />
+    <SolidColorBrush x:Key="DangerTextBrush" Color="{StaticResource Color.Danger.Text}" />
     <SolidColorBrush x:Key="NeutralSoftBrush" Color="{StaticResource Color.Neutral.Soft}" />
 </ResourceDictionary>

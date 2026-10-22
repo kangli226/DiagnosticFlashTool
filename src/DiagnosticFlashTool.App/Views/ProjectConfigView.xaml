@@ -220,7 +220,7 @@
                                     <TextBox Grid.Column="0"
                                              Height="32"
                                              Text="{Binding ProjectEditor.DriverFilePath, UpdateSourceTrigger=PropertyChanged}"
-                                             Style="{StaticResource SoftTextBoxStyle}" />
+                                             Style="{StaticResource MonoTextBoxStyle}" />
                                     <Button Grid.Column="2"
                                             Command="{Binding BrowseProjectEditorDriverCommand}"
                                             Margin="0"
@@ -249,7 +249,7 @@
                                     <TextBox Grid.Column="0"
                                              Height="32"
                                              Text="{Binding ProjectEditor.ApplicationFilePath, UpdateSourceTrigger=PropertyChanged}"
-                                             Style="{StaticResource SoftTextBoxStyle}" />
+                                             Style="{StaticResource MonoTextBoxStyle}" />
                                     <Button Grid.Column="2"
                                             Command="{Binding BrowseProjectEditorApplicationCommand}"
                                             Margin="0"

@@ -24,7 +24,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         WriteIndented = true
     };
 
-    private static readonly string AppSettingsFilePath = Path.Combine(
+    private static readonly string LegacyAppSettingsFilePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "DiagnosticFlashTool",
         "settings.json");
@@ -41,6 +41,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private const int MaxFrameHistoryEntries = 5000;
 
     private readonly AppConfigurationPaths _paths = new();
+    private readonly JsonApplicationDataLocationRepository _applicationDataLocationRepository;
     private readonly JsonProjectConfigRepository _projectRepository;
     private readonly JsonBootConfigRepository _bootConfigRepository;
     private readonly FirmwareLoader _firmwareLoader = new();
@@ -78,8 +79,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private bool _autoSearchBaudRate = true;
     private bool _logFileEnabled = true;
     private bool _logAutoScrollEnabled = true;
-    private bool _adminModeEnabled;
-    private bool _adminPasswordPromptVisible;
     private bool _isFrameCapturePaused;
     private bool _isFrameFilterEnabled;
     private bool _isProjectEditorVisible;
@@ -103,15 +102,15 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private string _newFlowProjectName = string.Empty;
     private string? _selectedFlowProjectTemplate;
     private string _newFlowProjectValidationText = string.Empty;
-    private string _adminPassword = string.Empty;
-    private string _adminPasswordMessage = "请输入密码，本次启动内有效。";
     private SystemLogEntry? _latestLogEntry;
     private readonly List<CanFrameRow> _frameHistory = [];
 
     public MainViewModel()
     {
         CommandErrorHandler.Current = HandleCommandException;
+        _applicationDataLocationRepository = new JsonApplicationDataLocationRepository(_paths);
         LoadAppSettings();
+        InitializeApplicationData();
         _projectRepository = new JsonProjectConfigRepository(_paths);
         _bootConfigRepository = new JsonBootConfigRepository(_paths);
 
@@ -187,22 +186,18 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         MoveFlowStepUpCommand = new RelayCommand(() => MoveSelectedFlowStep(-1), () => SelectedFlowStep is not null);
         MoveFlowStepDownCommand = new RelayCommand(() => MoveSelectedFlowStep(1), () => SelectedFlowStep is not null);
         SendManualFrameCommand = new AsyncRelayCommand(SendManualFrameAsync, () => IsConnected && !IsBusy);
-        ImportBuiltinConfigurationCommand = new RelayCommand(ImportBuiltinConfiguration);
-        ClearRuntimeConfigurationCommand = new RelayCommand(ClearRuntimeConfiguration);
+        ImportBuiltinConfigurationCommand = new RelayCommand(ImportBuiltinConfiguration, () => !IsBusy);
+        ClearRuntimeConfigurationCommand = new RelayCommand(ClearRuntimeConfiguration, () => !IsBusy);
+        OpenApplicationDataDirectoryCommand = new RelayCommand(() => OpenPathLocation(ApplicationDataDirectory));
+        ChooseApplicationDataDirectoryCommand = new AsyncRelayCommand(ChooseApplicationDataDirectoryAsync, () => !IsBusy);
         OpenFlowConfigDirectoryCommand = new RelayCommand(() => OpenPathLocation(FlowConfigDirectory));
-        ChooseFlowConfigDirectoryCommand = new RelayCommand(ChooseFlowConfigDirectory);
-        OpenFormulaDatabaseDirectoryCommand = new RelayCommand(() => OpenPathLocation(FormulaDatabaseDirectory));
-        ChooseFormulaDatabaseDirectoryCommand = new RelayCommand(ChooseFormulaDatabaseDirectory);
+        ChooseFlowConfigDirectoryCommand = new RelayCommand(ChooseFlowConfigDirectory, () => !IsBusy);
         OpenProjectConfigDirectoryCommand = new RelayCommand(() => OpenPathLocation(ProjectConfigPath));
-        ChooseProjectConfigFileCommand = new RelayCommand(ChooseProjectConfigFile);
+        ChooseProjectConfigFileCommand = new RelayCommand(ChooseProjectConfigFile, () => !IsBusy);
         OpenLogDirectoryCommand = new RelayCommand(() => OpenPathLocation(LogFilePath));
         ChooseLogFileCommand = new RelayCommand(ChooseLogFile);
         RestoreDefaultLogStorageCommand = new RelayCommand(RestoreDefaultLogStorage);
         OpenRuntimeLogPageCommand = new RelayCommand(() => SelectedShellIndex = 7);
-        ToggleAdminModeCommand = new RelayCommand(ToggleAdminMode);
-        SubmitAdminPasswordCommand = new RelayCommand(SubmitAdminPassword);
-        CancelAdminPasswordCommand = new RelayCommand(CancelAdminPasswordPrompt);
-
         Refresh();
     }
 
@@ -266,20 +261,16 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public AsyncRelayCommand SendManualFrameCommand { get; }
     public RelayCommand ImportBuiltinConfigurationCommand { get; }
     public RelayCommand ClearRuntimeConfigurationCommand { get; }
+    public RelayCommand OpenApplicationDataDirectoryCommand { get; }
+    public AsyncRelayCommand ChooseApplicationDataDirectoryCommand { get; }
     public RelayCommand OpenFlowConfigDirectoryCommand { get; }
     public RelayCommand ChooseFlowConfigDirectoryCommand { get; }
-    public RelayCommand OpenFormulaDatabaseDirectoryCommand { get; }
-    public RelayCommand ChooseFormulaDatabaseDirectoryCommand { get; }
     public RelayCommand OpenProjectConfigDirectoryCommand { get; }
     public RelayCommand ChooseProjectConfigFileCommand { get; }
     public RelayCommand OpenLogDirectoryCommand { get; }
     public RelayCommand ChooseLogFileCommand { get; }
     public RelayCommand RestoreDefaultLogStorageCommand { get; }
     public RelayCommand OpenRuntimeLogPageCommand { get; }
-    public RelayCommand ToggleAdminModeCommand { get; }
-    public RelayCommand SubmitAdminPasswordCommand { get; }
-    public RelayCommand CancelAdminPasswordCommand { get; }
-
     public bool IsProjectEditorVisible
     {
         get => _isProjectEditorVisible;
@@ -601,16 +592,28 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             if (SetProperty(ref _logFilePath, value))
             {
                 OnPropertyChanged(nameof(LogFileStatusPathText));
+                OnPropertyChanged(nameof(LogFileStatusText));
+                OnPropertyChanged(nameof(LogFileStatusKind));
                 SaveAppSettings();
             }
         }
     }
 
-    public string LogFileStatusText => LogFileEnabled ? "文件日志：已开启" : "文件日志：未开启";
+    public string LogFileStatusText => !LogFileEnabled
+        ? "文件日志：未开启"
+        : LogFileStatusKind == DiagnosticStatusKind.Warning
+            ? "文件日志：路径不存在"
+            : "文件日志：已开启";
 
-    public DiagnosticStatusKind LogFileStatusKind => LogFileEnabled ? DiagnosticStatusKind.Success : DiagnosticStatusKind.Neutral;
+    public DiagnosticStatusKind LogFileStatusKind => !LogFileEnabled
+        ? DiagnosticStatusKind.Neutral
+        : IsLogFileLocationAvailable(ResolveRuntimePath(LogFilePath))
+            ? DiagnosticStatusKind.Success
+            : DiagnosticStatusKind.Warning;
 
     public string LogFileStatusPathText => LogFilePath;
+
+    private string AppSettingsFilePath => _paths.SettingsFilePath;
 
     public string SelectedLogLevelFilter
     {
@@ -717,40 +720,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 SaveAppSettings();
             }
         }
-    }
-
-    public bool AdminModeAvailable => true;
-
-    public bool AdminModeEnabled
-    {
-        get => _adminModeEnabled;
-        private set
-        {
-            if (SetProperty(ref _adminModeEnabled, value))
-            {
-                OnPropertyChanged(nameof(AdminModeStatusText));
-            }
-        }
-    }
-
-    public string AdminModeStatusText => AdminModeEnabled ? "已启用" : "未启用";
-
-    public bool AdminPasswordPromptVisible
-    {
-        get => _adminPasswordPromptVisible;
-        private set => SetProperty(ref _adminPasswordPromptVisible, value);
-    }
-
-    public string AdminPassword
-    {
-        get => _adminPassword;
-        set => SetProperty(ref _adminPassword, value);
-    }
-
-    public string AdminPasswordMessage
-    {
-        get => _adminPasswordMessage;
-        private set => SetProperty(ref _adminPasswordMessage, value);
     }
 
     public int SelectedShellIndex
@@ -906,7 +875,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     };
 
     public string ProgressText => $"{Progress}%";
-    public string ScriptRootText => Path.Combine(_paths.ConfigDirectory, "Scripts");
+    public string ScriptRootText => _paths.ScriptDirectory;
     public string AlgorithmCatalogText => AlgorithmRows.Count == 0 ? "未发现算法配置" : $"已发现 {AlgorithmRows.Count} 个算法配置";
 
     public string FlashPageProjectIdText => SelectedProject is null
@@ -939,77 +908,30 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public string LogEntryCountText => HasLogEntries ? $"已记录 {LogEntries.Count} 条" : "暂无日志";
 
     public string ConfigRootText => _paths.ConfigDirectory;
+    public string ApplicationDataDirectory => _paths.ApplicationDataDirectory;
+    public DiagnosticStatusKind ApplicationDataDirectoryStatusKind => Directory.Exists(ApplicationDataDirectory)
+        ? DiagnosticStatusKind.Neutral
+        : DiagnosticStatusKind.Warning;
+    public string ApplicationDataDirectoryDisplay => GetPathStatusDisplay(ApplicationDataDirectory, ApplicationDataDirectoryStatusKind);
     public string FlowConfigDirectory => _paths.BootConfigDirectory;
     public string FlowConfigFilePath => string.IsNullOrWhiteSpace(SelectedBootConfig)
         ? string.Empty
         : Path.IsPathRooted(SelectedBootConfig)
             ? SelectedBootConfig
             : Path.Combine(FlowConfigDirectory, SelectedBootConfig);
-    public string FormulaDatabaseDirectory => _paths.FormulaDatabaseDirectory;
     public string ProjectConfigPath => _paths.ProjectConfigPath;
-    public string FlowConfigDirectoryDisplay => GetCompactPathDisplay(FlowConfigDirectory);
-    public string FormulaDatabaseDirectoryDisplay => GetCompactPathDisplay(FormulaDatabaseDirectory);
-    public string ProjectConfigPathDisplay => GetCompactPathDisplay(ProjectConfigPath);
+    public DiagnosticStatusKind FlowConfigDirectoryStatusKind => Directory.Exists(FlowConfigDirectory)
+        ? DiagnosticStatusKind.Neutral
+        : DiagnosticStatusKind.Warning;
+    public DiagnosticStatusKind ProjectConfigPathStatusKind => File.Exists(ProjectConfigPath)
+        ? DiagnosticStatusKind.Neutral
+        : DiagnosticStatusKind.Warning;
+    public string FlowConfigDirectoryDisplay => GetPathStatusDisplay(FlowConfigDirectory, FlowConfigDirectoryStatusKind);
+    public string ProjectConfigPathDisplay => GetPathStatusDisplay(ProjectConfigPath, ProjectConfigPathStatusKind);
 
     private bool IsConnectionFailure => !IsConnected
         && StatusKind == DiagnosticStatusKind.Error
         && ContainsAny(StatusText, "connect failed", "connection failed", "连接失败");
-
-    public bool EnableAdminMode(string password)
-    {
-        if (string.Equals(password, "admin", StringComparison.Ordinal))
-        {
-            AdminModeEnabled = true;
-            SetStatus("管理员模式已启动", DiagnosticStatusKind.Success);
-            AppendLog("Admin mode enabled.");
-            return true;
-        }
-
-        SetStatus("管理员密码错误", DiagnosticStatusKind.Warning);
-        AppendLog("Admin mode password rejected.");
-        return false;
-    }
-
-    private void ToggleAdminMode()
-    {
-        if (AdminModeEnabled)
-        {
-            AdminModeEnabled = false;
-            AdminPassword = string.Empty;
-            AdminPasswordPromptVisible = false;
-            SetStatus("管理员模式已退出", DiagnosticStatusKind.Success);
-            AppendLog("Admin mode disabled.");
-            return;
-        }
-
-        ShowAdminPasswordPrompt();
-    }
-
-    private void ShowAdminPasswordPrompt()
-    {
-        OnPropertyChanged(nameof(AdminModeEnabled));
-        AdminPassword = string.Empty;
-        AdminPasswordMessage = "请输入管理员密码，本次启动内有效。";
-        AdminPasswordPromptVisible = true;
-    }
-
-    private void SubmitAdminPassword()
-    {
-        if (EnableAdminMode(AdminPassword))
-        {
-            CancelAdminPasswordPrompt();
-            return;
-        }
-
-        AdminPassword = string.Empty;
-        AdminPasswordMessage = "密码错误，请重新输入。";
-    }
-
-    private void CancelAdminPasswordPrompt()
-    {
-        AdminPassword = string.Empty;
-        AdminPasswordPromptVisible = false;
-    }
 
     private void RefreshWithConfirmation()
     {
@@ -1048,14 +970,19 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         SelectedProject = Projects.FirstOrDefault(project => string.Equals(project.ProjectName, selectedName, StringComparison.OrdinalIgnoreCase))
             ?? Projects.FirstOrDefault();
         OnPropertyChanged(nameof(ConfigRootText));
+        OnPropertyChanged(nameof(ApplicationDataDirectory));
+        OnPropertyChanged(nameof(ApplicationDataDirectoryDisplay));
+        OnPropertyChanged(nameof(ApplicationDataDirectoryStatusKind));
         OnPropertyChanged(nameof(ScriptRootText));
         OnPropertyChanged(nameof(FlowConfigDirectory));
         OnPropertyChanged(nameof(FlowConfigFilePath));
-        OnPropertyChanged(nameof(FormulaDatabaseDirectory));
         OnPropertyChanged(nameof(ProjectConfigPath));
         OnPropertyChanged(nameof(FlowConfigDirectoryDisplay));
-        OnPropertyChanged(nameof(FormulaDatabaseDirectoryDisplay));
         OnPropertyChanged(nameof(ProjectConfigPathDisplay));
+        OnPropertyChanged(nameof(FlowConfigDirectoryStatusKind));
+        OnPropertyChanged(nameof(ProjectConfigPathStatusKind));
+        OnPropertyChanged(nameof(LogFileStatusText));
+        OnPropertyChanged(nameof(LogFileStatusKind));
         AppendLog($"Configuration loaded: projects={Projects.Count}, boot={BootConfigFiles.Count}");
     }
 
@@ -1070,17 +997,52 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         CloseProjectEditor();
     }
 
+    private void InitializeApplicationData()
+    {
+        try
+        {
+            InitializeApplicationData(_paths);
+        }
+        catch (Exception ex)
+        {
+            SetStatus("初始化应用数据目录失败", DiagnosticStatusKind.Error);
+            AppendLog($"Initialize application data directory failed: {ex.Message}");
+        }
+    }
+
+    private static void InitializeApplicationData(AppConfigurationPaths paths)
+    {
+        Directory.CreateDirectory(paths.ApplicationDataDirectory);
+
+        // Only supply missing built-in files; an existing data directory keeps its own configuration.
+        if (paths.ProjectConfigPathOverride is null)
+        {
+            CopyFileIfMissing(paths.BuiltInProjectConfigPath, paths.ProjectConfigPath);
+        }
+
+        if (paths.BootConfigDirectoryOverride is null)
+        {
+            CopyDirectoryMissing(paths.BuiltInBootConfigDirectory, paths.BootConfigDirectory);
+        }
+
+        CopyDirectoryMissing(paths.BuiltInScriptDirectory, paths.ScriptDirectory);
+    }
+
     private void LoadAppSettings()
     {
         try
         {
-            if (!File.Exists(AppSettingsFilePath))
+            _paths.ConfigDirectoryOverride = _applicationDataLocationRepository.Load();
+            var settingsFilePath = File.Exists(AppSettingsFilePath)
+                ? AppSettingsFilePath
+                : LegacyAppSettingsFilePath;
+            if (!File.Exists(settingsFilePath))
             {
                 return;
             }
 
             var settings = JsonSerializer.Deserialize<AppSettingsSnapshot>(
-                File.ReadAllText(AppSettingsFilePath),
+                File.ReadAllText(settingsFilePath),
                 SettingsJsonOptions);
             if (settings is null)
             {
@@ -1108,7 +1070,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 : settings.SelectedCanChannel;
             _paths.ProjectConfigPathOverride = EmptyToNull(settings.ProjectConfigPath);
             _paths.BootConfigDirectoryOverride = EmptyToNull(settings.FlowConfigDirectory);
-            _paths.FormulaDatabaseDirectoryOverride = EmptyToNull(settings.FormulaDatabaseDirectory);
+
+            if (!string.Equals(settingsFilePath, AppSettingsFilePath, StringComparison.OrdinalIgnoreCase))
+            {
+                Directory.CreateDirectory(_paths.ApplicationDataDirectory);
+                SaveAppSettings();
+            }
         }
         catch
         {
@@ -1116,7 +1083,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
-    private void SaveAppSettings()
+    private void SaveAppSettings(bool throwOnError = false)
     {
         try
         {
@@ -1135,12 +1102,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 SelectedBaudRate = SelectedBaudRate,
                 SelectedCanChannel = SelectedCanChannel,
                 ProjectConfigPath = _paths.ProjectConfigPathOverride,
-                FlowConfigDirectory = _paths.BootConfigDirectoryOverride,
-                FormulaDatabaseDirectory = _paths.FormulaDatabaseDirectoryOverride
+                FlowConfigDirectory = _paths.BootConfigDirectoryOverride
             };
             File.WriteAllText(AppSettingsFilePath, JsonSerializer.Serialize(settings, SettingsJsonOptions));
         }
-        catch
+        catch when (!throwOnError)
         {
             // Settings persistence should never block the flashing workflow.
         }
@@ -1155,9 +1121,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
         try
         {
-            CopyFileIfDifferent(_paths.DefaultProjectConfigPath, _paths.ProjectConfigPath);
-            CopyDirectoryIfDifferent(_paths.DefaultBootConfigDirectory, _paths.BootConfigDirectory);
-            CopyDirectoryIfDifferent(_paths.DefaultFormulaDatabaseDirectory, _paths.FormulaDatabaseDirectory);
+            CopyFileIfDifferent(_paths.BuiltInProjectConfigPath, _paths.ProjectConfigPath);
+            CopyDirectoryIfDifferent(_paths.BuiltInBootConfigDirectory, _paths.BootConfigDirectory);
+            CopyDirectoryIfDifferent(_paths.BuiltInScriptDirectory, _paths.ScriptDirectory);
             Refresh();
             SetStatus("内置配置已导入", DiagnosticStatusKind.Success);
         }
@@ -1207,35 +1173,83 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
-    private void ChooseFlowConfigDirectory()
+    private async Task ChooseApplicationDataDirectoryAsync(CancellationToken cancellationToken)
     {
-        BrowseFolder("选择流程配置目录", FlowConfigDirectory, path =>
+        var path = BrowseFolder("选择应用数据目录", ApplicationDataDirectory);
+        if (path is null
+            || string.Equals(Path.TrimEndingDirectorySeparator(path), Path.TrimEndingDirectorySeparator(ApplicationDataDirectory), StringComparison.OrdinalIgnoreCase)
+            || !ConfirmUnsavedFlowChanges("切换应用数据目录"))
         {
-            if (!ConfirmUnsavedFlowChanges("切换流程配置目录"))
+            return;
+        }
+
+        var previousDirectoryOverride = _paths.ConfigDirectoryOverride;
+        var targetPaths = new AppConfigurationPaths
+        {
+            RootDirectory = _paths.RootDirectory,
+            DefaultApplicationDataDirectory = _paths.DefaultApplicationDataDirectory,
+            ConfigDirectoryOverride = path,
+            ProjectConfigPathOverride = _paths.ProjectConfigPathOverride,
+            BootConfigDirectoryOverride = _paths.BootConfigDirectoryOverride
+        };
+        var switched = false;
+        IsBusy = true;
+        try
+        {
+            await Task.Run(() =>
+            {
+                InitializeApplicationData(targetPaths);
+                _ = new JsonProjectConfigRepository(targetPaths).LoadAll();
+                _ = new JsonBootConfigRepository(targetPaths).ListConfigFileNames();
+            }, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            // Editing may have continued while the target directory was being prepared.
+            if (!ConfirmUnsavedFlowChanges("切换应用数据目录"))
             {
                 return;
             }
 
-            _paths.BootConfigDirectoryOverride = path;
-            SaveAppSettings();
+            _paths.ConfigDirectoryOverride = path;
+            switched = true;
+            SaveAppSettings(throwOnError: true);
             Refresh();
-        });
+            _applicationDataLocationRepository.Save(path);
+            CloseProjectEditor();
+            SetStatus("应用数据目录已更改", DiagnosticStatusKind.Success);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            SetStatus("已取消更改应用数据目录", DiagnosticStatusKind.Neutral);
+        }
+        catch (Exception ex)
+        {
+            if (switched)
+            {
+                _paths.ConfigDirectoryOverride = previousDirectoryOverride;
+                Refresh();
+            }
+
+            SetStatus("更改应用数据目录失败，请检查目录权限或配置文件", DiagnosticStatusKind.Error);
+            AppendLog($"Change application data directory failed: {ex.Message}");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
-    private void ChooseFormulaDatabaseDirectory()
+    private void ChooseFlowConfigDirectory()
     {
-        BrowseFolder("选择配方数据库目录", FormulaDatabaseDirectory, path =>
+        var path = BrowseFolder("选择流程配置目录", FlowConfigDirectory);
+        if (path is null || !ConfirmUnsavedFlowChanges("切换流程配置目录"))
         {
-            if (!ConfirmUnsavedFlowChanges("切换配方数据库目录"))
-            {
-                return;
-            }
+            return;
+        }
 
-            _paths.FormulaDatabaseDirectoryOverride = path;
-            Directory.CreateDirectory(path);
-            SaveAppSettings();
-            Refresh();
-        });
+        _paths.BootConfigDirectoryOverride = path;
+        SaveAppSettings();
+        Refresh();
     }
 
     private void ChooseProjectConfigFile()
@@ -1263,7 +1277,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
-    private void BrowseFolder(string title, string currentPath, Action<string> setPath)
+    private string? BrowseFolder(string title, string currentPath)
     {
         var initialDirectory = Directory.Exists(currentPath)
             ? currentPath
@@ -1278,10 +1292,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             Multiselect = false
         };
 
-        if (dialog.ShowDialog() == true)
-        {
-            setPath(dialog.FolderName);
-        }
+        return dialog.ShowDialog() == true ? dialog.FolderName : null;
     }
 
     private void ChooseLogFile()
@@ -1528,6 +1539,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
 
         _disposed = true;
+        ChooseApplicationDataDirectoryCommand.Cancel();
 
         var device = _canDevice;
         _canDevice = null;
@@ -3092,6 +3104,25 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
+    private string GetPathStatusDisplay(string path, DiagnosticStatusKind statusKind)
+    {
+        var displayPath = GetCompactPathDisplay(path);
+        return statusKind == DiagnosticStatusKind.Warning
+            ? $"路径缺失 · {displayPath}"
+            : displayPath;
+    }
+
+    private static bool IsLogFileLocationAvailable(string path)
+    {
+        if (File.Exists(path))
+        {
+            return true;
+        }
+
+        var directory = Path.GetDirectoryName(path);
+        return !string.IsNullOrWhiteSpace(directory) && Directory.Exists(directory);
+    }
+
     private void RotateLogFileIfNeeded(string path)
     {
         if (!File.Exists(path))
@@ -3177,6 +3208,17 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         File.Copy(sourcePath, destinationPath, true);
     }
 
+    private static void CopyFileIfMissing(string sourcePath, string destinationPath)
+    {
+        if (!File.Exists(sourcePath) || File.Exists(destinationPath))
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+        File.Copy(sourcePath, destinationPath);
+    }
+
     private static void CopyDirectoryIfDifferent(string sourceDirectory, string destinationDirectory)
     {
         if (!Directory.Exists(sourceDirectory) || string.Equals(
@@ -3193,6 +3235,20 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             var destinationPath = Path.Combine(destinationDirectory, relativePath);
             Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
             File.Copy(sourceFile, destinationPath, true);
+        }
+    }
+
+    private static void CopyDirectoryMissing(string sourceDirectory, string destinationDirectory)
+    {
+        if (!Directory.Exists(sourceDirectory))
+        {
+            return;
+        }
+
+        foreach (var sourceFile in Directory.EnumerateFiles(sourceDirectory, "*.*", SearchOption.AllDirectories))
+        {
+            var relativePath = Path.GetRelativePath(sourceDirectory, sourceFile);
+            CopyFileIfMissing(sourceFile, Path.Combine(destinationDirectory, relativePath));
         }
     }
 
@@ -3222,6 +3278,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         MoveFlowStepUpCommand.RaiseCanExecuteChanged();
         MoveFlowStepDownCommand.RaiseCanExecuteChanged();
         SendManualFrameCommand.RaiseCanExecuteChanged();
+        ChooseApplicationDataDirectoryCommand.RaiseCanExecuteChanged();
+        ChooseFlowConfigDirectoryCommand.RaiseCanExecuteChanged();
+        ChooseProjectConfigFileCommand.RaiseCanExecuteChanged();
+        ImportBuiltinConfigurationCommand.RaiseCanExecuteChanged();
+        ClearRuntimeConfigurationCommand.RaiseCanExecuteChanged();
     }
 
     private void RaiseAddFlowStepCommandStates()
@@ -3270,6 +3331,5 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         public string? SelectedCanChannel { get; set; }
         public string? ProjectConfigPath { get; set; }
         public string? FlowConfigDirectory { get; set; }
-        public string? FormulaDatabaseDirectory { get; set; }
     }
 }

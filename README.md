@@ -45,7 +45,6 @@ The framework-dependent x64 packages are generated under `artifacts/publish/Diag
 - [软件功能说明](docs/软件功能说明.md): current functional baseline for development, testing and acceptance.
 - [Fluent 迁移与发布说明](docs/Fluent迁移与发布说明.md): migration batches, publishing profiles, local verification and remaining acceptance checks.
 - [ECU 专用烧写工具配置说明](docs/ECU专用烧写工具配置说明.md): ECU-X publishing, Seed&Key DLL and vehicle integration notes.
-- [管理员模式功能说明](docs/管理员模式功能说明.md): administrator-mode behavior and current permission boundary.
 
 ## Notes
 

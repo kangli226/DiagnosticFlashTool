@@ -4,22 +4,39 @@
                     xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="../Brushes.xaml" />
+        <ResourceDictionary Source="../Typography.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
+    <!-- 操作层级由填充色、文字色和交互态表达；所有共享按钮统一隐藏描边。 -->
     <!-- 官方模板直接读取这些动态资源；仅设置 Button.Background 无法保留危险操作的交互色。 -->
     <ResourceDictionary x:Key="Button.DangerStateResources">
-        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{StaticResource Color.Warning.Hover}" />
-        <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="{StaticResource Color.Warning.Hover}" />
-        <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="{StaticResource Color.Warning.Text}" />
-        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="{StaticResource Color.Warning.Pressed}" />
-        <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="{StaticResource Color.Warning.Pressed}" />
-        <SolidColorBrush x:Key="ButtonForegroundPressed" Color="{StaticResource Color.Warning.Text}" />
-        <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver" Color="{StaticResource Color.Warning.Hover}" />
-        <SolidColorBrush x:Key="AccentButtonBorderBrushPointerOver" Color="{StaticResource Color.Warning.Hover}" />
-        <SolidColorBrush x:Key="AccentButtonForegroundPointerOver" Color="{StaticResource Color.Warning.Text}" />
-        <SolidColorBrush x:Key="AccentButtonBackgroundPressed" Color="{StaticResource Color.Warning.Pressed}" />
-        <SolidColorBrush x:Key="AccentButtonBorderBrushPressed" Color="{StaticResource Color.Warning.Pressed}" />
-        <SolidColorBrush x:Key="AccentButtonForegroundPressed" Color="{StaticResource Color.Warning.Text}" />
+        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{StaticResource Color.Danger.Hover}" />
+        <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="Transparent" />
+        <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="{StaticResource Color.Danger.Text}" />
+        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="{StaticResource Color.Danger.Pressed}" />
+        <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="Transparent" />
+        <SolidColorBrush x:Key="ButtonForegroundPressed" Color="{StaticResource Color.Danger.Text}" />
+        <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver" Color="{StaticResource Color.Danger.Hover}" />
+        <SolidColorBrush x:Key="AccentButtonBorderBrushPointerOver" Color="Transparent" />
+        <SolidColorBrush x:Key="AccentButtonForegroundPointerOver" Color="{StaticResource Color.Danger.Text}" />
+        <SolidColorBrush x:Key="AccentButtonBackgroundPressed" Color="{StaticResource Color.Danger.Pressed}" />
+        <SolidColorBrush x:Key="AccentButtonBorderBrushPressed" Color="Transparent" />
+        <SolidColorBrush x:Key="AccentButtonForegroundPressed" Color="{StaticResource Color.Danger.Text}" />
+    </ResourceDictionary>
+
+    <ResourceDictionary x:Key="Button.DisconnectStateResources">
+        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{StaticResource Color.Surface.Background}" />
+        <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="Transparent" />
+        <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="{StaticResource Color.Text.Secondary}" />
+        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="{StaticResource Color.Border.Divider}" />
+        <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="Transparent" />
+        <SolidColorBrush x:Key="ButtonForegroundPressed" Color="{StaticResource Color.Text.Secondary}" />
+        <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver" Color="{StaticResource Color.Surface.Background}" />
+        <SolidColorBrush x:Key="AccentButtonBorderBrushPointerOver" Color="Transparent" />
+        <SolidColorBrush x:Key="AccentButtonForegroundPointerOver" Color="{StaticResource Color.Text.Secondary}" />
+        <SolidColorBrush x:Key="AccentButtonBackgroundPressed" Color="{StaticResource Color.Border.Divider}" />
+        <SolidColorBrush x:Key="AccentButtonBorderBrushPressed" Color="Transparent" />
+        <SolidColorBrush x:Key="AccentButtonForegroundPressed" Color="{StaticResource Color.Text.Secondary}" />
     </ResourceDictionary>
 
     <Style x:Key="Button.Base"
@@ -29,11 +46,11 @@
         <Setter Property="Padding" Value="16,0" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="Margin" Value="0,4,8,4" />
-        <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Background" Value="{StaticResource PanelBrush}" />
         <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
-        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
         <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="Cursor" Value="Hand" />
         <Style.Triggers>
@@ -46,10 +63,10 @@
     <Style x:Key="Button.Normal" TargetType="Button" BasedOn="{StaticResource Button.Base}">
         <Setter Property="Height" Value="28" />
         <Setter Property="Padding" Value="7,0" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
         <Setter Property="Background" Value="{StaticResource PanelBrush}" />
         <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}" />
-        <Setter Property="BorderBrush" Value="{StaticResource PrimarySoftBorderBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
     </Style>
 
     <Style TargetType="Button" BasedOn="{StaticResource Button.Normal}" />
@@ -57,11 +74,13 @@
     <Style x:Key="Button.Primary"
            TargetType="Button"
            BasedOn="{StaticResource AccentButtonStyle}">
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Height" Value="32" />
         <Setter Property="Padding" Value="16,0" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="Margin" Value="0,4,8,4" />
-        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
         <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="Cursor" Value="Hand" />
         <Style.Triggers>
@@ -71,15 +90,16 @@
         </Style.Triggers>
     </Style>
 
+    <!-- 实心危险按钮：用于需要强警示的操作；普通清空、删除入口使用 Button.DestructiveToolBar。 -->
     <Style x:Key="Button.Danger" TargetType="Button" BasedOn="{StaticResource Button.Base}">
         <Setter Property="controls:FluentButtonAssist.StateResources" Value="{StaticResource Button.DangerStateResources}" />
         <Setter Property="Background" Value="{StaticResource DangerBrush}" />
-        <Setter Property="BorderBrush" Value="{StaticResource DangerBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Foreground" Value="{StaticResource DangerTextBrush}" />
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="{StaticResource DangerActiveBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource DangerActiveBrush}" />
+                <Setter Property="BorderBrush" Value="Transparent" />
             </Trigger>
             <Trigger Property="IsPressed" Value="True">
                 <Setter Property="Background" Value="{StaticResource DangerPressedBrush}" />
@@ -87,7 +107,7 @@
             <Trigger Property="IsEnabled" Value="False">
                 <Setter Property="Foreground" Value="{StaticResource DisabledTextBrush}" />
                 <Setter Property="Background" Value="{StaticResource NeutralSoftBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}" />
+                <Setter Property="BorderBrush" Value="Transparent" />
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -96,31 +116,32 @@
         <Setter Property="Height" Value="32" />
         <Setter Property="Padding" Value="12,0" />
         <Setter Property="Margin" Value="8,0,0,0" />
-        <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
         <Style.Triggers>
             <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="True">
-                <Setter Property="controls:FluentButtonAssist.StateResources" Value="{StaticResource Button.DangerStateResources}" />
-                <Setter Property="Background" Value="{StaticResource DangerBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource DangerBrush}" />
-                <Setter Property="Foreground" Value="{StaticResource DangerTextBrush}" />
+                <Setter Property="controls:FluentButtonAssist.StateResources" Value="{StaticResource Button.DisconnectStateResources}" />
+                <Setter Property="Background" Value="{StaticResource PanelBrush}" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="Foreground" Value="{StaticResource LabelTextBrush}" />
             </DataTrigger>
             <MultiDataTrigger>
                 <MultiDataTrigger.Conditions>
                     <Condition Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="True" />
                     <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True" />
                 </MultiDataTrigger.Conditions>
-                <Setter Property="Background" Value="{StaticResource DangerActiveBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource DangerActiveBrush}" />
+                <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="Foreground" Value="{StaticResource BodyTextBrush}" />
             </MultiDataTrigger>
             <MultiDataTrigger>
                 <MultiDataTrigger.Conditions>
                     <Condition Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="True" />
                     <Condition Binding="{Binding IsPressed, RelativeSource={RelativeSource Self}}" Value="True" />
                 </MultiDataTrigger.Conditions>
-                <Setter Property="Background" Value="{StaticResource DangerPressedBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource DangerPressedBrush}" />
+                <Setter Property="Background" Value="{StaticResource DividerBrush}" />
+                <Setter Property="BorderBrush" Value="Transparent" />
             </MultiDataTrigger>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter Property="Foreground" Value="{DynamicResource ButtonForegroundDisabled}" />
@@ -134,7 +155,7 @@
         <Setter Property="Padding" Value="0" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Assist}" />
         <Setter Property="Margin" Value="0" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="Transparent" />
@@ -161,29 +182,30 @@
         <Setter Property="Height" Value="32" />
         <Setter Property="Padding" Value="14,0" />
         <Setter Property="Margin" Value="0" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
         <Style.Triggers>
             <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="True">
-                <Setter Property="controls:FluentButtonAssist.StateResources" Value="{StaticResource Button.DangerStateResources}" />
-                <Setter Property="Background" Value="{StaticResource DangerBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource DangerBrush}" />
-                <Setter Property="Foreground" Value="{StaticResource DangerTextBrush}" />
+                <Setter Property="controls:FluentButtonAssist.StateResources" Value="{StaticResource Button.DisconnectStateResources}" />
+                <Setter Property="Background" Value="{StaticResource PanelBrush}" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="Foreground" Value="{StaticResource LabelTextBrush}" />
             </DataTrigger>
             <MultiDataTrigger>
                 <MultiDataTrigger.Conditions>
                     <Condition Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="True" />
                     <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True" />
                 </MultiDataTrigger.Conditions>
-                <Setter Property="Background" Value="{StaticResource DangerActiveBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource DangerActiveBrush}" />
+                <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="Foreground" Value="{StaticResource BodyTextBrush}" />
             </MultiDataTrigger>
             <MultiDataTrigger>
                 <MultiDataTrigger.Conditions>
                     <Condition Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="True" />
                     <Condition Binding="{Binding IsPressed, RelativeSource={RelativeSource Self}}" Value="True" />
                 </MultiDataTrigger.Conditions>
-                <Setter Property="Background" Value="{StaticResource DangerPressedBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource DangerPressedBrush}" />
+                <Setter Property="Background" Value="{StaticResource DividerBrush}" />
+                <Setter Property="BorderBrush" Value="Transparent" />
             </MultiDataTrigger>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter Property="Foreground" Value="{DynamicResource AccentButtonForegroundDisabled}" />
@@ -216,7 +238,25 @@
         <Setter Property="Height" Value="32" />
         <Setter Property="Padding" Value="12,0" />
         <Setter Property="Margin" Value="0,0,8,0" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
+    </Style>
+
+    <!-- 白底红字危险操作的共享入口：统一复用工具栏尺寸及危险交互态，页面只引用此样式。 -->
+    <Style x:Key="Button.DestructiveToolBar" TargetType="Button" BasedOn="{StaticResource Button.ToolBar}">
+        <Setter Property="controls:FluentButtonAssist.StateResources" Value="{StaticResource Button.DangerStateResources}" />
+        <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Foreground" Value="{StaticResource DangerTextBrush}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Foreground" Value="{StaticResource DangerTextBrush}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="{StaticResource DisabledTextBrush}" />
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <Style x:Key="Button.Compact" TargetType="Button" BasedOn="{StaticResource Button.Normal}">
@@ -234,7 +274,7 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="{StaticResource PrimarySoftBrush}" />
@@ -247,6 +287,14 @@
                 <Setter Property="Background" Value="Transparent" />
             </Trigger>
         </Style.Triggers>
+    </Style>
+
+    <Style x:Key="Button.PathActionDropdown" TargetType="Button" BasedOn="{StaticResource Button.PathAction}">
+        <Setter Property="Width" Value="24" />
+        <Setter Property="MinWidth" Value="24" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
     </Style>
 
     <Style x:Key="Button.Glyph" TargetType="{x:Type controls:FluentIcon}">
@@ -286,7 +334,7 @@
     </Style>
 
     <Style x:Key="Button.HelpDocumentLabel" TargetType="TextBlock" BasedOn="{StaticResource Button.IconLabel}">
-        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Assist}" />
         <Setter Property="Margin" Value="0" />
     </Style>
 

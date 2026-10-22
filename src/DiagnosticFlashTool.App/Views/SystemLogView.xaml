@@ -45,6 +45,7 @@
                     </Border>
 
                     <Border Grid.Column="2"
+                            Tag="{Binding LogFileStatusKind}"
                             Style="{StaticResource PathDisplayBorderStyle}"
                             ToolTip="{Binding LogFileStatusPathText}">
                         <TextBlock Text="{Binding LogFileStatusPathText}"
@@ -71,7 +72,7 @@
                         </Button>
 
                         <Button Command="{Binding ClearLogCommand}"
-                                Style="{StaticResource Button.ToolBar}">
+                                Style="{StaticResource Button.DestructiveToolBar}">
                             <StackPanel Style="{StaticResource Button.InlineContent}">
                                 <controls:FluentIcon Kind="DeleteSweepOutline"
                                                      Style="{StaticResource Button.Glyph.Current}" />
@@ -168,7 +169,7 @@
                                 <TextBlock Grid.Column="1"
                                            Text="{Binding Text}"
                                            Foreground="{StaticResource LogTextBrush}"
-                                           FontFamily="Consolas"
+                                           FontFamily="{StaticResource Font.Mono}"
                                            TextTrimming="CharacterEllipsis" />
                             </Grid>
                         </DataTemplate>

@@ -95,11 +95,7 @@
                                          Value="{Binding Progress}"
                                          Style="{StaticResource SoftProgressBarStyle}" />
                             <TextBlock Text="{Binding ProgressText}"
-                                       FontSize="16"
-                                       FontWeight="SemiBold"
-                                       Foreground="{StaticResource TextBrush}"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center" />
+                                       Style="{StaticResource ProgressValueTextStyle}" />
                         </Grid>
                     </controls:HeaderedCard>
 
@@ -113,7 +109,7 @@
                                  Background="Transparent"
                                  BorderThickness="0"
                                  Foreground="{StaticResource BodyTextBrush}"
-                                 FontSize="13"
+                                  FontSize="{StaticResource FontSize.Body}"
                                  IsReadOnly="True"
                                  AcceptsReturn="True"
                                  TextWrapping="Wrap"
@@ -152,7 +148,7 @@
                                              Margin="0"
                                              Text="{Binding ManualFrameId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                              ToolTip="例如 0x7E0 或 7E0"
-                                             Style="{StaticResource SoftTextBoxStyle}" />
+                                             Style="{StaticResource MonoTextBoxStyle}" />
 
                                     <TextBlock Grid.Column="3"
                                                Text="发送数据："
@@ -162,7 +158,7 @@
                                              Margin="0"
                                              Text="{Binding ManualFrameData, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                              ToolTip="例如 02 10 03"
-                                             Style="{StaticResource SoftTextBoxStyle}" />
+                                             Style="{StaticResource MonoTextBoxStyle}" />
                                     <Button Grid.Column="6"
                                             Width="90"
                                             Height="32"
@@ -218,7 +214,7 @@
                                 <Button Width="108"
                                         Margin="0"
                                         Command="{Binding ClearFramesCommand}"
-                                        Style="{StaticResource Button.ToolBar}">
+                                        Style="{StaticResource Button.DestructiveToolBar}">
                                     <StackPanel Style="{StaticResource Button.InlineContent}">
                                         <controls:FluentIcon Kind="DeleteSweepOutline"
                                                              Style="{StaticResource Button.Glyph.Current}" />
@@ -235,10 +231,13 @@
                                   Style="{StaticResource DataGrid.Base}">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="方向" Binding="{Binding Direction}" Width="110" />
-                                <DataGridTextColumn Header="ID" Binding="{Binding IdText}" Width="140" />
+                                <DataGridTextColumn Header="ID" Binding="{Binding IdText}" Width="140"
+                                                    ElementStyle="{StaticResource DataGrid.MonoCellText}" />
                                 <DataGridTextColumn Header="格式" Binding="{Binding FormatText}" Width="140" />
-                                <DataGridTextColumn Header="长度" Binding="{Binding Dlc}" Width="100" />
-                                <DataGridTextColumn Header="数据" Binding="{Binding DataText}" Width="*" />
+                                <DataGridTextColumn Header="长度" Binding="{Binding Dlc}" Width="100"
+                                                    ElementStyle="{StaticResource DataGrid.MonoCellText}" />
+                                <DataGridTextColumn Header="数据" Binding="{Binding DataText}" Width="*"
+                                                    ElementStyle="{StaticResource DataGrid.MonoCellText}" />
                             </DataGrid.Columns>
                         </DataGrid>
                     </controls:HeaderedCard>
