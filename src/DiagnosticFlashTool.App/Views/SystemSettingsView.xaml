@@ -96,7 +96,7 @@
                                 <StackPanel Style="{StaticResource Button.InlineContent}">
                                     <controls:FluentIcon Kind="CloudDownloadOutline"
                                                              Style="{StaticResource Button.Glyph.Current}" />
-                                    <TextBlock Text="导入" Style="{StaticResource Button.IconLabel}" />
+                                    <TextBlock Text="恢复内置配置" Style="{StaticResource Button.IconLabel}" />
                                 </StackPanel>
                             </Button>
                             <Button Command="{Binding ClearRuntimeConfigurationCommand}"
@@ -105,7 +105,7 @@
                                 <StackPanel Style="{StaticResource Button.InlineContent}">
                                     <controls:FluentIcon Kind="DeleteOutline"
                                                              Style="{StaticResource Button.Glyph.Current}" />
-                                    <TextBlock Text="清空"
+                                    <TextBlock Text="清空运行配置"
                                                Style="{StaticResource Button.IconLabel}" />
                                 </StackPanel>
                             </Button>
