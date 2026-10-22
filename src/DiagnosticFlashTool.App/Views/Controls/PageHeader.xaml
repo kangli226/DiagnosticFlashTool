@@ -1,32 +1,16 @@
 <UserControl x:Class="DiagnosticFlashTool.App.Views.Controls.PageHeader"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:DiagnosticFlashTool.App.Views.Controls"
              x:Name="Root">
     <Grid Margin="{Binding Padding, ElementName=Root}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
-        <Grid Grid.Column="0" VerticalAlignment="Center">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0"
-                       Text="{Binding Breadcrumb, ElementName=Root}"
-                       Style="{StaticResource PageHeaderBreadcrumbTextStyle}"
-                       TextTrimming="CharacterEllipsis" />
-            <local:FluentIcon Grid.Column="1"
-                              Kind="ChevronRight"
-                              Style="{StaticResource PageHeaderSeparatorIconStyle}" />
-            <TextBlock Grid.Column="2"
-                       Text="{Binding Title, ElementName=Root}"
-                       Style="{StaticResource PageHeaderTitleTextStyle}"
-                       TextTrimming="CharacterEllipsis" />
-        </Grid>
+        <TextBlock Grid.Column="0"
+                   Text="{Binding Title, ElementName=Root}"
+                   Style="{StaticResource PageHeaderTitleTextStyle}"
+                   TextTrimming="CharacterEllipsis" />
         <ContentControl Grid.Column="1"
                         Content="{Binding Actions, ElementName=Root}"
                         HorizontalAlignment="Right"

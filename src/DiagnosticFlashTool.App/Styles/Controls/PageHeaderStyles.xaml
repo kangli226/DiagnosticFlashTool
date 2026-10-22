@@ -35,21 +35,6 @@
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
-    <Style x:Key="PageHeaderBreadcrumbTextStyle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="{StaticResource FontSize.Assist}" />
-        <Setter Property="Foreground" Value="{StaticResource SubtleTextBrush}" />
-        <Setter Property="VerticalAlignment" Value="Center" />
-    </Style>
-
-    <Style x:Key="PageHeaderSeparatorIconStyle" TargetType="{x:Type controls:FluentIcon}">
-        <Setter Property="Width" Value="16" />
-        <Setter Property="Height" Value="16" />
-        <Setter Property="FontSize" Value="{StaticResource FontSize.Assist}" />
-        <Setter Property="Foreground" Value="{StaticResource DividerBrush}" />
-        <Setter Property="Margin" Value="8,0" />
-        <Setter Property="VerticalAlignment" Value="Center" />
-    </Style>
-
     <Style x:Key="PageHeaderBadgeStyle" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource PrimarySoftBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource PrimarySoftBorderBrush}" />

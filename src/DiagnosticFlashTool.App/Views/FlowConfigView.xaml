@@ -80,7 +80,7 @@
             <RowDefinition Height="44" />
         </Grid.RowDefinitions>
 
-        <controls:PageHeader Grid.Row="0" Style="{StaticResource PageHeader.Standard}" Breadcrumb="配置管理" Title="流程配置">
+        <controls:PageHeader Grid.Row="0" Style="{StaticResource PageHeader.Standard}" Title="流程配置">
             <controls:PageHeader.Actions>
                 <controls:PageHelpDocumentButton Style="{StaticResource PageHelpDocumentButton.Standard}" />
             </controls:PageHeader.Actions>

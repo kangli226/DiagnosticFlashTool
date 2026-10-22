@@ -11,12 +11,6 @@ public partial class PageHeader : UserControl
         typeof(PageHeader),
         new PropertyMetadata(string.Empty));
 
-    public static readonly DependencyProperty BreadcrumbProperty = DependencyProperty.Register(
-        nameof(Breadcrumb),
-        typeof(string),
-        typeof(PageHeader),
-        new PropertyMetadata(string.Empty));
-
     public static readonly DependencyProperty BadgeTextProperty = DependencyProperty.Register(
         nameof(BadgeText),
         typeof(string),
@@ -38,12 +32,6 @@ public partial class PageHeader : UserControl
     {
         get => (string)GetValue(TitleProperty);
         set => SetValue(TitleProperty, value);
-    }
-
-    public string Breadcrumb
-    {
-        get => (string)GetValue(BreadcrumbProperty);
-        set => SetValue(BreadcrumbProperty, value);
     }
 
     public string BadgeText
