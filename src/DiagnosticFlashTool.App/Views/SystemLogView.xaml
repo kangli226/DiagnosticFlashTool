@@ -43,7 +43,7 @@
 
                     <TextBlock Grid.Column="2"
                                Text="{Binding LogFileStatusPathText}"
-                               ToolTip="{Binding LogFileStatusPathText}">
+                               ToolTip="{Binding LogFilePathFullPath}">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock" BasedOn="{StaticResource MonoAssistTextStyle}">
                                 <Style.Triggers>

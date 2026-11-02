@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
+using DiagnosticFlashTool.App.Utilities;
 using DiagnosticFlashTool.App.Views;
 using DiagnosticFlashTool.Core.Algorithms;
 using DiagnosticFlashTool.Core.Can;
@@ -453,6 +454,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             if (SetProperty(ref _selectedBootConfig, value))
             {
                 OnPropertyChanged(nameof(FlowConfigFilePath));
+                OnPropertyChanged(nameof(FlowConfigFileStatusKind));
+                OnPropertyChanged(nameof(FlowConfigFileDisplay));
                 OnPropertyChanged(nameof(StatusBarProjectText));
                 LoadFlowFromSelected();
                 RaiseCommandStates();
@@ -615,11 +618,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             ? DiagnosticStatusKind.Success
             : DiagnosticStatusKind.Warning;
 
-    public string LogFileStatusPathText => LogFilePath;
+    public string LogFileStatusPathText => FilePathDisplayFormatter.GetFileName(LogFilePathFullPath);
 
     public string LogFilePathFullPath => ResolveRuntimePath(LogFilePath);
 
-    public string LogFilePathDisplay => GetCompactLeafPathDisplay(LogFilePathFullPath, LogFileStatusKind);
+    public string LogFilePathDisplay => ApplyPathStatus(
+        FilePathDisplayFormatter.GetFileName(LogFilePathFullPath),
+        LogFileStatusKind);
 
     private string AppSettingsFilePath => _paths.SettingsFilePath;
 
@@ -910,7 +915,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         ? "项目：未选择"
         : string.IsNullOrWhiteSpace(SelectedBootConfig)
             ? $"项目：{SelectedProject.ProjectName}"
-            : $"项目：{SelectedProject.ProjectName} / BOOT：{SelectedBootConfig}";
+            : $"项目：{SelectedProject.ProjectName} / BOOT：{FilePathDisplayFormatter.GetFileName(SelectedBootConfig)}";
 
     /// <summary>状态栏运行态：当前下载/刷写状态。</summary>
     public string StatusBarStateText => $"状态：{DownloadStatusText}";
@@ -930,8 +935,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public DiagnosticStatusKind ApplicationDataDirectoryStatusKind => Directory.Exists(ApplicationDataDirectory)
         ? DiagnosticStatusKind.Neutral
         : DiagnosticStatusKind.Warning;
-    public string ApplicationDataDirectoryDisplay => GetPathStatusDisplay(ApplicationDataDirectory, ApplicationDataDirectoryStatusKind);
+    public string ApplicationDataDirectoryDisplay => ApplyPathStatus(
+        ApplicationDataDirectory,
+        ApplicationDataDirectoryStatusKind);
     public string FlowConfigDirectory => _paths.BootConfigDirectory;
+    public string FlowConfigDirectoryDisplay => ApplyPathStatus(
+        FlowConfigDirectory,
+        FlowConfigDirectoryStatusKind);
     public string FlowConfigFilePath => string.IsNullOrWhiteSpace(SelectedBootConfig)
         ? string.Empty
         : Path.IsPathRooted(SelectedBootConfig)
@@ -941,11 +951,19 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public DiagnosticStatusKind FlowConfigDirectoryStatusKind => Directory.Exists(FlowConfigDirectory)
         ? DiagnosticStatusKind.Neutral
         : DiagnosticStatusKind.Warning;
+    public DiagnosticStatusKind FlowConfigFileStatusKind => !string.IsNullOrWhiteSpace(FlowConfigFilePath)
+        && File.Exists(FlowConfigFilePath)
+            ? DiagnosticStatusKind.Neutral
+            : DiagnosticStatusKind.Warning;
     public DiagnosticStatusKind ProjectConfigPathStatusKind => File.Exists(ProjectConfigPath)
         ? DiagnosticStatusKind.Neutral
         : DiagnosticStatusKind.Warning;
-    public string FlowConfigDirectoryDisplay => GetPathStatusDisplay(FlowConfigDirectory, FlowConfigDirectoryStatusKind);
-    public string ProjectConfigPathDisplay => GetPathStatusDisplay(ProjectConfigPath, ProjectConfigPathStatusKind);
+    public string FlowConfigFileDisplay => string.IsNullOrWhiteSpace(FlowConfigFilePath)
+        ? "未选择流程配置文件"
+        : ApplyPathStatus(FilePathDisplayFormatter.GetFileName(FlowConfigFilePath), FlowConfigFileStatusKind);
+    public string ProjectConfigPathDisplay => ApplyPathStatus(
+        FilePathDisplayFormatter.GetFileName(ProjectConfigPath),
+        ProjectConfigPathStatusKind);
 
     private bool IsConnectionFailure => !IsConnected
         && StatusKind == DiagnosticStatusKind.Error
@@ -993,9 +1011,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         OnPropertyChanged(nameof(ApplicationDataDirectoryStatusKind));
         OnPropertyChanged(nameof(ScriptRootText));
         OnPropertyChanged(nameof(FlowConfigDirectory));
-        OnPropertyChanged(nameof(FlowConfigFilePath));
-        OnPropertyChanged(nameof(ProjectConfigPath));
         OnPropertyChanged(nameof(FlowConfigDirectoryDisplay));
+        OnPropertyChanged(nameof(FlowConfigFilePath));
+        OnPropertyChanged(nameof(FlowConfigFileDisplay));
+        OnPropertyChanged(nameof(FlowConfigFileStatusKind));
+        OnPropertyChanged(nameof(ProjectConfigPath));
         OnPropertyChanged(nameof(ProjectConfigPathDisplay));
         OnPropertyChanged(nameof(FlowConfigDirectoryStatusKind));
         OnPropertyChanged(nameof(ProjectConfigPathStatusKind));
@@ -1774,8 +1794,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private void OpenNewProjectEditor()
     {
-        var nextNo = Projects.Count == 0 ? 1 : Projects.Max(project => project.ProjectNo) + 1;
-        ProjectEditor.BeginNew(nextNo, BootConfigFiles.FirstOrDefault() ?? string.Empty);
+        ProjectEditor.BeginNew(BootConfigFiles.FirstOrDefault() ?? string.Empty);
         SetProjectEditorMode(null, "新建项目");
         IsProjectEditorVisible = true;
     }
@@ -1920,11 +1939,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private void AddProject()
     {
-        var nextNo = Projects.Count == 0 ? 1 : Projects.Max(project => project.ProjectNo) + 1;
         var project = new ProjectConfigEntry
         {
-            ProjectName = $"New Project {nextNo}",
-            ProjectNo = nextNo,
+            ProjectName = CreateDefaultProjectName(),
             BaudRate = "500K",
             PhysicalRequestId = "0x18DA5535",
             FunctionalRequestId = "0x18DA55FF",
@@ -1935,6 +1952,20 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         Projects.Add(project);
         SelectedProject = project;
         AppendLog($"Project added: {project.ProjectName}");
+    }
+
+    private string CreateDefaultProjectName()
+    {
+        var index = Projects.Count + 1;
+        while (Projects.Any(project => string.Equals(
+                   project.ProjectName,
+                   $"New Project {index}",
+                   StringComparison.OrdinalIgnoreCase)))
+        {
+            index++;
+        }
+
+        return $"New Project {index}";
     }
 
     private void DeleteSelectedProject()
@@ -1991,9 +2022,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         issues.AddRange(projectList.GroupBy(project => project.ProjectName, StringComparer.OrdinalIgnoreCase)
             .Where(group => !string.IsNullOrWhiteSpace(group.Key) && group.Count() > 1)
             .Select(group => $"Duplicate project name: {group.Key}"));
-        issues.AddRange(projectList.GroupBy(project => project.ProjectNo)
-            .Where(group => group.Key > 0 && group.Count() > 1)
-            .Select(group => $"Duplicate project number: {group.Key}"));
 
         return string.Join(Environment.NewLine, issues.Distinct());
     }
@@ -2326,11 +2354,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private ProjectConfigEntry CreateFlowProjectEntry(string projectName, string configFileName)
     {
-        var nextNo = Projects.Count == 0 ? 1 : Projects.Max(project => project.ProjectNo) + 1;
         return new ProjectConfigEntry
         {
             ProjectName = projectName,
-            ProjectNo = nextNo,
             BaudRate = "500K",
             PhysicalRequestId = "0x18DA5535",
             FunctionalRequestId = "0x18DA55FF",
@@ -3127,27 +3153,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private string GetPathStatusDisplay(string path, DiagnosticStatusKind statusKind)
         => ApplyPathStatus(GetCompactPathDisplay(path), statusKind);
 
-    private string GetCompactLeafPathDisplay(string path, DiagnosticStatusKind statusKind)
-        => ApplyPathStatus(GetCompactLeafDisplay(path), statusKind);
-
     private static string ApplyPathStatus(string displayPath, DiagnosticStatusKind statusKind)
         => statusKind == DiagnosticStatusKind.Warning
             ? $"路径缺失 · {displayPath}"
             : displayPath;
-
-    private string GetCompactLeafDisplay(string path)
-    {
-        try
-        {
-            var fullPath = Path.GetFullPath(path);
-            var name = Path.GetFileName(fullPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-            return string.IsNullOrWhiteSpace(name) ? fullPath : $"...{Path.DirectorySeparatorChar}{name}";
-        }
-        catch
-        {
-            return path;
-        }
-    }
 
     private static bool IsLogFileLocationAvailable(string path)
     {

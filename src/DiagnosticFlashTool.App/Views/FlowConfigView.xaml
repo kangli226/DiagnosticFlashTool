@@ -9,15 +9,6 @@
             <Setter Property="Margin" Value="0,0,8,0" />
         </Style>
 
-        <Style x:Key="FlowConfigPrimaryButtonStyle"
-               TargetType="Button"
-               BasedOn="{StaticResource Button.Primary}">
-            <Setter Property="Height" Value="32" />
-            <Setter Property="Padding" Value="12,0" />
-            <Setter Property="Margin" Value="0" />
-            <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
-        </Style>
-
         <Style x:Key="FlowConfigDataGridStyle"
                TargetType="DataGrid"
                BasedOn="{StaticResource DataGrid.Base}">
@@ -104,15 +95,21 @@
                         </Grid.ColumnDefinitions>
 
                         <TextBlock Grid.Column="0"
-                                   Text="配置名称："
+                                   Text="配置文件："
                                    Margin="0,0,10,0"
                                    Style="{StaticResource FieldLabelStyle}" />
                         <ComboBox Grid.Column="1"
                                   ItemsSource="{Binding Projects}"
                                   SelectedItem="{Binding SelectedProject, Mode=TwoWay}"
-                                  DisplayMemberPath="ProjectName"
                                   ToolTip="{Binding FlowConfigFilePath}"
-                                  Style="{StaticResource StandardComboBoxStyle}" />
+                                  Style="{StaticResource StandardComboBoxStyle}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding BootConfigFile, Converter={StaticResource FileNameConverter}}"
+                                               ToolTip="{Binding BootConfigFile}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
 
                         <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
                             <Button Command="{Binding LoadFlowCommand}"
@@ -144,7 +141,8 @@
                             </Button>
                             <Button Command="{Binding SaveFlowCommand}"
                                     ToolTip="保存流程配置"
-                                    Style="{StaticResource FlowConfigPrimaryButtonStyle}">
+                                    Margin="0"
+                                    Style="{StaticResource FlowConfigToolbarButtonStyle}">
                                 <StackPanel Style="{StaticResource Button.InlineContent}">
                                     <controls:FluentIcon Kind="ContentSaveOutline"
                                                              Style="{StaticResource Button.Glyph.Current}" />
@@ -175,7 +173,7 @@
                                 ToolTip="更换选中节点的模板并清除不兼容配置"
                                 Style="{StaticResource FlowConfigToolbarButtonStyle}">
                             <StackPanel Style="{StaticResource Button.InlineContent}">
-                                <controls:FluentIcon Kind="Refresh"
+                                <controls:FluentIcon Kind="Change"
                                                          Style="{StaticResource Button.Glyph.Current}" />
                                 <TextBlock Text="更换模板" Style="{StaticResource Button.IconLabel}" />
                             </StackPanel>
@@ -224,7 +222,10 @@
                           Style="{StaticResource FlowConfigDataGridStyle}"
                           ScrollViewer.VerticalScrollBarVisibility="Hidden">
                     <DataGrid.Columns>
-                        <DataGridTemplateColumn Header="ID" Width="76" IsReadOnly="True">
+                        <DataGridTemplateColumn Header="ID"
+                                                Width="76"
+                                                IsReadOnly="True"
+                                                HeaderStyle="{StaticResource DataGrid.ColumnHeader.Centered}">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Grid>
@@ -262,7 +263,10 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
-                        <DataGridTemplateColumn Header="服务" Width="68" IsReadOnly="True">
+                        <DataGridTemplateColumn Header="服务"
+                                                Width="68"
+                                                IsReadOnly="True"
+                                                HeaderStyle="{StaticResource DataGrid.ColumnHeader.Centered}">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Service}"
@@ -273,7 +277,10 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
-                        <DataGridTemplateColumn Header="子服务" Width="68" IsReadOnly="True">
+                        <DataGridTemplateColumn Header="子服务"
+                                                Width="68"
+                                                IsReadOnly="True"
+                                                HeaderStyle="{StaticResource DataGrid.ColumnHeader.Centered}">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding SubService}"

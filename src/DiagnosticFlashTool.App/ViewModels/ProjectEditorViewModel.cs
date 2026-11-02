@@ -1,12 +1,12 @@
-using System.Globalization;
+using System.IO;
 using DiagnosticFlashTool.Core.Configuration;
+using DiagnosticFlashTool.App.Utilities;
 
 namespace DiagnosticFlashTool.App.ViewModels;
 
 public sealed class ProjectEditorViewModel : ObservableObject
 {
     private string _projectName = string.Empty;
-    private string _projectNoText = "1";
     private string _baudRate = "500K";
     private string _physicalRequestId = "0x18DA5535";
     private string _functionalRequestId = "0x18DA55FF";
@@ -21,12 +21,6 @@ public sealed class ProjectEditorViewModel : ObservableObject
     {
         get => _projectName;
         set => SetProperty(ref _projectName, value);
-    }
-
-    public string ProjectNoText
-    {
-        get => _projectNoText;
-        set => SetProperty(ref _projectNoText, value);
     }
 
     public string BaudRate
@@ -74,19 +68,42 @@ public sealed class ProjectEditorViewModel : ObservableObject
     public string DriverFilePath
     {
         get => _driverFilePath;
-        set => SetProperty(ref _driverFilePath, value);
+        set
+        {
+            if (SetProperty(ref _driverFilePath, value))
+            {
+                OnPropertyChanged(nameof(DriverFileDisplay));
+            }
+        }
     }
 
     public string ApplicationFilePath
     {
         get => _applicationFilePath;
-        set => SetProperty(ref _applicationFilePath, value);
+        set
+        {
+            if (SetProperty(ref _applicationFilePath, value))
+            {
+                OnPropertyChanged(nameof(ApplicationFileDisplay));
+            }
+        }
     }
 
-    public void BeginNew(int projectNo, string bootConfigFile)
+    public string DriverFileDisplay
+    {
+        get => FilePathDisplayFormatter.GetFileName(DriverFilePath);
+        set => DriverFilePath = UpdateFileName(DriverFilePath, value);
+    }
+
+    public string ApplicationFileDisplay
+    {
+        get => FilePathDisplayFormatter.GetFileName(ApplicationFilePath);
+        set => ApplicationFilePath = UpdateFileName(ApplicationFilePath, value);
+    }
+
+    public void BeginNew(string bootConfigFile)
     {
         ProjectName = string.Empty;
-        ProjectNoText = projectNo.ToString(CultureInfo.InvariantCulture);
         BaudRate = "500K";
         PhysicalRequestId = "0x18DA5535";
         FunctionalRequestId = "0x18DA55FF";
@@ -101,7 +118,6 @@ public sealed class ProjectEditorViewModel : ObservableObject
     public void Load(ProjectConfigEntry project)
     {
         ProjectName = project.ProjectName;
-        ProjectNoText = project.ProjectNo.ToString(CultureInfo.InvariantCulture);
         BaudRate = project.BaudRate;
         PhysicalRequestId = project.PhysicalRequestId;
         FunctionalRequestId = project.FunctionalRequestId;
@@ -118,12 +134,6 @@ public sealed class ProjectEditorViewModel : ObservableObject
         if (string.IsNullOrWhiteSpace(ProjectName))
         {
             validationMessage = "项目名称不能为空。";
-            return null;
-        }
-
-        if (!TryParseProjectNo(ProjectNoText, out var projectNo) || projectNo <= 0)
-        {
-            validationMessage = "项目码必须是大于 0 的十进制或十六进制整数。";
             return null;
         }
 
@@ -145,7 +155,6 @@ public sealed class ProjectEditorViewModel : ObservableObject
         return new ProjectConfigEntry
         {
             ProjectName = ProjectName.Trim(),
-            ProjectNo = projectNo,
             BaudRate = BaudRate,
             PhysicalRequestId = PhysicalRequestId.Trim(),
             FunctionalRequestId = FunctionalRequestId.Trim(),
@@ -158,18 +167,31 @@ public sealed class ProjectEditorViewModel : ObservableObject
         };
     }
 
-    private static bool TryParseProjectNo(string value, out int projectNo)
+    private static string UpdateFileName(string currentPath, string? displayValue)
     {
-        var text = value.Trim();
-        if (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+        var value = displayValue?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(value))
         {
-            return int.TryParse(
-                text[2..],
-                NumberStyles.AllowHexSpecifier,
-                CultureInfo.InvariantCulture,
-                out projectNo);
+            return string.Empty;
         }
 
-        return int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out projectNo);
+        try
+        {
+            if (Path.IsPathRooted(value)
+                || value.Contains(Path.DirectorySeparatorChar)
+                || value.Contains(Path.AltDirectorySeparatorChar))
+            {
+                return value;
+            }
+
+            var directory = Path.GetDirectoryName(currentPath);
+            return string.IsNullOrWhiteSpace(directory)
+                ? value
+                : Path.Combine(directory, value);
+        }
+        catch
+        {
+            return value;
+        }
     }
 }

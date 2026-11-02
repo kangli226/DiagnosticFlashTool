@@ -448,7 +448,14 @@
                                        ItemsSource="{Binding BootConfigFiles}"
                                        SelectedItem="{Binding SelectedFlowProjectTemplate, Mode=TwoWay}"
                                        IsEnabled="{Binding CreateFlowProjectFromTemplate}"
-                                       Style="{StaticResource StandardComboBoxStyle}" />
+                                       Style="{StaticResource StandardComboBoxStyle}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Converter={StaticResource FileNameConverter}}"
+                                                   ToolTip="{Binding}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
                         </Grid>
                     </Grid>
 

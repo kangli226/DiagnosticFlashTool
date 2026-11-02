@@ -49,6 +49,8 @@ public sealed class FluentIcon : TextBlock
         Text = Kind switch
         {
             FluentIconKind.ArrowRight => "\uE72A",
+            // Segoe Fluent Icons / Segoe MDL2 Assets 的 Switch 字形：双向箭头，表示更换、切换
+            FluentIconKind.Change => "\uE8AB",
             FluentIconKind.CheckCircleOutline => "\uE930",
             FluentIconKind.ChevronDown => "\uE70D",
             FluentIconKind.ChevronRight => "\uE76C",
@@ -89,6 +91,7 @@ public sealed class FluentIcon : TextBlock
 public enum FluentIconKind
 {
     ArrowRight,
+    Change,
     CheckCircleOutline,
     ChevronDown,
     ChevronRight,

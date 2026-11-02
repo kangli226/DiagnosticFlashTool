@@ -1,6 +1,7 @@
 <Application x:Class="DiagnosticFlashTool.App.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:DiagnosticFlashTool.App.Converters"
              ThemeMode="Light"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
@@ -8,6 +9,7 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Styles/AppStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
+            <converters:FileNameConverter x:Key="FileNameConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>
