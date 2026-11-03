@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
@@ -124,6 +125,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         InitializeApplicationData();
         _projectRepository = new JsonProjectConfigRepository(_paths);
         _bootConfigRepository = new JsonBootConfigRepository(_paths);
+        ProjectEditor.PropertyChanged += OnProjectEditorPropertyChanged;
 
         RefreshCommand = new RelayCommand(RefreshWithConfirmation);
         ConnectCommand = new AsyncRelayCommand(ConnectAsync, () => !IsConnected && !IsBusy);
@@ -1114,6 +1116,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             BootConfigFiles.Add(config);
         }
+        RefreshProjectFileStatuses();
         OnPropertyChanged(nameof(HasBootConfigTemplates));
 
         LoadAlgorithmCatalog();
@@ -2169,6 +2172,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private void OpenNewProjectEditor()
     {
         ProjectEditor.BeginNew(BootConfigFiles.FirstOrDefault() ?? string.Empty, GetNextProjectNo());
+        UpdateProjectEditorFirmwareRequirements();
         SetProjectEditorMode(null, "新建项目");
         IsProjectEditorVisible = true;
     }
@@ -2181,6 +2185,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
 
         ProjectEditor.Load(SelectedProject);
+        UpdateProjectEditorFirmwareRequirements();
         SetProjectEditorMode(SelectedProject, "项目详情");
         IsProjectEditorVisible = true;
     }
@@ -2194,6 +2199,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             AppendLog(editorValidation);
             return;
         }
+        RefreshProjectFileStatus(project);
 
         var projectsToSave = Projects.ToList();
         var editedIndex = _editingProject is null ? -1 : projectsToSave.IndexOf(_editingProject);
@@ -2510,6 +2516,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             }
 
             _loadedFlowConfig = config;
+            RefreshProjectFileStatuses();
+            UpdateProjectEditorFirmwareRequirements();
             MarkFlowAsBaseline();
             SetStatus(isDraft ? "配置已保存" : "流程已保存", DiagnosticStatusKind.Success);
             AppendLog($"Flow saved: {SelectedBootConfig}, steps={FlowRows.Count}");
@@ -2682,6 +2690,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 ? new BootConfig()
                 : _bootConfigRepository.Load(templateSource);
             config.Name = projectName;
+            project.RefreshFirmwareFileStatuses(config, _firmwareLoader);
 
             _draftFlowProject = project;
             _draftFlowConfig = config;
@@ -3131,6 +3140,101 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
 
         project.CanProtocol = CanProtocolExtensions.Parse(project.CanProtocol).ToConfigValue();
+    }
+
+    private void OnProjectEditorPropertyChanged(object? sender, PropertyChangedEventArgs eventArgs)
+    {
+        if (eventArgs.PropertyName == nameof(ProjectEditorViewModel.BootConfigFile))
+        {
+            UpdateProjectEditorFirmwareRequirements();
+        }
+    }
+
+    private void UpdateProjectEditorFirmwareRequirements()
+    {
+        if (string.IsNullOrWhiteSpace(ProjectEditor.BootConfigFile))
+        {
+            ProjectEditor.SetFirmwareRequirements(false, false);
+            return;
+        }
+
+        try
+        {
+            var bootConfig = _bootConfigRepository.Load(ProjectEditor.BootConfigFile);
+            ProjectEditor.SetFirmwareRequirements(
+                RequiresDownloadStep(bootConfig, FlashStepKind.DownloadDriver),
+                RequiresDownloadStep(bootConfig, FlashStepKind.DownloadApplication));
+        }
+        catch
+        {
+            // 配置内容损坏时无法可靠判断下载步骤，保留两个文件入口以避免保存时误清已有路径。
+            ProjectEditor.SetFirmwareRequirements(true, true);
+        }
+    }
+
+    private void RefreshProjectFileStatuses()
+    {
+        var bootConfigCache = new Dictionary<string, (BootConfig? Config, string? Error)>(
+            StringComparer.OrdinalIgnoreCase);
+
+        for (var index = 0; index < Projects.Count; index++)
+        {
+            var project = Projects[index];
+            if (ReferenceEquals(project, _draftFlowProject) && _draftFlowConfig is not null)
+            {
+                project.RefreshFirmwareFileStatuses(_draftFlowConfig, _firmwareLoader);
+                Projects[index] = project;
+                continue;
+            }
+
+            var configReference = project.BootConfigFile?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(configReference))
+            {
+                project.RefreshFirmwareFileStatuses(
+                    null,
+                    _firmwareLoader,
+                    "项目未配置 BOOT 配置文件。");
+                Projects[index] = project;
+                continue;
+            }
+
+            if (!bootConfigCache.TryGetValue(configReference, out var result))
+            {
+                try
+                {
+                    result = (_bootConfigRepository.Load(configReference), null);
+                }
+                catch (Exception ex)
+                {
+                    result = (null, ex.Message);
+                }
+
+                bootConfigCache[configReference] = result;
+            }
+
+            project.RefreshFirmwareFileStatuses(result.Config, _firmwareLoader, result.Error);
+            Projects[index] = project;
+        }
+    }
+
+    private void RefreshProjectFileStatus(ProjectConfigEntry project)
+    {
+        if (string.IsNullOrWhiteSpace(project.BootConfigFile))
+        {
+            project.RefreshFirmwareFileStatuses(null, _firmwareLoader, "项目未配置 BOOT 配置文件。");
+            return;
+        }
+
+        try
+        {
+            project.RefreshFirmwareFileStatuses(
+                _bootConfigRepository.Load(project.BootConfigFile),
+                _firmwareLoader);
+        }
+        catch (Exception ex)
+        {
+            project.RefreshFirmwareFileStatuses(null, _firmwareLoader, ex.Message);
+        }
     }
 
     private void BrowseFirmware(Action<string> setPath)

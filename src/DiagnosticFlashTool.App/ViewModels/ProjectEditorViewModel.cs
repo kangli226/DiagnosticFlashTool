@@ -17,6 +17,8 @@ public sealed class ProjectEditorViewModel : ObservableObject
     private string _bootConfigFile = string.Empty;
     private string _driverFilePath = string.Empty;
     private string _applicationFilePath = string.Empty;
+    private bool _isDriverFileRequired;
+    private bool _isApplicationFileRequired;
 
     public string ProjectName
     {
@@ -102,6 +104,24 @@ public sealed class ProjectEditorViewModel : ObservableObject
         set => ApplicationFilePath = UpdateFileName(ApplicationFilePath, value);
     }
 
+    public bool IsDriverFileRequired
+    {
+        get => _isDriverFileRequired;
+        private set => SetProperty(ref _isDriverFileRequired, value);
+    }
+
+    public bool IsApplicationFileRequired
+    {
+        get => _isApplicationFileRequired;
+        private set => SetProperty(ref _isApplicationFileRequired, value);
+    }
+
+    public void SetFirmwareRequirements(bool requiresDriverFile, bool requiresApplicationFile)
+    {
+        IsDriverFileRequired = requiresDriverFile;
+        IsApplicationFileRequired = requiresApplicationFile;
+    }
+
     public void BeginNew(string bootConfigFile, int projectNo)
     {
         ProjectName = string.Empty;
@@ -176,8 +196,8 @@ public sealed class ProjectEditorViewModel : ObservableObject
             FunctionalRequestId = FunctionalRequestId.Trim(),
             ResponseAddressId = ResponseAddressId.Trim(),
             BootConfigFile = BootConfigFile,
-            DriveFilePath = DriverFilePath.Trim(),
-            FlashFilePath = ApplicationFilePath.Trim()
+            DriveFilePath = IsDriverFileRequired ? DriverFilePath.Trim() : string.Empty,
+            FlashFilePath = IsApplicationFileRequired ? ApplicationFilePath.Trim() : string.Empty
         };
     }
 

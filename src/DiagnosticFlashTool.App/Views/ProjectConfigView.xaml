@@ -81,13 +81,12 @@
                                 <Setter Property="FontSize" Value="18" />
                                 <Setter Property="Foreground" Value="{StaticResource StatusNeutralBrush}" />
                             </Style>
-                        </DataGrid.Resources>
-                        <DataGrid.ColumnHeaderStyle>
-                            <Style TargetType="DataGridColumnHeader"
-                                   BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
-                                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                            <Style x:Key="ProjectConfigFileStatusIconStyle" TargetType="{x:Type controls:FluentIcon}">
+                                <Setter Property="HorizontalAlignment" Value="Center" />
+                                <Setter Property="VerticalAlignment" Value="Center" />
+                                <Setter Property="FontSize" Value="18" />
                             </Style>
-                        </DataGrid.ColumnHeaderStyle>
+                        </DataGrid.Resources>
                         <DataGrid.InputBindings>
                             <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding EditProjectCommand}" />
                         </DataGrid.InputBindings>
@@ -103,50 +102,92 @@
                             <DataGridTemplateColumn Header="Driver 文件" Width="100">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding DriverFileStatusIcon}"
-                                                   ToolTip="{Binding DriverFileStatusText}">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock" BasedOn="{StaticResource ProjectConfigFileStatusTextStyle}">
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsDriverFileAvailable}" Value="True">
-                                                            <Setter Property="Foreground" Value="{StaticResource StatusSuccessBrush}" />
-                                                        </DataTrigger>
-                                                        <MultiDataTrigger>
-                                                            <MultiDataTrigger.Conditions>
-                                                                <Condition Binding="{Binding IsDriverFileConfigured}" Value="True" />
-                                                                <Condition Binding="{Binding IsDriverFileAvailable}" Value="False" />
-                                                            </MultiDataTrigger.Conditions>
-                                                            <Setter Property="Foreground" Value="{StaticResource StatusErrorBrush}" />
-                                                        </MultiDataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
+                                        <Grid ToolTip="{Binding DriverFileStatusText}">
+                                            <TextBlock Text="-">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock" BasedOn="{StaticResource ProjectConfigFileStatusTextStyle}">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding DriverFileStatusIcon}" Value="-">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <controls:FluentIcon Kind="CheckCircleOutline"
+                                                                 Foreground="{StaticResource StatusSuccessBrush}">
+                                                <controls:FluentIcon.Style>
+                                                    <Style TargetType="{x:Type controls:FluentIcon}" BasedOn="{StaticResource ProjectConfigFileStatusIconStyle}">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsDriverFileAvailable}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </controls:FluentIcon.Style>
+                                            </controls:FluentIcon>
+                                            <controls:FluentIcon Kind="CloseCircleOutline"
+                                                                 Foreground="{StaticResource StatusErrorBrush}">
+                                                <controls:FluentIcon.Style>
+                                                    <Style TargetType="{x:Type controls:FluentIcon}" BasedOn="{StaticResource ProjectConfigFileStatusIconStyle}">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsDriverFileError}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </controls:FluentIcon.Style>
+                                            </controls:FluentIcon>
+                                        </Grid>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
                             <DataGridTemplateColumn Header="App 文件" Width="100">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding ApplicationFileStatusIcon}"
-                                                   ToolTip="{Binding ApplicationFileStatusText}">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock" BasedOn="{StaticResource ProjectConfigFileStatusTextStyle}">
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsApplicationFileAvailable}" Value="True">
-                                                            <Setter Property="Foreground" Value="{StaticResource StatusSuccessBrush}" />
-                                                        </DataTrigger>
-                                                        <MultiDataTrigger>
-                                                            <MultiDataTrigger.Conditions>
-                                                                <Condition Binding="{Binding IsApplicationFileConfigured}" Value="True" />
-                                                                <Condition Binding="{Binding IsApplicationFileAvailable}" Value="False" />
-                                                            </MultiDataTrigger.Conditions>
-                                                            <Setter Property="Foreground" Value="{StaticResource StatusErrorBrush}" />
-                                                        </MultiDataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
+                                        <Grid ToolTip="{Binding ApplicationFileStatusText}">
+                                            <TextBlock Text="-">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock" BasedOn="{StaticResource ProjectConfigFileStatusTextStyle}">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding ApplicationFileStatusIcon}" Value="-">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <controls:FluentIcon Kind="CheckCircleOutline"
+                                                                 Foreground="{StaticResource StatusSuccessBrush}">
+                                                <controls:FluentIcon.Style>
+                                                    <Style TargetType="{x:Type controls:FluentIcon}" BasedOn="{StaticResource ProjectConfigFileStatusIconStyle}">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsApplicationFileAvailable}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </controls:FluentIcon.Style>
+                                            </controls:FluentIcon>
+                                            <controls:FluentIcon Kind="CloseCircleOutline"
+                                                                 Foreground="{StaticResource StatusErrorBrush}">
+                                                <controls:FluentIcon.Style>
+                                                    <Style TargetType="{x:Type controls:FluentIcon}" BasedOn="{StaticResource ProjectConfigFileStatusIconStyle}">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsApplicationFileError}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </controls:FluentIcon.Style>
+                                            </controls:FluentIcon>
+                                        </Grid>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -301,12 +342,13 @@
                                           Style="{StaticResource StandardComboBoxStyle}" />
                             </Grid>
 
-                            <Grid Margin="0,0,0,12">
+                            <Grid Margin="0,0,0,12"
+                                  Visibility="{Binding ProjectEditor.IsDriverFileRequired, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="100" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="驱动文件" Style="{StaticResource FieldLabelStyle}" />
+                                <TextBlock Grid.Column="0" Text="Driver 文件" Style="{StaticResource FieldLabelStyle}" />
                                 <Grid Grid.Column="1">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
@@ -331,12 +373,12 @@
                                 </Grid>
                             </Grid>
 
-                            <Grid>
+                            <Grid Visibility="{Binding ProjectEditor.IsApplicationFileRequired, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="100" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="应用文件" Style="{StaticResource FieldLabelStyle}" />
+                                <TextBlock Grid.Column="0" Text="App 文件" Style="{StaticResource FieldLabelStyle}" />
                                 <Grid Grid.Column="1">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
