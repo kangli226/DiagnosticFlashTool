@@ -54,58 +54,33 @@
                           SelectedItem="{Binding SelectedProject, Mode=TwoWay}"
                           IsReadOnly="True"
                           ScrollViewer.VerticalScrollBarVisibility="Hidden">
-                        <DataGrid.Resources>
-                            <Style x:Key="ProjectConfigCellTextStyle" TargetType="TextBlock">
-                                <Setter Property="HorizontalAlignment" Value="Left" />
-                                <Setter Property="Margin" Value="16,0,0,0" />
-                                <Setter Property="VerticalAlignment" Value="Center" />
-                            </Style>
-                            <Style x:Key="ProjectConfigBootFileCellTextStyle"
-                                   TargetType="TextBlock"
-                                   BasedOn="{StaticResource ProjectConfigCellTextStyle}">
-                                <Setter Property="ToolTip" Value="{Binding BootConfigFile}" />
-                            </Style>
-                            <Style x:Key="ProjectConfigDriverFileCellTextStyle"
-                                   TargetType="TextBlock"
-                                   BasedOn="{StaticResource ProjectConfigCellTextStyle}">
-                                <Setter Property="ToolTip" Value="{Binding DriveFilePath}" />
-                            </Style>
-                            <Style x:Key="ProjectConfigApplicationFileCellTextStyle"
-                                   TargetType="TextBlock"
-                                   BasedOn="{StaticResource ProjectConfigCellTextStyle}">
-                                <Setter Property="ToolTip" Value="{Binding FlashFilePath}" />
-                            </Style>
-                            <Style x:Key="ProjectConfigFileStatusTextStyle" TargetType="TextBlock">
-                                <Setter Property="HorizontalAlignment" Value="Center" />
-                                <Setter Property="VerticalAlignment" Value="Center" />
-                                <Setter Property="FontSize" Value="18" />
-                                <Setter Property="Foreground" Value="{StaticResource StatusNeutralBrush}" />
-                            </Style>
-                            <Style x:Key="ProjectConfigFileStatusIconStyle" TargetType="{x:Type controls:FluentIcon}">
-                                <Setter Property="HorizontalAlignment" Value="Center" />
-                                <Setter Property="VerticalAlignment" Value="Center" />
-                                <Setter Property="FontSize" Value="18" />
-                            </Style>
-                        </DataGrid.Resources>
                         <DataGrid.InputBindings>
                             <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding EditProjectCommand}" />
                         </DataGrid.InputBindings>
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="项目名称" Binding="{Binding ProjectName}" Width="150" ElementStyle="{StaticResource ProjectConfigCellTextStyle}" />
-                            <DataGridTextColumn Header="项目码" Binding="{Binding ProjectNo}" Width="76" ElementStyle="{StaticResource ProjectConfigCellTextStyle}" />
-                            <DataGridTextColumn Header="波特率" Binding="{Binding BaudRate}" Width="90" ElementStyle="{StaticResource ProjectConfigCellTextStyle}" />
-                            <DataGridTextColumn Header="物理请求" Binding="{Binding PhysicalRequestId}" Width="135" ElementStyle="{StaticResource ProjectConfigCellTextStyle}" />
-                            <DataGridTextColumn Header="功能请求" Binding="{Binding FunctionalRequestId}" Width="135" ElementStyle="{StaticResource ProjectConfigCellTextStyle}" />
-                            <DataGridTextColumn Header="响应地址" Binding="{Binding ResponseAddressId}" Width="135" ElementStyle="{StaticResource ProjectConfigCellTextStyle}" />
-                            <DataGridTextColumn Header="BOOT 配置" Binding="{Binding BootConfigFile, Converter={StaticResource FileNameConverter}}" Width="130" ElementStyle="{StaticResource ProjectConfigBootFileCellTextStyle}" />
-                            <DataGridTextColumn Header="CAN 协议" Binding="{Binding CanProtocol}" Width="90" ElementStyle="{StaticResource ProjectConfigCellTextStyle}" />
+                            <DataGridTextColumn Header="项目名称" Binding="{Binding ProjectName}" Width="150" ElementStyle="{StaticResource DataGrid.CellText}" />
+                            <DataGridTextColumn Header="项目码" Binding="{Binding ProjectNo}" Width="76" ElementStyle="{StaticResource DataGrid.CellText}" />
+                            <DataGridTextColumn Header="波特率" Binding="{Binding BaudRate}" Width="90" ElementStyle="{StaticResource DataGrid.CellText}" />
+                            <DataGridTextColumn Header="物理请求" Binding="{Binding PhysicalRequestId}" Width="135" ElementStyle="{StaticResource DataGrid.CellText}" />
+                            <DataGridTextColumn Header="功能请求" Binding="{Binding FunctionalRequestId}" Width="135" ElementStyle="{StaticResource DataGrid.CellText}" />
+                            <DataGridTextColumn Header="响应地址" Binding="{Binding ResponseAddressId}" Width="135" ElementStyle="{StaticResource DataGrid.CellText}" />
+                            <DataGridTemplateColumn Header="BOOT 配置" Width="130">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding BootConfigFile, Converter={StaticResource FileNameConverter}}"
+                                                   ToolTip="{Binding BootConfigFile}"
+                                                   Style="{StaticResource DataGrid.CellText}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="CAN 协议" Binding="{Binding CanProtocol}" Width="90" ElementStyle="{StaticResource DataGrid.CellText}" />
                             <DataGridTemplateColumn Header="Driver 文件" Width="100">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Grid ToolTip="{Binding DriverFileStatusText}">
                                             <TextBlock Text="-">
                                                 <TextBlock.Style>
-                                                    <Style TargetType="TextBlock" BasedOn="{StaticResource ProjectConfigFileStatusTextStyle}">
+                                                    <Style TargetType="TextBlock" BasedOn="{StaticResource DataGrid.StatusText}">
                                                         <Setter Property="Visibility" Value="Collapsed" />
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding DriverFileStatusIcon}" Value="-">
@@ -115,10 +90,10 @@
                                                     </Style>
                                                 </TextBlock.Style>
                                             </TextBlock>
-                                            <controls:FluentIcon Kind="CheckCircleOutline"
+                                            <controls:FluentIcon Kind="Check"
                                                                  Foreground="{StaticResource StatusSuccessBrush}">
                                                 <controls:FluentIcon.Style>
-                                                    <Style TargetType="{x:Type controls:FluentIcon}" BasedOn="{StaticResource ProjectConfigFileStatusIconStyle}">
+                                                    <Style TargetType="{x:Type controls:FluentIcon}" BasedOn="{StaticResource DataGrid.StatusIcon}">
                                                         <Setter Property="Visibility" Value="Collapsed" />
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding IsDriverFileAvailable}" Value="True">
@@ -131,7 +106,7 @@
                                             <controls:FluentIcon Kind="CloseCircleOutline"
                                                                  Foreground="{StaticResource StatusErrorBrush}">
                                                 <controls:FluentIcon.Style>
-                                                    <Style TargetType="{x:Type controls:FluentIcon}" BasedOn="{StaticResource ProjectConfigFileStatusIconStyle}">
+                                                    <Style TargetType="{x:Type controls:FluentIcon}" BasedOn="{StaticResource DataGrid.StatusIcon}">
                                                         <Setter Property="Visibility" Value="Collapsed" />
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding IsDriverFileError}" Value="True">
@@ -151,7 +126,7 @@
                                         <Grid ToolTip="{Binding ApplicationFileStatusText}">
                                             <TextBlock Text="-">
                                                 <TextBlock.Style>
-                                                    <Style TargetType="TextBlock" BasedOn="{StaticResource ProjectConfigFileStatusTextStyle}">
+                                                    <Style TargetType="TextBlock" BasedOn="{StaticResource DataGrid.StatusText}">
                                                         <Setter Property="Visibility" Value="Collapsed" />
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding ApplicationFileStatusIcon}" Value="-">
@@ -161,10 +136,10 @@
                                                     </Style>
                                                 </TextBlock.Style>
                                             </TextBlock>
-                                            <controls:FluentIcon Kind="CheckCircleOutline"
+                                            <controls:FluentIcon Kind="Check"
                                                                  Foreground="{StaticResource StatusSuccessBrush}">
                                                 <controls:FluentIcon.Style>
-                                                    <Style TargetType="{x:Type controls:FluentIcon}" BasedOn="{StaticResource ProjectConfigFileStatusIconStyle}">
+                                                    <Style TargetType="{x:Type controls:FluentIcon}" BasedOn="{StaticResource DataGrid.StatusIcon}">
                                                         <Setter Property="Visibility" Value="Collapsed" />
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding IsApplicationFileAvailable}" Value="True">
@@ -177,7 +152,7 @@
                                             <controls:FluentIcon Kind="CloseCircleOutline"
                                                                  Foreground="{StaticResource StatusErrorBrush}">
                                                 <controls:FluentIcon.Style>
-                                                    <Style TargetType="{x:Type controls:FluentIcon}" BasedOn="{StaticResource ProjectConfigFileStatusIconStyle}">
+                                                    <Style TargetType="{x:Type controls:FluentIcon}" BasedOn="{StaticResource DataGrid.StatusIcon}">
                                                         <Setter Property="Visibility" Value="Collapsed" />
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding IsApplicationFileError}" Value="True">

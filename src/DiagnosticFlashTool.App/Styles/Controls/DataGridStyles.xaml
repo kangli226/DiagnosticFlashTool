@@ -41,12 +41,6 @@
         <Setter Property="BorderThickness" Value="0,0,1,1" />
     </Style>
 
-    <Style x:Key="DataGrid.ColumnHeader.Centered"
-           TargetType="DataGridColumnHeader"
-           BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
-        <Setter Property="HorizontalContentAlignment" Value="Center" />
-    </Style>
-
     <Style TargetType="DataGridCell">
         <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
         <Setter Property="BorderThickness" Value="0,0,0,1" />
@@ -61,11 +55,33 @@
         </Style.Triggers>
     </Style>
 
-    <Style x:Key="DataGrid.MonoCellText" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
+    <Style x:Key="DataGrid.CellText" TargetType="TextBlock">
+        <Setter Property="Margin" Value="16,0,0,0" />
+        <Setter Property="Foreground" Value="{StaticResource BodyTextBrush}" />
         <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style x:Key="DataGrid.MonoCellText"
+           TargetType="TextBlock"
+           BasedOn="{StaticResource DataGrid.CellText}">
+        <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
+    </Style>
+
+    <Style x:Key="DataGrid.StatusText" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource StatusNeutralBrush}" />
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="DataGrid.StatusIcon" TargetType="{x:Type controls:FluentIcon}">
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
     <Style TargetType="DataGrid" BasedOn="{StaticResource DataGrid.Base}" />

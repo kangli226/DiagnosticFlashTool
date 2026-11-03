@@ -227,16 +227,15 @@
                         <DataGrid Margin="0"
                                   ItemsSource="{Binding Frames}"
                                   IsReadOnly="True"
-                                  GridLinesVisibility="All"
                                   Style="{StaticResource DataGrid.Base}">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="方向" Binding="{Binding Direction}" Width="110" />
+                                <DataGridTextColumn Header="方向" Binding="{Binding Direction}" Width="110" ElementStyle="{StaticResource DataGrid.CellText}" />
                                 <DataGridTextColumn Header="ID" Binding="{Binding IdText}" Width="140"
                                                     ElementStyle="{StaticResource DataGrid.MonoCellText}" />
-                                <DataGridTextColumn Header="格式" Binding="{Binding FormatText}" Width="140" />
-                                <DataGridTextColumn Header="协议" Binding="{Binding ProtocolText}" Width="100" />
-                                <DataGridTextColumn Header="BRS" Binding="{Binding BrsText}" Width="70" />
-                                <DataGridTextColumn Header="ESI" Binding="{Binding EsiText}" Width="70" />
+                                <DataGridTextColumn Header="格式" Binding="{Binding FormatText}" Width="140" ElementStyle="{StaticResource DataGrid.CellText}" />
+                                <DataGridTextColumn Header="协议" Binding="{Binding ProtocolText}" Width="100" ElementStyle="{StaticResource DataGrid.CellText}" />
+                                <DataGridTextColumn Header="BRS" Binding="{Binding BrsText}" Width="70" ElementStyle="{StaticResource DataGrid.CellText}" />
+                                <DataGridTextColumn Header="ESI" Binding="{Binding EsiText}" Width="70" ElementStyle="{StaticResource DataGrid.CellText}" />
                                 <DataGridTextColumn Header="长度" Binding="{Binding Dlc}" Width="100"
                                                     ElementStyle="{StaticResource DataGrid.MonoCellText}" />
                                 <DataGridTextColumn Header="数据" Binding="{Binding DataText}" Width="*"

@@ -3,27 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls">
     <UserControl.Resources>
-        <Style x:Key="FlowConfigDataGridStyle"
-               TargetType="DataGrid"
-               BasedOn="{StaticResource DataGrid.Base}">
-            <Setter Property="RowHeight" Value="46" />
-            <Setter Property="ColumnHeaderHeight" Value="38" />
-            <Setter Property="CanUserReorderColumns" Value="False" />
-            <Setter Property="CanUserResizeRows" Value="False" />
-        </Style>
-
-        <Style x:Key="FlowConfigDataGridCellStyle" TargetType="DataGridCell">
-            <Setter Property="Padding" Value="4,0" />
-            <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
-            <Setter Property="BorderThickness" Value="0,0,0,1" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Style.Triggers>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="{StaticResource PrimarySoftBrush}" />
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
         <Style x:Key="FlowConfigCellTextBoxStyle"
                TargetType="TextBox"
                BasedOn="{StaticResource SoftTextBoxStyle}">
@@ -32,14 +11,6 @@
             <Setter Property="Padding" Value="8,0" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
-        </Style>
-
-        <Style x:Key="FlowConfigReadOnlyCellTextStyle" TargetType="TextBlock">
-            <Setter Property="Margin" Value="8,0" />
-            <Setter Property="Foreground" Value="{StaticResource BodyTextBrush}" />
-            <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
 
         <Style x:Key="FlowConfigCellComboBoxStyle"
@@ -213,14 +184,11 @@
                           DragOver="FlowDataGrid_DragOver"
                           DragLeave="FlowDataGrid_DragLeave"
                           Drop="FlowDataGrid_Drop"
-                          CellStyle="{StaticResource FlowConfigDataGridCellStyle}"
-                          Style="{StaticResource FlowConfigDataGridStyle}"
                           ScrollViewer.VerticalScrollBarVisibility="Hidden">
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="ID"
                                                 Width="76"
-                                                IsReadOnly="True"
-                                                HeaderStyle="{StaticResource DataGrid.ColumnHeader.Centered}">
+                                                IsReadOnly="True">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Grid>
@@ -253,35 +221,31 @@
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Name}"
                                                ToolTip="名称由节点模板决定"
-                                               Style="{StaticResource FlowConfigReadOnlyCellTextStyle}" />
+                                               Style="{StaticResource DataGrid.CellText}" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
                         <DataGridTemplateColumn Header="服务"
                                                 Width="68"
-                                                IsReadOnly="True"
-                                                HeaderStyle="{StaticResource DataGrid.ColumnHeader.Centered}">
+                                                IsReadOnly="True">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Service}"
                                                ToolTip="服务 ID 由节点模板决定"
-                                               HorizontalAlignment="Center"
-                                               Style="{StaticResource FlowConfigReadOnlyCellTextStyle}" />
+                                               Style="{StaticResource DataGrid.CellText}" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
                         <DataGridTemplateColumn Header="子服务"
                                                 Width="68"
-                                                IsReadOnly="True"
-                                                HeaderStyle="{StaticResource DataGrid.ColumnHeader.Centered}">
+                                                IsReadOnly="True">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding SubService}"
                                                ToolTip="子服务 ID 由节点模板决定"
-                                               HorizontalAlignment="Center"
-                                               Style="{StaticResource FlowConfigReadOnlyCellTextStyle}" />
+                                               Style="{StaticResource DataGrid.CellText}" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -306,7 +270,7 @@
                                         <TextBlock Text="{Binding ExtendText}"
                                                    ToolTip="扩展数据由节点模板固定">
                                             <TextBlock.Style>
-                                                <Style TargetType="TextBlock" BasedOn="{StaticResource FlowConfigReadOnlyCellTextStyle}">
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource DataGrid.CellText}">
                                                     <Setter Property="Visibility" Value="Visible" />
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding CanEditExtend}" Value="True">
@@ -356,7 +320,7 @@
                                         <TextBlock Text="{Binding AlgorithmDisplayText}"
                                                    ToolTip="{Binding AlgorithmDisplayText}">
                                             <TextBlock.Style>
-                                                <Style TargetType="TextBlock" BasedOn="{StaticResource FlowConfigReadOnlyCellTextStyle}">
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource DataGrid.CellText}">
                                                     <Setter Property="Visibility" Value="Visible" />
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding CanEditSecurityAlgorithm}" Value="True">
