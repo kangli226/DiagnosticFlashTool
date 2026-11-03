@@ -1,94 +1,100 @@
-using System.Runtime.InteropServices;
 using DiagnosticFlashTool.Core.Can;
 
 namespace DiagnosticFlashTool.Infrastructure.Can;
 
 public sealed class ZlgCanDevice : ICanDevice
 {
-    private const uint Reserved = 0;
-    private static bool s_nativeSearchPathConfigured;
     private readonly CancellationTokenSource _receiveLoopCts = new();
     private Task? _receiveLoop;
+    private IntPtr _deviceHandle;
+    private IntPtr _channelHandle;
     private CanDeviceOptions _options = new();
 
     public event EventHandler<CanFrame>? FrameReceived;
     public event EventHandler<CanFrame>? FrameSent;
 
     public bool IsOpen { get; private set; }
+    public CanDeviceInfo? DeviceInfo { get; private set; }
+    public CanProtocol ActiveProtocol { get; private set; } = CanProtocol.Can;
 
     public Task OpenAsync(CanDeviceOptions options, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(options);
         if (!OperatingSystem.IsWindows())
         {
-            throw new PlatformNotSupportedException("ZLG ControlCAN is only supported on Windows.");
+            throw new PlatformNotSupportedException("ZLG CAN 设备仅支持 Windows。");
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
+        ZlgNative.ConfigureSearchPath();
         _options = options;
-        ConfigureNativeSearchPath();
-        var deviceType = ParseDeviceType(options.DeviceType);
-        if (VCI_OpenDevice(deviceType, options.DeviceIndex, Reserved) != 1)
-        {
-            throw new InvalidOperationException("VCI_OpenDevice failed.");
-        }
-
-        var init = BuildInitConfig(options.BaudRate);
-        if (VCI_InitCAN(deviceType, options.DeviceIndex, options.Channel, ref init) != 1)
-        {
-            VCI_CloseDevice(deviceType, options.DeviceIndex);
-            throw new InvalidOperationException("VCI_InitCAN failed.");
-        }
-
-        if (VCI_StartCAN(deviceType, options.DeviceIndex, options.Channel) != 1)
-        {
-            VCI_CloseDevice(deviceType, options.DeviceIndex);
-            throw new InvalidOperationException("VCI_StartCAN failed.");
-        }
-
+        OpenDevice(options, cancellationToken);
+        InitializeChannel(options);
         IsOpen = true;
-        _receiveLoop = Task.Run(() => ReceiveLoopAsync(_receiveLoopCts.Token), cancellationToken);
+        _receiveLoop = Task.Run(() => ReceiveLoopAsync(_receiveLoopCts.Token), CancellationToken.None);
         return Task.CompletedTask;
     }
 
-    public Task CloseAsync(CancellationToken cancellationToken)
+    public async Task CloseAsync(CancellationToken cancellationToken)
     {
-        if (!IsOpen)
+        if (!IsOpen && _deviceHandle == IntPtr.Zero)
         {
-            return Task.CompletedTask;
+            return;
         }
 
         _receiveLoopCts.Cancel();
-        var deviceType = ParseDeviceType(_options.DeviceType);
-        VCI_CloseDevice(deviceType, _options.DeviceIndex);
+        if (_receiveLoop is not null)
+        {
+            try
+            {
+                await _receiveLoop.ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }
+
+        if (_channelHandle != IntPtr.Zero)
+        {
+            ZlgNative.ZCAN_ResetCAN(_channelHandle);
+            _channelHandle = IntPtr.Zero;
+        }
+
+        if (_deviceHandle != IntPtr.Zero)
+        {
+            if (ZlgNative.ZCAN_CloseDevice(_deviceHandle) != ZlgNative.StatusOk)
+            {
+                throw new InvalidOperationException("ZCAN_CloseDevice 失败，设备可能仍被占用。");
+            }
+
+            _deviceHandle = IntPtr.Zero;
+        }
+
         IsOpen = false;
-        return Task.CompletedTask;
     }
 
     public Task SendAsync(CanFrame frame, CancellationToken cancellationToken)
     {
-        if (!IsOpen)
+        if (!IsOpen || _channelHandle == IntPtr.Zero)
         {
-            throw new InvalidOperationException("ZLG CAN device is not open.");
+            throw new InvalidOperationException("ZLG CAN 设备尚未打开。");
         }
 
-        var obj = new VciCanObj
+        cancellationToken.ThrowIfCancellationRequested();
+        if (ActiveProtocol == CanProtocol.CanFd && frame.IsCanFd)
         {
-            Id = frame.Id,
-            SendType = 0,
-            RemoteFlag = frame.IsRemote ? (byte)1 : (byte)0,
-            ExternFlag = frame.IsExtended ? (byte)1 : (byte)0,
-            DataLen = (byte)Math.Min(8, frame.Data.Length),
-            Data = new byte[8],
-            Reserved = new byte[3]
-        };
-        Array.Copy(frame.Data, obj.Data, obj.DataLen);
-
-        var result = VCI_Transmit(ParseDeviceType(_options.DeviceType), _options.DeviceIndex, frame.Channel, [obj], 1);
-        if (result != 1)
+            SendCanFd(frame);
+        }
+        else
         {
-            throw new InvalidOperationException("VCI_Transmit failed.");
+            SendClassic(frame);
         }
 
-        FrameSent?.Invoke(this, frame);
+        FrameSent?.Invoke(this, frame with
+        {
+            IsCanFd = ActiveProtocol == CanProtocol.CanFd && frame.IsCanFd,
+            BitRateSwitch = ActiveProtocol == CanProtocol.CanFd && frame.BitRateSwitch
+        });
         return Task.CompletedTask;
     }
 
@@ -98,126 +104,296 @@ public sealed class ZlgCanDevice : ICanDevice
         _receiveLoopCts.Dispose();
     }
 
+    private void OpenDevice(CanDeviceOptions options, CancellationToken cancellationToken)
+    {
+        var attempts = new List<string>();
+        foreach (var descriptor in ZlgDeviceCatalog.ResolveCandidates(options.DeviceType))
+        {
+            foreach (var index in CandidateIndices(options.DeviceIndex))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var handle = ZlgNative.ZCAN_OpenDevice(descriptor.DeviceType, index, 0);
+                attempts.Add($"{descriptor.Model}[{index}]");
+                if (handle == IntPtr.Zero)
+                {
+                    continue;
+                }
+
+                var nativeInfo = ZlgCanDeviceProbe.CreateDeviceInfo();
+                if (ZlgNative.ZCAN_GetDeviceInf(handle, ref nativeInfo) != ZlgNative.StatusOk)
+                {
+                    nativeInfo.ChannelCount = (byte)descriptor.DefaultChannelCount;
+                }
+
+                _deviceHandle = handle;
+                DeviceInfo = ZlgDeviceCatalog.CreateInfo(descriptor, index, nativeInfo);
+                return;
+            }
+        }
+
+        throw new InvalidOperationException(
+            $"未检测到可用的 ZLG 设备。已尝试：{string.Join(", ", attempts)}。" +
+            "请检查 USB 连接、驱动安装，并关闭其他占用 CAN 设备的软件。");
+    }
+
+    private void InitializeChannel(CanDeviceOptions options)
+    {
+        var channelCount = Math.Max(DeviceInfo?.ChannelCount ?? 1, 1);
+        if (options.Channel >= channelCount)
+        {
+            CloseDeviceAfterOpenFailure();
+            throw new ArgumentOutOfRangeException(
+                nameof(options),
+                $"设备只有 {channelCount} 个通道，无法打开 Channel {options.Channel}。");
+        }
+
+        ActiveProtocol = options.Protocol == CanProtocol.CanFd && DeviceInfo?.SupportsCanFd == true
+            ? CanProtocol.CanFd
+            : CanProtocol.Can;
+        var init = ActiveProtocol == CanProtocol.CanFd
+            ? BuildCanFdInit(options)
+            : BuildClassicInit(options.BaudRate);
+        _channelHandle = ZlgNative.ZCAN_InitCAN(_deviceHandle, options.Channel, ref init);
+        if (_channelHandle == IntPtr.Zero)
+        {
+            CloseDeviceAfterOpenFailure();
+            throw new InvalidOperationException(
+                $"ZCAN_InitCAN 失败：Channel {options.Channel}，波特率 {options.BaudRate}。请检查通道和波特率配置。");
+        }
+
+        if (ZlgNative.ZCAN_ClearBuffer(_channelHandle) != ZlgNative.StatusOk
+            || ZlgNative.ZCAN_StartCAN(_channelHandle) != ZlgNative.StatusOk)
+        {
+            CloseDeviceAfterOpenFailure();
+            throw new InvalidOperationException($"ZLG Channel {options.Channel} 启动失败。");
+        }
+    }
+
+    private ZlgNative.ChannelInitConfig BuildCanFdInit(CanDeviceOptions options)
+    {
+        var arbitrationPath = $"{options.Channel}/canfd_abit_baud_rate";
+        var dataPath = $"{options.Channel}/canfd_dbit_baud_rate";
+        var standardPath = $"{options.Channel}/canfd_standard";
+        if (ZlgNative.ZCAN_SetValue(_deviceHandle, standardPath, "0") != ZlgNative.StatusOk
+            || ZlgNative.ZCAN_SetValue(_deviceHandle, arbitrationPath, options.BaudRate.ToString()) != ZlgNative.StatusOk
+            || ZlgNative.ZCAN_SetValue(_deviceHandle, dataPath, options.CanFdDataBaudRate.ToString()) != ZlgNative.StatusOk)
+        {
+            CloseDeviceAfterOpenFailure();
+            throw new InvalidOperationException(
+                $"CAN FD 波特率配置失败：仲裁段 {options.BaudRate}，数据段 {options.CanFdDataBaudRate}。");
+        }
+
+        return new ZlgNative.ChannelInitConfig
+        {
+            CanType = ZlgNative.TypeCanFd,
+            AccCode = 0,
+            AccMask = uint.MaxValue,
+            CanFdFilter = 1,
+            CanFdMode = 0
+        };
+    }
+
+    private static ZlgNative.ChannelInitConfig BuildClassicInit(uint baudRate)
+    {
+        var (timing0, timing1) = baudRate switch
+        {
+            10_000 => ((byte)0x31, (byte)0x1C),
+            20_000 => ((byte)0x18, (byte)0x1C),
+            40_000 => ((byte)0x87, (byte)0xFF),
+            50_000 => ((byte)0x09, (byte)0x1C),
+            80_000 => ((byte)0x83, (byte)0xFF),
+            100_000 => ((byte)0x04, (byte)0x1C),
+            125_000 => ((byte)0x03, (byte)0x1C),
+            200_000 => ((byte)0x81, (byte)0xFA),
+            250_000 => ((byte)0x01, (byte)0x1C),
+            400_000 => ((byte)0x80, (byte)0xFA),
+            500_000 => ((byte)0x00, (byte)0x1C),
+            666_000 => ((byte)0x80, (byte)0xB6),
+            800_000 => ((byte)0x00, (byte)0x16),
+            1_000_000 => ((byte)0x00, (byte)0x14),
+            _ => throw new ArgumentOutOfRangeException(nameof(baudRate), $"不支持的经典 CAN 波特率：{baudRate}。")
+        };
+        return new ZlgNative.ChannelInitConfig
+        {
+            CanType = ZlgNative.TypeCan,
+            AccCode = 0,
+            AccMask = uint.MaxValue,
+            ClassicFilter = 1,
+            Timing0 = timing0,
+            Timing1 = timing1,
+            ClassicMode = 0
+        };
+    }
+
+    private void SendClassic(CanFrame frame)
+    {
+        if (frame.Data.Length > 8)
+        {
+            throw new InvalidOperationException("经典 CAN 数据长度不能超过 8 字节。");
+        }
+
+        var data = new byte[8];
+        Array.Copy(frame.Data, data, frame.Data.Length);
+        var packet = new ZlgNative.ClassicTransmitData
+        {
+            Frame = new ZlgNative.ClassicFrame
+            {
+                CanId = ZlgNative.MakeCanId(frame.Id, frame.IsExtended, frame.IsRemote),
+                Dlc = (byte)frame.Data.Length,
+                Data = data
+            }
+        };
+        if (ZlgNative.ZCAN_Transmit(_channelHandle, [packet], 1) != 1)
+        {
+            throw new InvalidOperationException("ZCAN_Transmit 发送失败。");
+        }
+    }
+
+    private void SendCanFd(CanFrame frame)
+    {
+        if (frame.IsRemote)
+        {
+            throw new InvalidOperationException("CAN FD 不支持远程帧。");
+        }
+
+        if (frame.Data.Length > 64)
+        {
+            throw new InvalidOperationException("CAN FD 数据长度不能超过 64 字节。");
+        }
+
+        var data = new byte[64];
+        Array.Copy(frame.Data, data, frame.Data.Length);
+        var flags = frame.BitRateSwitch && _options.UseBitRateSwitch ? ZlgNative.CanFdBrs : (byte)0;
+        var packet = new ZlgNative.CanFdTransmitData
+        {
+            Frame = new ZlgNative.CanFdFrame
+            {
+                CanId = ZlgNative.MakeCanId(frame.Id, frame.IsExtended, false),
+                Length = (byte)frame.Data.Length,
+                Flags = flags,
+                Data = data
+            }
+        };
+        if (ZlgNative.ZCAN_TransmitFD(_channelHandle, [packet], 1) != 1)
+        {
+            throw new InvalidOperationException("ZCAN_TransmitFD 发送失败。");
+        }
+    }
+
     private async Task ReceiveLoopAsync(CancellationToken cancellationToken)
     {
-        var deviceType = ParseDeviceType(_options.DeviceType);
         while (!cancellationToken.IsCancellationRequested)
         {
-            var buffer = new VciCanObj[100];
-            for (var i = 0; i < buffer.Length; i++)
+            ReceiveClassic();
+            if (DeviceInfo?.SupportsCanFd == true)
             {
-                buffer[i].Data = new byte[8];
-                buffer[i].Reserved = new byte[3];
-            }
-
-            var count = VCI_Receive(deviceType, _options.DeviceIndex, _options.Channel, buffer, (uint)buffer.Length, 10);
-            for (var i = 0; i < count; i++)
-            {
-                var item = buffer[i];
-                var data = item.Data.Take(item.DataLen).ToArray();
-                FrameReceived?.Invoke(this, new CanFrame(item.Id, data, _options.Channel, item.ExternFlag != 0, item.RemoteFlag != 0));
+                ReceiveCanFd();
             }
 
             await Task.Delay(1, cancellationToken).ConfigureAwait(false);
         }
     }
 
-    private static uint ParseDeviceType(string? deviceType)
+    private void ReceiveClassic()
     {
-        if (uint.TryParse(deviceType, out var value))
-        {
-            return value;
-        }
-
-        return 4;
-    }
-
-    private static void ConfigureNativeSearchPath()
-    {
-        if (s_nativeSearchPathConfigured)
+        var buffer = CreateClassicReceiveBuffer(100);
+        var count = ZlgNative.ZCAN_Receive(_channelHandle, buffer, (uint)buffer.Length, 0);
+        if (count > buffer.Length)
         {
             return;
         }
 
-        var nativeDirectory = Path.Combine(AppContext.BaseDirectory, "resources", "native");
-        if (Directory.Exists(nativeDirectory) && !SetDllDirectory(nativeDirectory))
+        for (var index = 0; index < count; index++)
         {
-            throw new InvalidOperationException($"Failed to set native DLL directory: {nativeDirectory}");
+            var item = buffer[index];
+            var extended = (item.Frame.CanId & ZlgNative.CanEffFlag) != 0;
+            var id = item.Frame.CanId & (extended ? ZlgNative.CanEffMask : ZlgNative.CanSffMask);
+            FrameReceived?.Invoke(this, new CanFrame(
+                id,
+                item.Frame.Data.Take(item.Frame.Dlc).ToArray(),
+                _options.Channel,
+                extended,
+                (item.Frame.CanId & ZlgNative.CanRtrFlag) != 0,
+                TimestampFromMicroseconds(item.Timestamp)));
+        }
+    }
+
+    private void ReceiveCanFd()
+    {
+        var buffer = CreateCanFdReceiveBuffer(100);
+        var count = ZlgNative.ZCAN_ReceiveFD(_channelHandle, buffer, (uint)buffer.Length, 0);
+        if (count > buffer.Length)
+        {
+            return;
         }
 
-        s_nativeSearchPathConfigured = true;
-    }
-
-    private static VciInitConfig BuildInitConfig(uint baudRate)
-    {
-        var (timing0, timing1) = baudRate switch
+        for (var index = 0; index < count; index++)
         {
-            250_000 => ((byte)0x01, (byte)0x1C),
-            500_000 => ((byte)0x00, (byte)0x1C),
-            1_000_000 => ((byte)0x00, (byte)0x14),
-            _ => ((byte)0x00, (byte)0x1C)
-        };
+            var item = buffer[index];
+            var extended = (item.Frame.CanId & ZlgNative.CanEffFlag) != 0;
+            var id = item.Frame.CanId & (extended ? ZlgNative.CanEffMask : ZlgNative.CanSffMask);
+            FrameReceived?.Invoke(this, new CanFrame(
+                id,
+                item.Frame.Data.Take(item.Frame.Length).ToArray(),
+                _options.Channel,
+                extended,
+                false,
+                TimestampFromMicroseconds(item.Timestamp),
+                true,
+                (item.Frame.Flags & ZlgNative.CanFdBrs) != 0,
+                (item.Frame.Flags & ZlgNative.CanFdEsi) != 0));
+        }
+    }
 
-        return new VciInitConfig
+    private void CloseDeviceAfterOpenFailure()
+    {
+        if (_channelHandle != IntPtr.Zero)
         {
-            AccCode = 0,
-            AccMask = 0xFFFFFFFF,
-            Reserved = 0,
-            Filter = 1,
-            Timing0 = timing0,
-            Timing1 = timing1,
-            Mode = 0
-        };
+            ZlgNative.ZCAN_ResetCAN(_channelHandle);
+            _channelHandle = IntPtr.Zero;
+        }
+
+        if (_deviceHandle != IntPtr.Zero)
+        {
+            ZlgNative.ZCAN_CloseDevice(_deviceHandle);
+            _deviceHandle = IntPtr.Zero;
+        }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    private struct VciInitConfig
+    private static IEnumerable<uint> CandidateIndices(uint preferred)
     {
-        public uint AccCode;
-        public uint AccMask;
-        public uint Reserved;
-        public byte Filter;
-        public byte Timing0;
-        public byte Timing1;
-        public byte Mode;
+        yield return preferred;
+        for (uint index = 0; index < 8; index++)
+        {
+            if (index != preferred)
+            {
+                yield return index;
+            }
+        }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    private struct VciCanObj
+    private static DateTimeOffset? TimestampFromMicroseconds(ulong microseconds) =>
+        microseconds == 0 ? null : DateTimeOffset.UtcNow;
+
+    private static ZlgNative.ClassicReceiveData[] CreateClassicReceiveBuffer(int length)
     {
-        public uint Id;
-        public uint TimeStamp;
-        public byte TimeFlag;
-        public byte SendType;
-        public byte RemoteFlag;
-        public byte ExternFlag;
-        public byte DataLen;
+        var buffer = new ZlgNative.ClassicReceiveData[length];
+        for (var index = 0; index < buffer.Length; index++)
+        {
+            buffer[index].Frame.Data = new byte[8];
+        }
 
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-        public byte[] Data;
-
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
-        public byte[] Reserved;
+        return buffer;
     }
 
-    [DllImport("ControlCAN.dll", CallingConvention = CallingConvention.StdCall)]
-    private static extern uint VCI_OpenDevice(uint deviceType, uint deviceIndex, uint reserved);
+    private static ZlgNative.CanFdReceiveData[] CreateCanFdReceiveBuffer(int length)
+    {
+        var buffer = new ZlgNative.CanFdReceiveData[length];
+        for (var index = 0; index < buffer.Length; index++)
+        {
+            buffer[index].Frame.Data = new byte[64];
+        }
 
-    [DllImport("ControlCAN.dll", CallingConvention = CallingConvention.StdCall)]
-    private static extern uint VCI_CloseDevice(uint deviceType, uint deviceIndex);
-
-    [DllImport("ControlCAN.dll", CallingConvention = CallingConvention.StdCall)]
-    private static extern uint VCI_InitCAN(uint deviceType, uint deviceIndex, uint canIndex, ref VciInitConfig initConfig);
-
-    [DllImport("ControlCAN.dll", CallingConvention = CallingConvention.StdCall)]
-    private static extern uint VCI_StartCAN(uint deviceType, uint deviceIndex, uint canIndex);
-
-    [DllImport("ControlCAN.dll", CallingConvention = CallingConvention.StdCall)]
-    private static extern uint VCI_Transmit(uint deviceType, uint deviceIndex, uint canIndex, [In] VciCanObj[] send, uint len);
-
-    [DllImport("ControlCAN.dll", CallingConvention = CallingConvention.StdCall)]
-    private static extern uint VCI_Receive(uint deviceType, uint deviceIndex, uint canIndex, [Out] VciCanObj[] receive, uint len, int waitTime);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern bool SetDllDirectory(string lpPathName);
+        return buffer;
+    }
 }

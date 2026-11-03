@@ -80,7 +80,8 @@
                                         Command="{Binding ToggleConnectionCommand}"
                                         Tag="{Binding IsConnected}"
                                         Width="112"
-                                        Style="{StaticResource Button.ConnectionAction}">
+                                        Margin="8,0,0,0"
+                                        Style="{StaticResource Button.Normal}">
                                     <StackPanel Style="{StaticResource Button.InlineContent}">
                                         <controls:FluentIcon Kind="PowerPlugOutline"
                                                              Style="{StaticResource Button.Glyph.Current}" />
@@ -120,7 +121,7 @@
                                        Margin="0,0,16,0" />
                             <TextBlock Grid.Row="2"
                                        Grid.Column="1"
-                                       Text="{Binding SelectedDeviceType}"
+                                       Text="{Binding ConnectedDeviceText}"
                                        Style="{StaticResource ConfigValueTextStyle}" />
 
                             <TextBlock Grid.Row="4"
@@ -130,7 +131,7 @@
                                        Margin="0,0,16,0" />
                             <TextBlock Grid.Row="4"
                                        Grid.Column="1"
-                                       Text="{Binding SelectedBaudRate}"
+                                       Text="{Binding BaudRateStatusText}"
                                        Style="{StaticResource ConfigValueTextStyle}" />
 
                             <TextBlock Grid.Row="6"
@@ -140,17 +141,17 @@
                                        Margin="0,0,16,0" />
                             <TextBlock Grid.Row="6"
                                        Grid.Column="1"
-                                       Text="CAN"
+                                       Text="{Binding ProtocolStatusText}"
                                        Style="{StaticResource ConfigValueTextStyle}" />
 
                             <TextBlock Grid.Row="8"
                                        Grid.Column="0"
-                                       Text="监视器"
+                                       Text="波特率模式"
                                        Style="{StaticResource ConfigLabelTextStyle}"
                                        Margin="0,0,16,0" />
                             <TextBlock Grid.Row="8"
                                        Grid.Column="1"
-                                       Text="BTMS"
+                                       Text="{Binding SelectedBaudRateMode}"
                                        Style="{StaticResource ConfigValueTextStyle}" />
                         </Grid>
                     </Grid>

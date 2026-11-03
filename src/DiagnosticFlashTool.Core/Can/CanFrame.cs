@@ -6,7 +6,10 @@ public sealed record CanFrame(
     uint Channel = 0,
     bool IsExtended = true,
     bool IsRemote = false,
-    DateTimeOffset? Timestamp = null)
+    DateTimeOffset? Timestamp = null,
+    bool IsCanFd = false,
+    bool BitRateSwitch = false,
+    bool ErrorStateIndicator = false)
 {
     public int Dlc => Data.Length;
 

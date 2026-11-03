@@ -118,7 +118,7 @@ public sealed class FlashStepConfig
     [JsonPropertyName("securityAlgorithm")]
     public string? SecurityAlgorithm { get; set; }
 
-    /// <summary>CRC 校验算法名；当前版本不执行校验，声明即阻断刷写（校验报错）。</summary>
+    /// <summary>下载完成后计算固件 CRC 的算法名；结果由后续 UDS 节点的运行时占位符显式消费。</summary>
     [JsonPropertyName("crcAlgorithm")]
     public string? CrcAlgorithm { get; set; }
 

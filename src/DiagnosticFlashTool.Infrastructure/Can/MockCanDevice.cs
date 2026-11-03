@@ -10,6 +10,7 @@ public sealed class MockCanDevice : ICanDevice
     private uint _responseId = 0x18DA3555;
     private uint _channel;
     private bool _extendedFrame = true;
+    private CanProtocol _activeProtocol = CanProtocol.Can;
     private int _expectedLength;
     private List<byte>? _rxBuffer;
     private byte _nextConsecutiveFrame = 1;
@@ -18,6 +19,9 @@ public sealed class MockCanDevice : ICanDevice
     public event EventHandler<CanFrame>? FrameSent;
 
     public bool IsOpen => _isOpen;
+    public CanDeviceInfo? DeviceInfo { get; private set; } =
+        new("Mock CAN/CANFD", "MOCK-0001", 2, true);
+    public CanProtocol ActiveProtocol => _activeProtocol;
 
     public void ConfigureTransport(DiagnosticTransportOptions options)
     {
@@ -31,6 +35,7 @@ public sealed class MockCanDevice : ICanDevice
     {
         _isOpen = true;
         _channel = options.Channel;
+        _activeProtocol = options.Protocol;
         return Task.CompletedTask;
     }
 
@@ -69,19 +74,19 @@ public sealed class MockCanDevice : ICanDevice
         switch (pciType)
         {
             case 0:
-                var length = frame.Data[0] & 0x0F;
-                var payload = frame.Data.Skip(1).Take(length).ToArray();
+                var (singleFrameOffset, singleFrameLength) = ParseSingleFrame(frame.Data);
+                var payload = frame.Data.Skip(singleFrameOffset).Take(singleFrameLength).ToArray();
                 _ = RespondToRequestAsync(payload, cancellationToken);
                 break;
             case 1:
                 lock (_sync)
                 {
                     _expectedLength = ((frame.Data[0] & 0x0F) << 8) | frame.Data[1];
-                    _rxBuffer = frame.Data.Skip(2).Take(Math.Min(6, _expectedLength)).ToList();
+                    _rxBuffer = frame.Data.Skip(2).Take(Math.Min(frame.Data.Length - 2, _expectedLength)).ToList();
                     _nextConsecutiveFrame = 1;
                 }
 
-                EmitFrame([0x30, 0x00, 0x00, 0, 0, 0, 0, 0]);
+                EmitFrame(BuildFlowControlFrame());
                 break;
             case 2:
                 byte[]? completed = null;
@@ -177,30 +182,44 @@ public sealed class MockCanDevice : ICanDevice
 
     private async Task EmitPayloadAsync(byte[] payload, CancellationToken cancellationToken)
     {
-        if (payload.Length <= 7)
+        var frameLength = _activeProtocol == CanProtocol.CanFd ? 64 : 8;
+        var singleFramePayloadLength = frameLength > 8 ? frameLength - 2 : 7;
+        if (payload.Length <= singleFramePayloadLength)
         {
-            var data = new byte[8];
-            data[0] = (byte)payload.Length;
-            Buffer.BlockCopy(payload, 0, data, 1, payload.Length);
+            var data = new byte[frameLength];
+            var payloadOffset = 1;
+            if (frameLength > 8)
+            {
+                data[0] = 0;
+                data[1] = (byte)payload.Length;
+                payloadOffset = 2;
+            }
+            else
+            {
+                data[0] = (byte)payload.Length;
+            }
+
+            Buffer.BlockCopy(payload, 0, data, payloadOffset, payload.Length);
             EmitFrame(data);
             return;
         }
 
-        var first = new byte[8];
+        var first = new byte[frameLength];
         first[0] = (byte)(0x10 | ((payload.Length >> 8) & 0x0F));
         first[1] = (byte)(payload.Length & 0xFF);
-        Buffer.BlockCopy(payload, 0, first, 2, 6);
+        var firstPayloadLength = Math.Min(frameLength - 2, payload.Length);
+        Buffer.BlockCopy(payload, 0, first, 2, firstPayloadLength);
         EmitFrame(first);
 
         await Task.Delay(20, cancellationToken).ConfigureAwait(false);
 
-        var offset = 6;
+        var offset = firstPayloadLength;
         byte sequence = 1;
         while (offset < payload.Length)
         {
-            var cf = new byte[8];
+            var cf = new byte[frameLength];
             cf[0] = (byte)(0x20 | (sequence & 0x0F));
-            var count = Math.Min(7, payload.Length - offset);
+            var count = Math.Min(frameLength - 1, payload.Length - offset);
             Buffer.BlockCopy(payload, offset, cf, 1, count);
             EmitFrame(cf);
             offset += count;
@@ -211,6 +230,29 @@ public sealed class MockCanDevice : ICanDevice
 
     private void EmitFrame(byte[] data)
     {
-        FrameReceived?.Invoke(this, new CanFrame(_responseId, data, _channel, _extendedFrame));
+        FrameReceived?.Invoke(this, new CanFrame(
+            _responseId,
+            data,
+            _channel,
+            _extendedFrame,
+            IsCanFd: _activeProtocol == CanProtocol.CanFd,
+            BitRateSwitch: _activeProtocol == CanProtocol.CanFd));
+    }
+
+    private byte[] BuildFlowControlFrame()
+    {
+        var data = new byte[_activeProtocol == CanProtocol.CanFd ? 64 : 8];
+        data[0] = 0x30;
+        return data;
+    }
+
+    private static (int Offset, int Length) ParseSingleFrame(byte[] data)
+    {
+        if (data.Length > 8 && data[0] == 0)
+        {
+            return (2, Math.Min(data[1], data.Length - 2));
+        }
+
+        return (1, Math.Min(data[0] & 0x0F, data.Length - 1));
     }
 }

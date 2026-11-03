@@ -1,6 +1,8 @@
 [
     {
         "ProjectName": "7107",
+        "projectNo": 1,
+        "CanProtocol": "CAN",
         "BaudRate": "500K",
         "PhysicalRequestId": "0x18DA5535",
         "FunctionalRequestId": "0x18DA55FF",
@@ -11,6 +13,8 @@
     },
     {
         "ProjectName": "ZHILI 10KW",
+        "projectNo": 2,
+        "CanProtocol": "CAN",
         "BaudRate": "250K",
         "PhysicalRequestId": "0x18DA5537",
         "FunctionalRequestId": "0x18DA55FF",
@@ -21,6 +25,8 @@
     },
     {
         "ProjectName": "7104",
+        "projectNo": 3,
+        "CanProtocol": "CAN",
         "BaudRate": "500K",
         "PhysicalRequestId": "0x18DA5535",
         "FunctionalRequestId": "0x18DA55FF",
@@ -31,6 +37,8 @@
     },
     {
         "ProjectName": "TE8E0",
+        "projectNo": 4,
+        "CanProtocol": "CAN",
         "BaudRate": "500K",
         "PhysicalRequestId": "0x18DA5535",
         "FunctionalRequestId": "0x18DA55FF",
@@ -41,6 +49,8 @@
     },
     {
         "ProjectName": "TE9B0",
+        "projectNo": 5,
+        "CanProtocol": "CAN",
         "BaudRate": "500K",
         "PhysicalRequestId": "0x18DA82F1",
         "FunctionalRequestId": "0x18DBFFF1",
@@ -51,6 +61,8 @@
     },
     {
         "ProjectName": "TN6Q",
+        "projectNo": 6,
+        "CanProtocol": "CAN",
         "BaudRate": "500K",
         "PhysicalRequestId": "0x18DA82F1",
         "FunctionalRequestId": "0x18DBFFF1",
@@ -61,6 +73,8 @@
     },
     {
         "ProjectName": "KHAD0",
+        "projectNo": 7,
+        "CanProtocol": "CAN",
         "BaudRate": "500K",
         "PhysicalRequestId": "0x18DA5535",
         "FunctionalRequestId": "0x18DA55FF",
@@ -71,6 +85,8 @@
     },
     {
         "ProjectName": "CNHTC HH",
+        "projectNo": 8,
+        "CanProtocol": "CAN",
         "BaudRate": "250K",
         "PhysicalRequestId": "0x18DA5535",
         "FunctionalRequestId": "0x18DA55FF",

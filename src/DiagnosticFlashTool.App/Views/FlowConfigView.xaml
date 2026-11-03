@@ -3,12 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls">
     <UserControl.Resources>
-        <Style x:Key="FlowConfigToolbarButtonStyle"
-               TargetType="Button"
-               BasedOn="{StaticResource Button.ToolBar}">
-            <Setter Property="Margin" Value="0,0,8,0" />
-        </Style>
-
         <Style x:Key="FlowConfigDataGridStyle"
                TargetType="DataGrid"
                BasedOn="{StaticResource DataGrid.Base}">
@@ -114,7 +108,7 @@
                         <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
                             <Button Command="{Binding LoadFlowCommand}"
                                     ToolTip="重新加载当前流程配置"
-                                    Style="{StaticResource FlowConfigToolbarButtonStyle}">
+                                    Style="{StaticResource Button.Normal}">
                                 <StackPanel Style="{StaticResource Button.InlineContent}">
                                     <controls:FluentIcon Kind="Refresh"
                                                              Style="{StaticResource Button.Glyph.Current}" />
@@ -123,7 +117,7 @@
                             </Button>
                             <Button Command="{Binding ValidateFlowCommand}"
                                     ToolTip="校验当前流程配置"
-                                    Style="{StaticResource FlowConfigToolbarButtonStyle}">
+                                    Style="{StaticResource Button.Normal}">
                                 <StackPanel Style="{StaticResource Button.InlineContent}">
                                     <controls:FluentIcon Kind="CheckCircleOutline"
                                                              Style="{StaticResource Button.Glyph.Current}" />
@@ -132,7 +126,7 @@
                             </Button>
                             <Button Command="{Binding NewFlowCommand}"
                                     ToolTip="新建流程配置"
-                                    Style="{StaticResource FlowConfigToolbarButtonStyle}">
+                                    Style="{StaticResource Button.Normal}">
                                 <StackPanel Style="{StaticResource Button.InlineContent}">
                                     <controls:FluentIcon Kind="Plus"
                                                              Style="{StaticResource Button.Glyph.Current}" />
@@ -142,7 +136,7 @@
                             <Button Command="{Binding SaveFlowCommand}"
                                     ToolTip="保存流程配置"
                                     Margin="0"
-                                    Style="{StaticResource FlowConfigToolbarButtonStyle}">
+                                    Style="{StaticResource Button.Normal}">
                                 <StackPanel Style="{StaticResource Button.InlineContent}">
                                     <controls:FluentIcon Kind="ContentSaveOutline"
                                                              Style="{StaticResource Button.Glyph.Current}" />
@@ -162,7 +156,7 @@
                 <StackPanel Orientation="Horizontal">
                         <Button Command="{Binding AddFlowStepCommand}"
                                 ToolTip="从模板添加节点"
-                                Style="{StaticResource FlowConfigToolbarButtonStyle}">
+                                Style="{StaticResource Button.Normal}">
                             <StackPanel Style="{StaticResource Button.InlineContent}">
                                 <controls:FluentIcon Kind="Plus"
                                                          Style="{StaticResource Button.Glyph.Current}" />
@@ -171,7 +165,7 @@
                         </Button>
                         <Button Command="{Binding ReplaceFlowStepTemplateCommand}"
                                 ToolTip="更换选中节点的模板并清除不兼容配置"
-                                Style="{StaticResource FlowConfigToolbarButtonStyle}">
+                                Style="{StaticResource Button.Normal}">
                             <StackPanel Style="{StaticResource Button.InlineContent}">
                                 <controls:FluentIcon Kind="Change"
                                                          Style="{StaticResource Button.Glyph.Current}" />
@@ -180,7 +174,7 @@
                         </Button>
                         <Button Command="{Binding DeleteFlowStepCommand}"
                                 ToolTip="删除选中节点"
-                                Style="{StaticResource FlowConfigToolbarButtonStyle}">
+                                Style="{StaticResource Button.Danger}">
                             <StackPanel Style="{StaticResource Button.InlineContent}">
                                 <controls:FluentIcon Kind="DeleteOutline"
                                                          Style="{StaticResource Button.Glyph.Current}" />
@@ -189,7 +183,7 @@
                         </Button>
                         <Button Command="{Binding MoveFlowStepUpCommand}"
                                 ToolTip="上移选中节点"
-                                Style="{StaticResource FlowConfigToolbarButtonStyle}">
+                                Style="{StaticResource Button.Normal}">
                             <StackPanel Style="{StaticResource Button.InlineContent}">
                                 <controls:FluentIcon Kind="HandPointingUp"
                                                          Style="{StaticResource Button.Glyph.Current}" />
@@ -198,7 +192,8 @@
                         </Button>
                         <Button Command="{Binding MoveFlowStepDownCommand}"
                                 ToolTip="下移选中节点"
-                                Style="{StaticResource FlowConfigToolbarButtonStyle}">
+                                Margin="0"
+                                Style="{StaticResource Button.Normal}">
                             <StackPanel Style="{StaticResource Button.InlineContent}">
                                 <controls:FluentIcon Kind="HandPointingDown"
                                                          Style="{StaticResource Button.Glyph.Current}" />
@@ -291,12 +286,37 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
-                        <DataGridTemplateColumn Header="扩展数据" Width="220" IsReadOnly="True">
+                        <DataGridTemplateColumn Header="扩展数据" Width="300">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding ExtendText}"
-                                               ToolTip="扩展数据由节点模板固定"
-                                               Style="{StaticResource FlowConfigReadOnlyCellTextStyle}" />
+                                    <Grid>
+                                        <TextBox Text="{Binding ExtendText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 ToolTip="CRC 校验例程需显式填写例程参数及运行时变量，例如 0xF2, 0x04, ${application.start:u32be}, ${application.length:u32be}, ${application.crc:u32be}">
+                                            <TextBox.Style>
+                                                <Style TargetType="TextBox" BasedOn="{StaticResource FlowConfigCellTextBoxStyle}">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding CanEditExtend}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBox.Style>
+                                        </TextBox>
+                                        <TextBlock Text="{Binding ExtendText}"
+                                                   ToolTip="扩展数据由节点模板固定">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource FlowConfigReadOnlyCellTextStyle}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding CanEditExtend}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -319,6 +339,20 @@
                                                 </Style>
                                             </ComboBox.Style>
                                         </ComboBox>
+                                        <ComboBox ItemsSource="{Binding DataContext.FlowCrcAlgorithmOptions, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}"
+                                                  SelectedItem="{Binding CrcAlgorithm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  ToolTip="下载节点计算固件 CRC；必须由后续 CRC 校验例程显式消费">
+                                            <ComboBox.Style>
+                                                <Style TargetType="ComboBox" BasedOn="{StaticResource FlowConfigCellComboBoxStyle}">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding CanEditCrcAlgorithm}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ComboBox.Style>
+                                        </ComboBox>
                                         <TextBlock Text="{Binding AlgorithmDisplayText}"
                                                    ToolTip="{Binding AlgorithmDisplayText}">
                                             <TextBlock.Style>
@@ -326,6 +360,9 @@
                                                     <Setter Property="Visibility" Value="Visible" />
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding CanEditSecurityAlgorithm}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding CanEditCrcAlgorithm}" Value="True">
                                                             <Setter Property="Visibility" Value="Collapsed" />
                                                         </DataTrigger>
                                                     </Style.Triggers>

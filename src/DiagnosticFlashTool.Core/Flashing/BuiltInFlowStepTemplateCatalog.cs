@@ -6,7 +6,8 @@ namespace DiagnosticFlashTool.Core.Flashing;
 public enum FlowStepTemplateAlgorithmUsage
 {
     None,
-    Security
+    Security,
+    CrcVerification
 }
 
 /// <summary>不依赖 UI 的内置流程节点定义，是通用主程序可编辑节点的白名单。</summary>
@@ -20,7 +21,8 @@ public sealed record FlowStepTemplateDefinition(
     string? Service,
     string? SubService,
     IReadOnlyList<string> Extend,
-    FlowStepTemplateAlgorithmUsage AlgorithmUsage = FlowStepTemplateAlgorithmUsage.None)
+    FlowStepTemplateAlgorithmUsage AlgorithmUsage = FlowStepTemplateAlgorithmUsage.None,
+    string? RequiredCrcPrefix = null)
 {
     public FlashStepConfig CreateStep(int stepId)
     {
@@ -92,7 +94,27 @@ public static class BuiltInFlowStepTemplateCatalog
         Template("communication.enable", "通信控制", "开启收发", "开启收发", "0x28 / 0x00 + 03", "0x28", "0x00", ["0x03"]),
         Template("routine.start.ff01", "例程控制", "启动例程（FF01）", "启动例程", "0x31 / 0x01 + FF 01", "0x31", "0x01", ["0xFF", "0x01"]),
         Template("routine.start.aaaa", "例程控制", "启动例程（AAAA）", "启动例程", "0x31 / 0x01 + AA AA", "0x31", "0x01", ["0xAA", "0xAA"]),
-        Template("routine.vendor.ff01", "例程控制", "厂商例程（FF/01）", "启动例程", "0x31 / 0xFF + 01", "0x31", "0xFF", ["0x01"])
+        Template("routine.vendor.ff01", "例程控制", "厂商例程（FF/01）", "启动例程", "0x31 / 0xFF + 01", "0x31", "0xFF", ["0x01"]),
+        Template(
+            "routine.crc.driver",
+            "例程控制",
+            "驱动 CRC 校验例程",
+            "驱动CRC校验",
+            "0x31 / 0x01；扩展数据显式填写例程参数及 driver 运行时变量",
+            "0x31",
+            "0x01",
+            algorithmUsage: FlowStepTemplateAlgorithmUsage.CrcVerification,
+            requiredCrcPrefix: "driver"),
+        Template(
+            "routine.crc.application",
+            "例程控制",
+            "应用 CRC 校验例程",
+            "应用CRC校验",
+            "0x31 / 0x01；扩展数据显式填写例程参数及 application 运行时变量",
+            "0x31",
+            "0x01",
+            algorithmUsage: FlowStepTemplateAlgorithmUsage.CrcVerification,
+            requiredCrcPrefix: "application")
     ];
 
     public static FlowStepTemplateDefinition? FindById(string? templateId)
@@ -129,7 +151,8 @@ public static class BuiltInFlowStepTemplateCatalog
             && StepTypesEqual(step.StepType, template.StepType)
             && HexValuesEqual(step.Service, template.Service)
             && HexValuesEqual(step.SubService, template.SubService)
-            && ExtendValuesEqual(step.Extend, template.Extend);
+            && (template.AlgorithmUsage == FlowStepTemplateAlgorithmUsage.CrcVerification
+                || ExtendValuesEqual(step.Extend, template.Extend));
     }
 
     private static FlowStepTemplateDefinition Template(
@@ -142,7 +165,8 @@ public static class BuiltInFlowStepTemplateCatalog
         string? subService = null,
         IReadOnlyList<string>? extend = null,
         string? stepType = null,
-        FlowStepTemplateAlgorithmUsage algorithmUsage = FlowStepTemplateAlgorithmUsage.None) =>
+        FlowStepTemplateAlgorithmUsage algorithmUsage = FlowStepTemplateAlgorithmUsage.None,
+        string? requiredCrcPrefix = null) =>
         new(
             id,
             category,
@@ -153,7 +177,8 @@ public static class BuiltInFlowStepTemplateCatalog
             service,
             subService,
             extend ?? [],
-            algorithmUsage);
+            algorithmUsage,
+            requiredCrcPrefix);
 
     private static bool StepTypesEqual(string? actual, string? expected)
     {

@@ -1,4 +1,5 @@
 using System.IO;
+using System.Globalization;
 using DiagnosticFlashTool.Core.Configuration;
 using DiagnosticFlashTool.App.Utilities;
 
@@ -7,12 +8,12 @@ namespace DiagnosticFlashTool.App.ViewModels;
 public sealed class ProjectEditorViewModel : ObservableObject
 {
     private string _projectName = string.Empty;
+    private string _projectNoText = "1";
+    private string _canProtocol = "CAN";
     private string _baudRate = "500K";
     private string _physicalRequestId = "0x18DA5535";
     private string _functionalRequestId = "0x18DA55FF";
     private string _responseAddressId = "0x18DA3555";
-    private string? _appStartAddress;
-    private string? _appEndAddress;
     private string _bootConfigFile = string.Empty;
     private string _driverFilePath = string.Empty;
     private string _applicationFilePath = string.Empty;
@@ -21,6 +22,18 @@ public sealed class ProjectEditorViewModel : ObservableObject
     {
         get => _projectName;
         set => SetProperty(ref _projectName, value);
+    }
+
+    public string ProjectNoText
+    {
+        get => _projectNoText;
+        set => SetProperty(ref _projectNoText, value);
+    }
+
+    public string CanProtocol
+    {
+        get => _canProtocol;
+        set => SetProperty(ref _canProtocol, value);
     }
 
     public string BaudRate
@@ -45,18 +58,6 @@ public sealed class ProjectEditorViewModel : ObservableObject
     {
         get => _responseAddressId;
         set => SetProperty(ref _responseAddressId, value);
-    }
-
-    public string? AppStartAddress
-    {
-        get => _appStartAddress;
-        set => SetProperty(ref _appStartAddress, value);
-    }
-
-    public string? AppEndAddress
-    {
-        get => _appEndAddress;
-        set => SetProperty(ref _appEndAddress, value);
     }
 
     public string BootConfigFile
@@ -101,15 +102,15 @@ public sealed class ProjectEditorViewModel : ObservableObject
         set => ApplicationFilePath = UpdateFileName(ApplicationFilePath, value);
     }
 
-    public void BeginNew(string bootConfigFile)
+    public void BeginNew(string bootConfigFile, int projectNo)
     {
         ProjectName = string.Empty;
+        ProjectNoText = projectNo.ToString(CultureInfo.InvariantCulture);
+        CanProtocol = "CAN";
         BaudRate = "500K";
         PhysicalRequestId = "0x18DA5535";
         FunctionalRequestId = "0x18DA55FF";
         ResponseAddressId = "0x18DA3555";
-        AppStartAddress = null;
-        AppEndAddress = null;
         BootConfigFile = bootConfigFile;
         DriverFilePath = string.Empty;
         ApplicationFilePath = string.Empty;
@@ -118,12 +119,12 @@ public sealed class ProjectEditorViewModel : ObservableObject
     public void Load(ProjectConfigEntry project)
     {
         ProjectName = project.ProjectName;
+        ProjectNoText = project.ProjectNo.ToString(CultureInfo.InvariantCulture);
+        CanProtocol = project.CanProtocol;
         BaudRate = project.BaudRate;
         PhysicalRequestId = project.PhysicalRequestId;
         FunctionalRequestId = project.FunctionalRequestId;
         ResponseAddressId = project.ResponseAddressId;
-        AppStartAddress = project.AppStartAddress;
-        AppEndAddress = project.AppEndAddress;
         BootConfigFile = project.BootConfigFile;
         DriverFilePath = project.DriveFilePath;
         ApplicationFilePath = project.FlashFilePath;
@@ -134,6 +135,19 @@ public sealed class ProjectEditorViewModel : ObservableObject
         if (string.IsNullOrWhiteSpace(ProjectName))
         {
             validationMessage = "项目名称不能为空。";
+            return null;
+        }
+
+        if (!TryParseProjectNo(ProjectNoText, out var projectNo) || projectNo <= 0)
+        {
+            validationMessage = "项目码必须是大于 0 的十进制或十六进制整数。";
+            return null;
+        }
+
+        if (!string.Equals(CanProtocol, "CAN", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(CanProtocol, "CANFD", StringComparison.OrdinalIgnoreCase))
+        {
+            validationMessage = "CAN 协议只能选择 CAN 或 CANFD。";
             return null;
         }
 
@@ -155,16 +169,31 @@ public sealed class ProjectEditorViewModel : ObservableObject
         return new ProjectConfigEntry
         {
             ProjectName = ProjectName.Trim(),
+            ProjectNo = projectNo,
+            CanProtocol = string.Equals(CanProtocol, "CANFD", StringComparison.OrdinalIgnoreCase) ? "CANFD" : "CAN",
             BaudRate = BaudRate,
             PhysicalRequestId = PhysicalRequestId.Trim(),
             FunctionalRequestId = FunctionalRequestId.Trim(),
             ResponseAddressId = ResponseAddressId.Trim(),
-            AppStartAddress = AppStartAddress,
-            AppEndAddress = AppEndAddress,
             BootConfigFile = BootConfigFile,
             DriveFilePath = DriverFilePath.Trim(),
             FlashFilePath = ApplicationFilePath.Trim()
         };
+    }
+
+    private static bool TryParseProjectNo(string value, out int projectNo)
+    {
+        var text = value.Trim();
+        if (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+        {
+            return int.TryParse(
+                text[2..],
+                NumberStyles.AllowHexSpecifier,
+                CultureInfo.InvariantCulture,
+                out projectNo);
+        }
+
+        return int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out projectNo);
     }
 
     private static string UpdateFileName(string currentPath, string? displayValue)

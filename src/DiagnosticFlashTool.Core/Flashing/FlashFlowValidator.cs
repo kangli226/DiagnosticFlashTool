@@ -40,7 +40,8 @@ public static class FlashFlowValidator
 
     public static IReadOnlyList<FlashFlowIssue> Validate(
         BootConfig bootConfig,
-        SeedKeyAlgorithmRegistry? algorithms = null)
+        SeedKeyAlgorithmRegistry? algorithms = null,
+        CrcAlgorithmRegistry? crcAlgorithms = null)
     {
         ArgumentNullException.ThrowIfNull(bootConfig);
 
@@ -55,7 +56,11 @@ public static class FlashFlowValidator
         }
 
         var registry = algorithms ?? new SeedKeyAlgorithmRegistry();
+        var crcRegistry = crcAlgorithms ?? new CrcAlgorithmRegistry();
         var seedStepId = 0;
+        var availableRuntimePrefixes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var crcDeclarations = new Dictionary<string, FlashStepConfig>(StringComparer.OrdinalIgnoreCase);
+        var crcConsumers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var step in bootConfig.Flow)
         {
@@ -79,6 +84,19 @@ public static class FlashFlowValidator
 
             var securityIssues = ValidateSecuritySteps(step, registry, ref seedStepId);
             issues.AddRange(securityIssues);
+            ValidateRuntimeParameters(
+                step,
+                availableRuntimePrefixes,
+                crcConsumers,
+                issues);
+            ValidateCrcDeclaration(
+                step,
+                kind,
+                crcRegistry,
+                availableRuntimePrefixes,
+                crcConsumers,
+                crcDeclarations,
+                issues);
             AddUnsupportedMetadataIssues(step, issues);
         }
 
@@ -90,7 +108,93 @@ public static class FlashFlowValidator
                 "请求了 seed，但后续没有对应的 send-key 步骤。"));
         }
 
+        foreach (var declaration in crcDeclarations)
+        {
+            if (!crcConsumers.Contains(declaration.Key))
+            {
+                issues.Add(new FlashFlowIssue(
+                    FlashFlowIssueKind.Error,
+                    declaration.Value.Id,
+                    $"声明了 crcAlgorithm=\"{declaration.Value.CrcAlgorithm}\"，但后续步骤没有消费 ${{{declaration.Key}.crc:格式}}。请添加显式 CRC 校验 UDS 步骤。"));
+            }
+        }
+
         return issues;
+    }
+
+    private static void ValidateRuntimeParameters(
+        FlashStepConfig step,
+        IReadOnlySet<string> availableRuntimePrefixes,
+        HashSet<string> crcConsumers,
+        List<FlashFlowIssue> issues)
+    {
+        foreach (var value in step.Extend)
+        {
+            if (RuntimeParameterExpander.HasUnsupportedPlaceholder(value))
+            {
+                issues.Add(new FlashFlowIssue(
+                    FlashFlowIssueKind.Error,
+                    step.Id,
+                    $"扩展参数包含不支持的运行时占位符：{value}。"));
+            }
+        }
+
+        foreach (var variable in RuntimeParameterExpander.GetReferencedVariables(step.Extend))
+        {
+            var separator = variable.IndexOf('.');
+            var prefix = separator > 0 ? variable[..separator] : variable;
+            if (!availableRuntimePrefixes.Contains(prefix))
+            {
+                issues.Add(new FlashFlowIssue(
+                    FlashFlowIssueKind.Error,
+                    step.Id,
+                    $"运行时变量 {variable} 在对应固件下载和 CRC 计算之前被使用。"));
+                continue;
+            }
+
+            if (variable.EndsWith(".crc", StringComparison.OrdinalIgnoreCase))
+            {
+                crcConsumers.Add(prefix);
+            }
+        }
+    }
+
+    private static void ValidateCrcDeclaration(
+        FlashStepConfig step,
+        FlashStepKind kind,
+        CrcAlgorithmRegistry registry,
+        HashSet<string> availableRuntimePrefixes,
+        HashSet<string> crcConsumers,
+        Dictionary<string, FlashStepConfig> declarations,
+        List<FlashFlowIssue> issues)
+    {
+        if (string.IsNullOrWhiteSpace(step.CrcAlgorithm))
+        {
+            return;
+        }
+
+        if (kind is not (FlashStepKind.DownloadDriver or FlashStepKind.DownloadApplication))
+        {
+            issues.Add(new FlashFlowIssue(
+                FlashFlowIssueKind.Error,
+                step.Id,
+                "只有 DownloadDriver 或 DownloadApplication 节点允许配置 crcAlgorithm。"));
+            return;
+        }
+
+        if (!registry.IsRegistered(step.CrcAlgorithm))
+        {
+            issues.Add(new FlashFlowIssue(
+                FlashFlowIssueKind.Error,
+                step.Id,
+                $"CRC 算法 \"{step.CrcAlgorithm}\" 未注册。已注册：{string.Join(", ", registry.RegisteredNames)}。"));
+            return;
+        }
+
+        var prefix = kind == FlashStepKind.DownloadDriver ? "driver" : "application";
+        availableRuntimePrefixes.Add(prefix);
+        crcConsumers.Remove(prefix);
+        declarations[prefix] = step;
     }
 
     /// <summary>
@@ -165,19 +269,11 @@ public static class FlashFlowValidator
 
     /// <summary>
     /// 报告流程中已声明但 <see cref="FlashFlowExecutor"/> 当前尚未使用的配置。
-    /// 未执行的 CRC 校验和擦除例程会产生错误并阻止刷写；响应匹配、校验规则及
+    /// 未执行的擦除例程会产生错误并阻止刷写；响应匹配、校验规则及
     /// 节点级 Tester Present 周期会产生警告，以免操作人员误以为这些配置已经生效。
     /// </summary>
     private static void AddUnsupportedMetadataIssues(FlashStepConfig step, List<FlashFlowIssue> issues)
     {
-        if (!string.IsNullOrWhiteSpace(step.CrcAlgorithm))
-        {
-            issues.Add(new FlashFlowIssue(
-                FlashFlowIssueKind.Error,
-                step.Id,
-                $"声明了 crcAlgorithm=\"{step.CrcAlgorithm}\"，但当前版本不执行 CRC 校验。请移除该声明，或改写为显式的 0x31 校验例程步骤。"));
-        }
-
         if (!string.IsNullOrWhiteSpace(step.EraseRoutine))
         {
             issues.Add(new FlashFlowIssue(

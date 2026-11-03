@@ -9,6 +9,7 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Styles/AppStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
             <converters:FileNameConverter x:Key="FileNameConverter" />
         </ResourceDictionary>
     </Application.Resources>

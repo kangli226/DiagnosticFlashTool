@@ -70,21 +70,36 @@
                             HorizontalAlignment="Right"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True">
                     <Button ToolTip="最小化"
-                            Style="{StaticResource ChromeButtonStyle}"
+                            Width="46"
+                            Height="46"
+                            Padding="0"
+                            Margin="0"
+                            Style="{StaticResource Button.Normal}"
+                            shell:WindowChrome.IsHitTestVisibleInChrome="True"
                             Click="Minimize_Click">
                         <controls:FluentIcon Kind="WindowMinimize"
                                              Style="{StaticResource Button.Glyph}"
                                              Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                     </Button>
                     <Button ToolTip="最大化"
-                            Style="{StaticResource ChromeButtonStyle}"
+                            Width="46"
+                            Height="46"
+                            Padding="0"
+                            Margin="0"
+                            Style="{StaticResource Button.Normal}"
+                            shell:WindowChrome.IsHitTestVisibleInChrome="True"
                             Click="Maximize_Click">
                         <controls:FluentIcon Kind="WindowMaximize"
                                              Style="{StaticResource Button.Glyph}"
                                              Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                     </Button>
                     <Button ToolTip="关闭"
-                            Style="{StaticResource CloseChromeButtonStyle}"
+                            Width="46"
+                            Height="46"
+                            Padding="0"
+                            Margin="0"
+                            Style="{StaticResource Button.Normal}"
+                            shell:WindowChrome.IsHitTestVisibleInChrome="True"
                             Click="Close_Click">
                         <controls:FluentIcon Kind="Close"
                                              Style="{StaticResource Button.Glyph}"
@@ -272,7 +287,7 @@
                            Style="{StaticResource StatusBarCountTextStyle}" />
                 <Button Grid.Column="9"
                         Command="{Binding OpenRuntimeLogPageCommand}"
-                        Style="{StaticResource Button.ToolBar}"
+                        Style="{StaticResource Button.Normal}"
                         Margin="0,0,10,0"
                         Padding="10,0">
                     <StackPanel Style="{StaticResource Button.InlineContent}">
@@ -473,7 +488,7 @@
                         <Button Command="{Binding CancelNewFlowProjectCommand}"
                                 Width="88"
                                 Margin="0,0,12,0"
-                                Style="{StaticResource Button.DialogSecondary}">
+                                Style="{StaticResource Button.Normal}">
                             <StackPanel Style="{StaticResource Button.InlineContent}">
                                 <controls:FluentIcon Kind="Close"
                                                      Style="{StaticResource Button.Glyph.Current}" />
@@ -482,7 +497,8 @@
                         </Button>
                         <Button Command="{Binding ConfirmNewFlowProjectCommand}"
                                 Width="104"
-                                Style="{StaticResource Button.DialogPrimary}">
+                                Margin="0"
+                                Style="{StaticResource Button.Normal}">
                             <StackPanel Style="{StaticResource Button.InlineContent}">
                                 <controls:FluentIcon Kind="CheckCircleOutline"
                                                      Style="{StaticResource Button.Glyph.Current}" />
@@ -597,12 +613,13 @@
                         <Button Command="{Binding CancelAddFlowStepCommand}"
                                 Width="88"
                                 Margin="0,0,12,0"
-                                Style="{StaticResource Button.DialogSecondary}">
+                                Style="{StaticResource Button.Normal}">
                             <TextBlock Text="取消" Style="{StaticResource Button.IconLabel}" Margin="0" />
                         </Button>
                         <Button Command="{Binding ConfirmAddFlowStepCommand}"
                                 Width="104"
-                                Style="{StaticResource Button.DialogPrimary}">
+                                Margin="0"
+                                Style="{StaticResource Button.Normal}">
                             <StackPanel Style="{StaticResource Button.InlineContent}">
                                 <controls:FluentIcon Kind="CheckCircleOutline"
                                                      Style="{StaticResource Button.Glyph.Current}" />

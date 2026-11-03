@@ -7,6 +7,7 @@ public sealed class DiagnosticTransportOptions
     public uint ResponseId { get; set; } = 0x18DA3555;
     public uint Channel { get; set; }
     public bool ExtendedFrame { get; set; } = true;
+    public int FrameDataLength { get; set; } = 8;
     public int FlowControlBlockSize { get; set; } = 0x0A;
     public int FlowControlStMinMs { get; set; } = 10;
 }

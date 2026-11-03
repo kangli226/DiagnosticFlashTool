@@ -29,13 +29,18 @@ public sealed class FlashFlowExecutor : IFlashFlowExecutor
 
     private readonly UdsClient _udsClient;
     private readonly SeedKeyAlgorithmRegistry _seedKeyAlgorithms;
+    private readonly CrcAlgorithmRegistry _crcAlgorithms;
     private readonly UdsFirmwareDownloader _firmwareDownloader;
     private readonly SemaphoreSlim _executionGate = new(1, 1);
 
-    public FlashFlowExecutor(UdsClient udsClient, SeedKeyAlgorithmRegistry? seedKeyAlgorithms = null)
+    public FlashFlowExecutor(
+        UdsClient udsClient,
+        SeedKeyAlgorithmRegistry? seedKeyAlgorithms = null,
+        CrcAlgorithmRegistry? crcAlgorithms = null)
     {
         _udsClient = udsClient ?? throw new ArgumentNullException(nameof(udsClient));
         _seedKeyAlgorithms = seedKeyAlgorithms ?? new SeedKeyAlgorithmRegistry();
+        _crcAlgorithms = crcAlgorithms ?? new CrcAlgorithmRegistry();
         _firmwareDownloader = new UdsFirmwareDownloader(_udsClient, CleanupTiming);
     }
 
@@ -71,7 +76,7 @@ public sealed class FlashFlowExecutor : IFlashFlowExecutor
 
             // 拒绝执行可能静默跳过操作或中途失败的流程。对于未执行任何下载，
             // 或声明了 CRC 却未进行校验的流程，报告“刷写完成”比拒绝启动更危险。
-            var issues = FlashFlowValidator.Validate(request.BootConfig, _seedKeyAlgorithms);
+            var issues = FlashFlowValidator.Validate(request.BootConfig, _seedKeyAlgorithms, _crcAlgorithms);
             var errors = issues.Where(issue => issue.Kind == FlashFlowIssueKind.Error).ToList();
             if (errors.Count > 0)
             {
@@ -154,6 +159,13 @@ public sealed class FlashFlowExecutor : IFlashFlowExecutor
                 context.WriteLog($"步骤 {step.Id} 已完成：{step.Name}");
             }
 
+            if (context.PendingCrcVerifications.Count > 0)
+            {
+                throw new FlashExecutionException(
+                    FlashFailureKind.Validation,
+                    $"CRC 校验未完成：{string.Join(", ", context.PendingCrcVerifications)} 固件的 CRC 变量未被后续 UDS 步骤确认。");
+            }
+
             progress?.Report(new FlashProgress(100, "刷写完成"));
             context.WriteLog("刷写完成。");
             return new FlashResult
@@ -211,15 +223,19 @@ public sealed class FlashFlowExecutor : IFlashFlowExecutor
             parameters.Add(subService);
         }
 
+        IReadOnlySet<string> referencedVariables;
         try
         {
-            parameters.AddRange(step.Extend.SelectMany(HexUtil.ParseBytes));
+            parameters.AddRange(RuntimeParameterExpander.Expand(
+                step.Extend,
+                context.RuntimeVariables,
+                out referencedVariables));
         }
-        catch (Exception ex) when (ex is FormatException or OverflowException)
+        catch (Exception ex) when (ex is FormatException or OverflowException or KeyNotFoundException)
         {
             throw new FlashExecutionException(
                 FlashFailureKind.Configuration,
-                $"步骤 {step.Id} 的附加参数不是有效的十六进制字节。",
+                $"步骤 {step.Id} 的附加参数或运行时变量无效：{ex.Message}",
                 ex);
         }
 
@@ -272,6 +288,12 @@ public sealed class FlashFlowExecutor : IFlashFlowExecutor
 
         FlashStepUdsSettings.EnsurePositive(response);
         context.WriteLog($"接收：{response}");
+        context.ConfirmCrcVariables(referencedVariables);
+        foreach (var variable in referencedVariables.Where(value =>
+                     value.EndsWith(".crc", StringComparison.OrdinalIgnoreCase)))
+        {
+            context.WriteLog($"CRC 校验步骤已获正响应：{variable}");
+        }
 
         if (serviceId == 0x27
             && response.Payload.Length > 2
@@ -292,6 +314,7 @@ public sealed class FlashFlowExecutor : IFlashFlowExecutor
         CancellationToken cancellationToken)
     {
         var firmware = RequireFirmware(image, FirmwareImageKind.Driver);
+        RegisterCrcValues(firmware, step, "driver", context);
         await _firmwareDownloader.DownloadAsync(
             firmware,
             step,
@@ -322,6 +345,18 @@ public sealed class FlashFlowExecutor : IFlashFlowExecutor
             _ = RequireFirmware(image, FirmwareImageKind.Application);
         }
 
+        if (!string.IsNullOrWhiteSpace(step.CrcAlgorithm))
+        {
+            if (images.Count != 1)
+            {
+                throw new FlashExecutionException(
+                    FlashFailureKind.Configuration,
+                    "应用固件 CRC 变量只支持单个应用镜像；当前选择了多个应用文件，请拆分为独立下载和校验流程。");
+            }
+
+            RegisterCrcValues(images[0], step, "application", context);
+        }
+
         var totalBytes = images.Sum(image => (long)image.Length);
         long completedBytes = 0;
 
@@ -341,6 +376,49 @@ public sealed class FlashFlowExecutor : IFlashFlowExecutor
                 cancellationToken).ConfigureAwait(false);
             completedBytes += image.Length;
         }
+
+    }
+
+    private void RegisterCrcValues(
+        FirmwareImage image,
+        FlashStepConfig step,
+        string prefix,
+        FlashExecutionContext context)
+    {
+        if (string.IsNullOrWhiteSpace(step.CrcAlgorithm))
+        {
+            return;
+        }
+
+        var orderedBlocks = image.Blocks.OrderBy(block => block.Address).ToList();
+        if (orderedBlocks.Count == 0)
+        {
+            throw new FlashExecutionException(
+                FlashFailureKind.Configuration,
+                $"{prefix} 固件没有可用于 CRC 计算的数据块。");
+        }
+
+        for (var index = 1; index < orderedBlocks.Count; index++)
+        {
+            var previousEnd = checked(orderedBlocks[index - 1].Address + (uint)orderedBlocks[index - 1].Data.Length);
+            if (orderedBlocks[index].Address != previousEnd)
+            {
+                throw new FlashExecutionException(
+                    FlashFailureKind.Configuration,
+                    $"{prefix} 固件包含不连续地址块，无法用单一 start/length/CRC 变量无歧义表达。");
+            }
+        }
+
+        var data = orderedBlocks.SelectMany(block => block.Data).ToArray();
+        var algorithm = _crcAlgorithms.Resolve(step.CrcAlgorithm);
+        var crc = algorithm.Compute(data);
+        var start = orderedBlocks[0].Address;
+        var length = checked((uint)data.Length);
+        var crcText = crc.ToString($"X{algorithm.WidthBits / 4}");
+        context.SetFirmwareRuntimeValues(prefix, start, length, crc);
+        context.WriteLog(
+            $"{prefix} 固件 CRC 已计算：算法={algorithm.Name}，地址=0x{start:X8}，" +
+            $"长度={length}，CRC=0x{crcText}。");
     }
 
     /// <summary>

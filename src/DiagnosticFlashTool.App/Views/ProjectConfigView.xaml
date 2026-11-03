@@ -28,7 +28,7 @@
                 <controls:HeaderedCard.Actions>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                             <Button Command="{Binding RefreshProjectsCommand}"
-                                    Style="{StaticResource Button.ToolBar}"
+                                    Style="{StaticResource Button.Normal}"
                                     ToolTip="刷新项目列表">
                                 <StackPanel Style="{StaticResource Button.InlineContent}">
                                     <controls:FluentIcon Kind="Refresh"
@@ -39,7 +39,7 @@
 
                             <Button Command="{Binding NewProjectCommand}"
                                     Margin="0"
-                                    Style="{StaticResource Button.ToolBar}"
+                                    Style="{StaticResource Button.Normal}"
                                     ToolTip="新增项目">
                                 <StackPanel Style="{StaticResource Button.InlineContent}">
                                     <controls:FluentIcon Kind="Plus"
@@ -52,7 +52,8 @@
 
                 <DataGrid ItemsSource="{Binding Projects}"
                           SelectedItem="{Binding SelectedProject, Mode=TwoWay}"
-                          IsReadOnly="True">
+                          IsReadOnly="True"
+                          ScrollViewer.VerticalScrollBarVisibility="Hidden">
                         <DataGrid.Resources>
                             <Style x:Key="ProjectConfigCellTextStyle" TargetType="TextBlock">
                                 <Setter Property="HorizontalAlignment" Value="Left" />
@@ -74,6 +75,12 @@
                                    BasedOn="{StaticResource ProjectConfigCellTextStyle}">
                                 <Setter Property="ToolTip" Value="{Binding FlashFilePath}" />
                             </Style>
+                            <Style x:Key="ProjectConfigFileStatusTextStyle" TargetType="TextBlock">
+                                <Setter Property="HorizontalAlignment" Value="Center" />
+                                <Setter Property="VerticalAlignment" Value="Center" />
+                                <Setter Property="FontSize" Value="18" />
+                                <Setter Property="Foreground" Value="{StaticResource StatusNeutralBrush}" />
+                            </Style>
                         </DataGrid.Resources>
                         <DataGrid.ColumnHeaderStyle>
                             <Style TargetType="DataGridColumnHeader"
@@ -86,13 +93,63 @@
                         </DataGrid.InputBindings>
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="项目名称" Binding="{Binding ProjectName}" Width="150" ElementStyle="{StaticResource ProjectConfigCellTextStyle}" />
+                            <DataGridTextColumn Header="项目码" Binding="{Binding ProjectNo}" Width="76" ElementStyle="{StaticResource ProjectConfigCellTextStyle}" />
                             <DataGridTextColumn Header="波特率" Binding="{Binding BaudRate}" Width="90" ElementStyle="{StaticResource ProjectConfigCellTextStyle}" />
                             <DataGridTextColumn Header="物理请求" Binding="{Binding PhysicalRequestId}" Width="135" ElementStyle="{StaticResource ProjectConfigCellTextStyle}" />
                             <DataGridTextColumn Header="功能请求" Binding="{Binding FunctionalRequestId}" Width="135" ElementStyle="{StaticResource ProjectConfigCellTextStyle}" />
                             <DataGridTextColumn Header="响应地址" Binding="{Binding ResponseAddressId}" Width="135" ElementStyle="{StaticResource ProjectConfigCellTextStyle}" />
                             <DataGridTextColumn Header="BOOT 配置" Binding="{Binding BootConfigFile, Converter={StaticResource FileNameConverter}}" Width="130" ElementStyle="{StaticResource ProjectConfigBootFileCellTextStyle}" />
-                            <DataGridTextColumn Header="驱动文件" Binding="{Binding DriveFilePath, Converter={StaticResource FileNameConverter}}" Width="180" ElementStyle="{StaticResource ProjectConfigDriverFileCellTextStyle}" />
-                            <DataGridTextColumn Header="应用文件" Binding="{Binding FlashFilePath, Converter={StaticResource FileNameConverter}}" Width="*" ElementStyle="{StaticResource ProjectConfigApplicationFileCellTextStyle}" />
+                            <DataGridTextColumn Header="CAN 协议" Binding="{Binding CanProtocol}" Width="90" ElementStyle="{StaticResource ProjectConfigCellTextStyle}" />
+                            <DataGridTemplateColumn Header="Driver 文件" Width="100">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding DriverFileStatusIcon}"
+                                                   ToolTip="{Binding DriverFileStatusText}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource ProjectConfigFileStatusTextStyle}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsDriverFileAvailable}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource StatusSuccessBrush}" />
+                                                        </DataTrigger>
+                                                        <MultiDataTrigger>
+                                                            <MultiDataTrigger.Conditions>
+                                                                <Condition Binding="{Binding IsDriverFileConfigured}" Value="True" />
+                                                                <Condition Binding="{Binding IsDriverFileAvailable}" Value="False" />
+                                                            </MultiDataTrigger.Conditions>
+                                                            <Setter Property="Foreground" Value="{StaticResource StatusErrorBrush}" />
+                                                        </MultiDataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="App 文件" Width="100">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding ApplicationFileStatusIcon}"
+                                                   ToolTip="{Binding ApplicationFileStatusText}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource ProjectConfigFileStatusTextStyle}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsApplicationFileAvailable}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource StatusSuccessBrush}" />
+                                                        </DataTrigger>
+                                                        <MultiDataTrigger>
+                                                            <MultiDataTrigger.Conditions>
+                                                                <Condition Binding="{Binding IsApplicationFileConfigured}" Value="True" />
+                                                                <Condition Binding="{Binding IsApplicationFileAvailable}" Value="False" />
+                                                            </MultiDataTrigger.Conditions>
+                                                            <Setter Property="Foreground" Value="{StaticResource StatusErrorBrush}" />
+                                                        </MultiDataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                 </DataGrid>
             </controls:HeaderedCard>
@@ -114,7 +171,11 @@
                 </controls:HeaderedCard.Style>
                 <controls:HeaderedCard.Actions>
                     <Button Command="{Binding CancelProjectEditorCommand}"
-                            Style="{StaticResource Button.Icon}"
+                            Width="32"
+                            Height="32"
+                            Padding="0"
+                            Margin="0"
+                            Style="{StaticResource Button.Normal}"
                             ToolTip="关闭">
                         <controls:FluentIcon Kind="Close"
                                                  Style="{StaticResource Button.Glyph.Current}" />
@@ -129,7 +190,7 @@
 
                     <ScrollViewer Grid.Row="0"
                                   HorizontalScrollBarVisibility="Disabled"
-                                  VerticalScrollBarVisibility="Auto">
+                                  VerticalScrollBarVisibility="Hidden">
                         <StackPanel>
                             <Grid Margin="0,0,0,12">
                                 <Grid.ColumnDefinitions>
@@ -140,6 +201,18 @@
                                 <TextBox Grid.Column="1"
                                          Height="32"
                                          Text="{Binding ProjectEditor.ProjectName, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource SoftTextBoxStyle}" />
+                            </Grid>
+
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="项目码" Style="{StaticResource FieldLabelStyle}" />
+                                <TextBox Grid.Column="1"
+                                         Height="32"
+                                         Text="{Binding ProjectEditor.ProjectNoText, UpdateSourceTrigger=PropertyChanged}"
                                          Style="{StaticResource SoftTextBoxStyle}" />
                             </Grid>
 
@@ -219,6 +292,20 @@
                                     <ColumnDefinition Width="100" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="CAN 协议" Style="{StaticResource FieldLabelStyle}" />
+                                <ComboBox Grid.Column="1"
+                                          Width="Auto"
+                                          HorizontalAlignment="Stretch"
+                                          ItemsSource="{Binding CanProtocols}"
+                                          SelectedItem="{Binding ProjectEditor.CanProtocol, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          Style="{StaticResource StandardComboBoxStyle}" />
+                            </Grid>
+
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="驱动文件" Style="{StaticResource FieldLabelStyle}" />
                                 <Grid Grid.Column="1">
                                     <Grid.ColumnDefinitions>
@@ -234,7 +321,7 @@
                                     <Button Grid.Column="2"
                                             Command="{Binding BrowseProjectEditorDriverCommand}"
                                             Margin="0"
-                                            Style="{StaticResource Button.ToolBar}">
+                                            Style="{StaticResource Button.Normal}">
                                         <StackPanel Style="{StaticResource Button.InlineContent}">
                                             <controls:FluentIcon Kind="FolderOpenOutline"
                                                                      Style="{StaticResource Button.Glyph.Current}" />
@@ -264,7 +351,7 @@
                                     <Button Grid.Column="2"
                                             Command="{Binding BrowseProjectEditorApplicationCommand}"
                                             Margin="0"
-                                            Style="{StaticResource Button.ToolBar}">
+                                            Style="{StaticResource Button.Normal}">
                                         <StackPanel Style="{StaticResource Button.InlineContent}">
                                             <controls:FluentIcon Kind="FolderOpenOutline"
                                                                      Style="{StaticResource Button.Glyph.Current}" />
@@ -277,29 +364,22 @@
                     </ScrollViewer>
 
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="取消"
-                                Command="{Binding CancelProjectEditorCommand}"
-                                Style="{StaticResource Button.DialogSecondary}" />
-                        <Button Command="{Binding DeleteProjectEditorCommand}">
-                            <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource Button.DialogSecondary}">
-                                    <Setter Property="Width" Value="88" />
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsEditingProject}" Value="True">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                            <TextBlock Text="删除项目" />
+                        <Button Command="{Binding DeleteProjectEditorCommand}"
+                                Visibility="{Binding IsEditingProject, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Style="{StaticResource Button.Danger}">
+                            <StackPanel Style="{StaticResource Button.InlineContent}">
+                                <controls:FluentIcon Kind="DeleteOutline"
+                                                         Style="{StaticResource Button.Glyph.Current}" />
+                                <TextBlock Text="删除项目信息" Style="{StaticResource Button.IconLabel}" />
+                            </StackPanel>
                         </Button>
                         <Button Command="{Binding SaveProjectEditorCommand}"
-                                Style="{StaticResource Button.DialogPrimary}">
+                                Margin="0"
+                                Style="{StaticResource Button.Normal}">
                             <StackPanel Style="{StaticResource Button.InlineContent}">
                                 <controls:FluentIcon Kind="ContentSaveOutline"
                                                          Style="{StaticResource Button.Glyph.Current}" />
-                                <TextBlock Text="保存项目" Style="{StaticResource Button.IconLabel}" />
+                                <TextBlock Text="保存" Style="{StaticResource Button.IconLabel}" />
                             </StackPanel>
                         </Button>
                     </StackPanel>

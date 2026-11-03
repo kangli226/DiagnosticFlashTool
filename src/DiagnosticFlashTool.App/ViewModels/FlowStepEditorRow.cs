@@ -108,6 +108,7 @@ public sealed class FlowStepEditorRow : ObservableObject
                 OnPropertyChanged(nameof(HasUnsupportedAlgorithm));
                 OnPropertyChanged(nameof(AlgorithmDisplayText));
                 OnPropertyChanged(nameof(CanEditSecurityAlgorithm));
+                OnPropertyChanged(nameof(CanEditCrcAlgorithm));
             }
         }
     }
@@ -122,14 +123,22 @@ public sealed class FlowStepEditorRow : ObservableObject
 
     public bool CanEditSecurityAlgorithm => IsSecurityAlgorithmStep && string.IsNullOrWhiteSpace(CrcAlgorithm);
 
+    public bool CanEditCrcAlgorithm => IsDownloadStep;
+
+    public bool CanEditExtend =>
+        BuiltInFlowStepTemplateCatalog.FindById(TemplateId)?.AlgorithmUsage
+        == FlowStepTemplateAlgorithmUsage.CrcVerification;
+
     public bool HasUnsupportedAlgorithm =>
-        !string.IsNullOrWhiteSpace(CrcAlgorithm)
+        (!IsDownloadStep && !string.IsNullOrWhiteSpace(CrcAlgorithm))
         || (!IsSecurityAlgorithmStep
             && (!string.IsNullOrWhiteSpace(SecurityAlgorithm) || !string.IsNullOrWhiteSpace(AlgorithmParamsText)));
 
     public string AlgorithmDisplayText => HasUnsupportedAlgorithm
         ? $"不兼容：{FirstConfiguredAlgorithm()}（请更换模板）"
-        : "不适用";
+        : !string.IsNullOrWhiteSpace(CrcAlgorithm)
+            ? CrcAlgorithm
+            : "不适用";
 
     public string TesterPresentIntervalMs
     {
@@ -203,6 +212,7 @@ public sealed class FlowStepEditorRow : ObservableObject
         var wasSecurityStep = IsSecurityAlgorithmStep;
         var wasDownloadStep = IsDownloadStep;
         var securityAlgorithm = SecurityAlgorithm;
+        var crcAlgorithm = CrcAlgorithm;
         var algorithmParams = AlgorithmParamsText;
         var blockSize = BlockSize;
 
@@ -219,7 +229,9 @@ public sealed class FlowStepEditorRow : ObservableObject
             && template.AlgorithmUsage == FlowStepTemplateAlgorithmUsage.Security;
         SecurityAlgorithm = preserveSecurity ? securityAlgorithm : string.Empty;
         AlgorithmParamsText = preserveSecurity ? algorithmParams : string.Empty;
-        CrcAlgorithm = string.Empty;
+        CrcAlgorithm = preserveCompatibleValues && wasDownloadStep && FlashStepTypes.IsDownload(template.StepType)
+            ? crcAlgorithm
+            : string.Empty;
         BlockSize = preserveCompatibleValues && wasDownloadStep && FlashStepTypes.IsDownload(template.StepType)
             ? blockSize
             : null;
@@ -260,6 +272,8 @@ public sealed class FlowStepEditorRow : ObservableObject
     {
         OnPropertyChanged(nameof(IsSecurityAlgorithmStep));
         OnPropertyChanged(nameof(CanEditSecurityAlgorithm));
+        OnPropertyChanged(nameof(CanEditCrcAlgorithm));
+        OnPropertyChanged(nameof(CanEditExtend));
         OnPropertyChanged(nameof(HasUnsupportedAlgorithm));
         OnPropertyChanged(nameof(AlgorithmDisplayText));
     }

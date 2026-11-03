@@ -40,6 +40,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private const int MaxRecentLogEntries = 10;
     private const int MaxDownloadInfoEntries = 30;
     private const int MaxFrameHistoryEntries = 5000;
+    private const string AutoBaudRateModeText = "自动搜索";
+    private const string FixedBaudRateModeText = "指定波特率";
+    private const string ProjectBaudRateModeText = "跟随项目";
+    private const uint AutoFlashTriggerId = 0x555;
 
     private readonly AppConfigurationPaths _paths = new();
     private readonly JsonApplicationDataLocationRepository _applicationDataLocationRepository;
@@ -66,6 +70,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private string? _selectedBootConfig;
     private string _selectedDeviceType = "Mock";
     private string _selectedBaudRate = "500K";
+    private string _selectedBaudRateMode = AutoBaudRateModeText;
+    private string _selectedCanFdDataBaudRate = "2M";
+    private bool _useBitRateSwitch = true;
+    private CanDeviceInfo? _detectedCanDeviceInfo;
+    private string _deviceProbeStatusText = "尚未检测设备";
+    private DateTimeOffset _lastAutoFlashTriggerAt;
+    private int _lastAutoFlashProjectNo;
     private string _driverFilePath = string.Empty;
     private string _applicationFilePath = string.Empty;
     private string _manualFrameId = "7E0";
@@ -77,7 +88,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private string _logSearchText = string.Empty;
     private bool _keepRunningInTray;
     private bool _autoFlashEnabled;
-    private bool _autoSearchBaudRate = true;
     private bool _logFileEnabled = true;
     private bool _logAutoScrollEnabled = true;
     private bool _isFrameCapturePaused;
@@ -119,6 +129,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         ConnectCommand = new AsyncRelayCommand(ConnectAsync, () => !IsConnected && !IsBusy);
         DisconnectCommand = new AsyncRelayCommand(DisconnectAsync, () => IsConnected && !IsBusy);
         ToggleConnectionCommand = new AsyncRelayCommand(ToggleConnectionAsync, () => !IsBusy);
+        ProbeCanDeviceCommand = new AsyncRelayCommand(ProbeCanDeviceAsync, () => !IsConnected && !IsBusy);
         BrowseDriverCommand = new RelayCommand(() => BrowseFirmware(path => DriverFilePath = path));
         BrowseApplicationCommand = new RelayCommand(() => BrowseFirmware(path => ApplicationFilePath = path));
         StartFlashCommand = new AsyncRelayCommand(
@@ -205,8 +216,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public ObservableCollection<ProjectConfigEntry> Projects { get; } = [];
     public ProjectEditorViewModel ProjectEditor { get; } = new();
     public ObservableCollection<string> BootConfigFiles { get; } = [];
-    public ObservableCollection<string> DeviceTypes { get; } = ["Mock", "ZLG USBCAN-2A (4)"];
+    public ObservableCollection<string> DeviceTypes { get; } = ["Mock", "ZLGCAN"];
     public ObservableCollection<string> BaudRates { get; } = ["250K", "500K", "1000K"];
+    public ObservableCollection<string> CanFdDataBaudRates { get; } = ["1M", "2M", "4M", "5M", "8M"];
+    public ObservableCollection<string> BaudRateModes { get; } = [AutoBaudRateModeText, FixedBaudRateModeText, ProjectBaudRateModeText];
+    public ObservableCollection<string> CanProtocols { get; } = ["CAN", "CANFD"];
     public ObservableCollection<string> CanChannels { get; } = ["0", "1"];
     public ObservableCollection<string> LogLevelFilters { get; } = ["全部", "普通", "成功", "运行", "警告", "错误"];
     public ObservableCollection<string> LogTimeRangeFilters { get; } = ["全部", "最近1小时", "今天", "最近24小时", "最近7天"];
@@ -217,12 +231,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public ObservableCollection<FlowStepEditorRow> FlowRows { get; } = [];
     public IReadOnlyList<FlowStepTemplate> FlowStepTemplates { get; } = FlowStepTemplate.BuiltIn;
     public ObservableCollection<string> FlowSecurityAlgorithmOptions { get; } = [string.Empty, "AES128_OneFunc"];
+    public ObservableCollection<string> FlowCrcAlgorithmOptions { get; } = [string.Empty, "CRC16_DNP", "CRC32"];
     public ObservableCollection<AlgorithmConfigRow> AlgorithmRows { get; } = [];
 
     public RelayCommand RefreshCommand { get; }
     public AsyncRelayCommand ConnectCommand { get; }
     public AsyncRelayCommand DisconnectCommand { get; }
     public AsyncRelayCommand ToggleConnectionCommand { get; }
+    public AsyncRelayCommand ProbeCanDeviceCommand { get; }
     public RelayCommand BrowseDriverCommand { get; }
     public RelayCommand BrowseApplicationCommand { get; }
     public AsyncRelayCommand StartFlashCommand { get; }
@@ -412,6 +428,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 ApplySelectedProject();
                 OnPropertyChanged(nameof(StatusBarProjectText));
                 OnPropertyChanged(nameof(FlashPageProjectIdText));
+                OnPropertyChanged(nameof(IsCanFdRequested));
                 if (IsFrameFilterEnabled)
                 {
                     Frames.Clear();
@@ -470,6 +487,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             if (SetProperty(ref _selectedDeviceType, value))
             {
+                DetectedCanDeviceInfo = null;
+                DeviceProbeStatusText = "设备类型已更改，请重新检测";
+                ResetCanChannels(2);
                 SaveAppSettings();
                 OnPropertyChanged(nameof(ConnectionText));
                 OnPropertyChanged(nameof(ConnectionSummaryText));
@@ -493,6 +513,103 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             }
         }
     }
+
+    public string SelectedBaudRateMode
+    {
+        get => _selectedBaudRateMode;
+        set
+        {
+            var normalized = BaudRateModes.Contains(value) ? value : AutoBaudRateModeText;
+            if (SetProperty(ref _selectedBaudRateMode, normalized))
+            {
+                if (normalized == ProjectBaudRateModeText && SelectedProject is not null)
+                {
+                    SelectedBaudRate = SelectedProject.BaudRate;
+                }
+
+                OnPropertyChanged(nameof(IsFixedBaudRateMode));
+                SaveAppSettings();
+                RaiseConnectionDetailProperties();
+            }
+        }
+    }
+
+    public bool IsFixedBaudRateMode => SelectedBaudRateMode == FixedBaudRateModeText;
+    public bool IsCanFdRequested => CanProtocolExtensions.Parse(SelectedProject?.CanProtocol) == CanProtocol.CanFd;
+
+    public string SelectedCanFdDataBaudRate
+    {
+        get => _selectedCanFdDataBaudRate;
+        set
+        {
+            if (SetProperty(ref _selectedCanFdDataBaudRate, value))
+            {
+                SaveAppSettings();
+                RaiseConnectionDetailProperties();
+            }
+        }
+    }
+
+    public bool UseBitRateSwitch
+    {
+        get => _useBitRateSwitch;
+        set
+        {
+            if (SetProperty(ref _useBitRateSwitch, value))
+            {
+                SaveAppSettings();
+                OnPropertyChanged(nameof(BitRateSwitchStatusText));
+            }
+        }
+    }
+
+    public CanDeviceInfo? DetectedCanDeviceInfo
+    {
+        get => _detectedCanDeviceInfo;
+        private set
+        {
+            if (SetProperty(ref _detectedCanDeviceInfo, value))
+            {
+                OnPropertyChanged(nameof(DetectedDeviceText));
+                OnPropertyChanged(nameof(CanFdCapabilityText));
+                RaiseConnectionDetailProperties();
+            }
+        }
+    }
+
+    public string DeviceProbeStatusText
+    {
+        get => _deviceProbeStatusText;
+        private set => SetProperty(ref _deviceProbeStatusText, value);
+    }
+
+    public string DetectedDeviceText => DetectedCanDeviceInfo is null
+        ? "未识别"
+        : string.IsNullOrWhiteSpace(DetectedCanDeviceInfo.SerialNumber)
+            ? $"{DetectedCanDeviceInfo.Model} / {DetectedCanDeviceInfo.ChannelCount} 通道"
+            : $"{DetectedCanDeviceInfo.Model} / S/N {DetectedCanDeviceInfo.SerialNumber} / {DetectedCanDeviceInfo.ChannelCount} 通道";
+
+    public string CanFdCapabilityText => DetectedCanDeviceInfo is null
+        ? "检测设备后显示能力"
+        : DetectedCanDeviceInfo.SupportsCanFd ? "支持 CAN FD" : "仅支持经典 CAN";
+
+    public string RequestedProtocolText => CanProtocolExtensions.Parse(SelectedProject?.CanProtocol).ToConfigValue();
+
+    public string ActiveProtocolText => IsConnected && _canDevice is not null
+        ? _canDevice.ActiveProtocol.ToConfigValue()
+        : RequestedProtocolText;
+
+    public string ProtocolStatusText => IsConnected && _canDevice is not null
+        ? _canDevice.ActiveProtocol == CanProtocolExtensions.Parse(SelectedProject?.CanProtocol)
+            ? ActiveProtocolText
+            : $"{ActiveProtocolText}（设备不支持 CAN FD，已回退）"
+        : $"待连接：{RequestedProtocolText}";
+
+    public string BitRateSwitchStatusText => UseBitRateSwitch ? "已开启 BRS" : "未开启 BRS";
+
+    public string AutoFlashStatusText => AutoFlashEnabled
+        ? "手动连接后监听 0x555 项目码触发帧"
+        : "仅手动选择项目并启动刷写";
 
     public string DriverFilePath
     {
@@ -556,18 +673,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             if (SetProperty(ref _autoFlashEnabled, value))
             {
-                SaveAppSettings();
-            }
-        }
-    }
-
-    public bool AutoSearchBaudRate
-    {
-        get => _autoSearchBaudRate;
-        set
-        {
-            if (SetProperty(ref _autoSearchBaudRate, value))
-            {
+                OnPropertyChanged(nameof(AutoFlashStatusText));
                 SaveAppSettings();
             }
         }
@@ -773,6 +879,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 OnPropertyChanged(nameof(ConnectionSummaryText));
                 OnPropertyChanged(nameof(BaudRateStatusText));
                 OnPropertyChanged(nameof(StatusBarDeviceText));
+                RaiseConnectionDetailProperties();
                 RaiseCommandStates();
             }
         }
@@ -853,11 +960,16 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         set => SetProperty(ref _flowValidationText, value);
     }
 
-    public string ConnectionText => IsConnected ? $"Connected: {SelectedDeviceType} / {SelectedBaudRate}" : "Disconnected";
-    public string BaudRateStatusText => IsConnected ? SelectedBaudRate : "待自动搜索";
+    public string ConnectionText => IsConnected ? $"已连接：{ConnectedDeviceText} / {SelectedBaudRate}" : "未连接";
+    public string BaudRateStatusText => IsConnected
+        ? $"{SelectedBaudRate} / {SelectedBaudRateMode}"
+        : SelectedBaudRateMode == AutoBaudRateModeText ? "待自动搜索" : $"{SelectedBaudRate} / {SelectedBaudRateMode}";
     public string ConnectionSummaryText => IsConnected
-        ? $"{SelectedDeviceType} / {SelectedBaudRate}"
+        ? $"{ConnectedDeviceText} / {ActiveProtocolText} / {SelectedBaudRate}"
         : IsConnectionFailure ? "连接失败，请重试" : "等待设备连接";
+    public string ConnectedDeviceText => _canDevice?.DeviceInfo?.Model
+        ?? DetectedCanDeviceInfo?.Model
+        ?? SelectedDeviceType;
     public string ConnectionActionText => IsConnected ? "断开设备" : "连接设备";
     public string DeviceStatusText => IsConnected
         ? "设备在线"
@@ -907,7 +1019,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     /// <summary>状态栏运行态：当前 CAN 设备与通道。</summary>
     public string StatusBarDeviceText => IsConnected
-        ? $"设备：{SelectedDeviceType} / {SelectedBaudRate} / 通道 {SelectedCanChannel}"
+        ? $"设备：{ConnectedDeviceText} / {ActiveProtocolText} / {SelectedBaudRate} / 通道 {SelectedCanChannel}"
         : "设备：未连接";
 
     /// <summary>状态栏运行态：当前项目与 BOOT 配置。</summary>
@@ -989,8 +1101,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
         var selectedName = SelectedProject?.ProjectName;
         Projects.Clear();
+        var projectIndex = 0;
         foreach (var project in _projectRepository.LoadAll())
         {
+            projectIndex++;
+            NormalizeProjectDefaults(project, projectIndex);
             Projects.Add(project);
         }
 
@@ -1091,7 +1206,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
             _keepRunningInTray = settings.KeepRunningInTray;
             _autoFlashEnabled = settings.AutoFlashEnabled;
-            _autoSearchBaudRate = settings.AutoSearchBaudRate;
+            _selectedBaudRateMode = string.IsNullOrWhiteSpace(settings.BaudRateSelectionMode)
+                ? settings.AutoSearchBaudRate is false ? FixedBaudRateModeText : AutoBaudRateModeText
+                : ToBaudRateModeText(BaudRateSelectionModeExtensions.Parse(settings.BaudRateSelectionMode));
             _logFileEnabled = settings.LogFileEnabled;
             _logFilePath = string.IsNullOrWhiteSpace(settings.LogFilePath)
                 ? _logFilePath
@@ -1099,15 +1216,17 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             _logRetentionDays = NormalizeLogRetentionDays(settings.LogRetentionDays);
             _logMaxFileSizeMb = NormalizeLogMaxFileSizeMb(settings.LogMaxFileSizeMb);
             _logAutoScrollEnabled = settings.LogAutoScrollEnabled;
-            _selectedDeviceType = string.IsNullOrWhiteSpace(settings.SelectedDeviceType)
-                ? _selectedDeviceType
-                : settings.SelectedDeviceType;
+            _selectedDeviceType = NormalizeDeviceType(settings.SelectedDeviceType);
             _selectedBaudRate = string.IsNullOrWhiteSpace(settings.SelectedBaudRate)
                 ? _selectedBaudRate
                 : settings.SelectedBaudRate;
             _selectedCanChannel = string.IsNullOrWhiteSpace(settings.SelectedCanChannel)
                 ? _selectedCanChannel
                 : settings.SelectedCanChannel;
+            _selectedCanFdDataBaudRate = string.IsNullOrWhiteSpace(settings.CanFdDataBaudRate)
+                ? _selectedCanFdDataBaudRate
+                : settings.CanFdDataBaudRate;
+            _useBitRateSwitch = settings.UseBitRateSwitch ?? true;
             _paths.ProjectConfigPathOverride = EmptyToNull(settings.ProjectConfigPath);
             _paths.BootConfigDirectoryOverride = EmptyToNull(settings.FlowConfigDirectory);
 
@@ -1132,7 +1251,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             {
                 KeepRunningInTray = KeepRunningInTray,
                 AutoFlashEnabled = AutoFlashEnabled,
-                AutoSearchBaudRate = AutoSearchBaudRate,
+                AutoSearchBaudRate = SelectedBaudRateMode == AutoBaudRateModeText,
+                BaudRateSelectionMode = GetBaudRateSelectionMode().ToConfigValue(),
                 LogFileEnabled = LogFileEnabled,
                 LogFilePath = LogFilePath,
                 LogRetentionDays = LogRetentionDays,
@@ -1141,6 +1261,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 SelectedDeviceType = SelectedDeviceType,
                 SelectedBaudRate = SelectedBaudRate,
                 SelectedCanChannel = SelectedCanChannel,
+                CanFdDataBaudRate = SelectedCanFdDataBaudRate,
+                UseBitRateSwitch = UseBitRateSwitch,
                 ProjectConfigPath = _paths.ProjectConfigPathOverride,
                 FlowConfigDirectory = _paths.BootConfigDirectoryOverride
             };
@@ -1466,7 +1588,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private void RefreshFlowAlgorithmOptions()
     {
-        var algorithms = new[] { string.Empty, "AES128_OneFunc" }
+        var securityAlgorithms = new[] { string.Empty, "AES128_OneFunc" }
             .Concat(AlgorithmRows
                 .Where(row => row.Category.Contains("安全算法", StringComparison.Ordinal))
                 .Select(row => row.Name))
@@ -1480,9 +1602,23 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             .ToList();
 
         FlowSecurityAlgorithmOptions.Clear();
-        foreach (var algorithm in algorithms)
+        foreach (var algorithm in securityAlgorithms)
         {
             FlowSecurityAlgorithmOptions.Add(algorithm);
+        }
+
+        var crcAlgorithms = new[] { string.Empty, "CRC16_DNP", "CRC32" }
+            .Concat(FlowRows.Where(row => row.IsDownloadStep).Select(row => row.CrcAlgorithm))
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+            .Prepend(string.Empty)
+            .ToList();
+
+        FlowCrcAlgorithmOptions.Clear();
+        foreach (var algorithm in crcAlgorithms)
+        {
+            FlowCrcAlgorithmOptions.Add(algorithm);
         }
     }
 
@@ -1503,30 +1639,256 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
+    private async Task ProbeCanDeviceAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            IsBusy = true;
+            await ProbeCanDeviceCoreAsync(cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            DeviceProbeStatusText = "设备检测已取消";
+        }
+        catch (Exception ex)
+        {
+            DetectedCanDeviceInfo = null;
+            DeviceProbeStatusText = $"设备检测失败：{ex.Message}";
+            SetStatus("设备检测失败", DiagnosticStatusKind.Error);
+            AppendLog(DeviceProbeStatusText);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task ProbeCanDeviceCoreAsync(CancellationToken cancellationToken)
+    {
+        DeviceProbeStatusText = "正在检测 CAN 设备…";
+        var probe = _canDeviceFactory.CreateProbe(SelectedDeviceType);
+        var info = await probe.ProbeAsync(SelectedDeviceType, cancellationToken: cancellationToken);
+        if (info is null)
+        {
+            DetectedCanDeviceInfo = null;
+            DeviceProbeStatusText = "未检测到可用设备";
+            throw new InvalidOperationException("未检测到可用的 CAN 设备，请检查硬件连接和驱动。 ");
+        }
+
+        ApplyDetectedDeviceInfo(info);
+        DeviceProbeStatusText = $"已识别 {info.Model}";
+        SetStatus("CAN 设备检测完成", DiagnosticStatusKind.Success);
+        AppendLog($"检测到 CAN 设备：{DetectedDeviceText}，{CanFdCapabilityText}");
+    }
+
+    private void ApplyDetectedDeviceInfo(CanDeviceInfo? info)
+    {
+        if (info is null)
+        {
+            return;
+        }
+
+        DetectedCanDeviceInfo = info;
+        ResetCanChannels(info.ChannelCount);
+    }
+
+    private void ResetCanChannels(uint channelCount)
+    {
+        var count = Math.Clamp((int)channelCount, 1, 16);
+        var selected = int.TryParse(SelectedCanChannel, out var parsed) ? parsed : 0;
+        CanChannels.Clear();
+        for (var channel = 0; channel < count; channel++)
+        {
+            CanChannels.Add(channel.ToString());
+        }
+
+        SelectedCanChannel = Math.Clamp(selected, 0, count - 1).ToString();
+    }
+
+    private async Task OpenCanDeviceAsync(string baudRate, CancellationToken cancellationToken)
+    {
+        var device = _canDeviceFactory.Create(SelectedDeviceType);
+        device.FrameReceived += OnFrameReceived;
+        device.FrameSent += OnFrameSent;
+        try
+        {
+            await device.OpenAsync(new CanDeviceOptions
+            {
+                DeviceType = DetectedCanDeviceInfo is { DeviceType: > 0 }
+                    ? DetectedCanDeviceInfo.DeviceType.ToString()
+                    : SelectedDeviceType,
+                DeviceIndex = DetectedCanDeviceInfo?.DeviceIndex ?? 0,
+                BaudRate = HexUtil.ParseBaudRate(baudRate),
+                Channel = uint.TryParse(SelectedCanChannel, out var channel) ? channel : 0,
+                Protocol = CanProtocolExtensions.Parse(SelectedProject?.CanProtocol),
+                CanFdDataBaudRate = ParseFlexibleBaudRate(SelectedCanFdDataBaudRate),
+                UseBitRateSwitch = UseBitRateSwitch
+            }, cancellationToken);
+            _canDevice = device;
+        }
+        catch
+        {
+            device.FrameReceived -= OnFrameReceived;
+            device.FrameSent -= OnFrameSent;
+            await device.DisposeAsync();
+            throw;
+        }
+    }
+
+    private async Task ReleaseCanDeviceAsync(CancellationToken cancellationToken)
+    {
+        var device = _canDevice;
+        _canDevice = null;
+        if (device is null)
+        {
+            return;
+        }
+
+        device.FrameReceived -= OnFrameReceived;
+        device.FrameSent -= OnFrameSent;
+        try
+        {
+            await device.CloseAsync(cancellationToken);
+        }
+        finally
+        {
+            await device.DisposeAsync();
+        }
+    }
+
+    private IReadOnlyList<string> ResolveBaudRateCandidates(BaudRateSelectionMode mode)
+    {
+        if (mode == BaudRateSelectionMode.Project)
+        {
+            if (SelectedProject is null)
+            {
+                throw new InvalidOperationException("跟随项目波特率时必须先选择项目。");
+            }
+
+            return [SelectedProject.BaudRate];
+        }
+
+        if (mode == BaudRateSelectionMode.Fixed)
+        {
+            return [SelectedBaudRate];
+        }
+
+        return new[] { SelectedProject?.BaudRate, SelectedBaudRate }
+            .Concat(BaudRates)
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    private static async Task<bool> HasBusTrafficAsync(ICanDevice device, CancellationToken cancellationToken)
+    {
+        var trafficDetected = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        void OnTraffic(object? sender, CanFrame frame) => trafficDetected.TrySetResult();
+        device.FrameReceived += OnTraffic;
+        try
+        {
+            var delay = Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
+            var completed = await Task.WhenAny(trafficDetected.Task, delay);
+            cancellationToken.ThrowIfCancellationRequested();
+            return completed == trafficDetected.Task;
+        }
+        finally
+        {
+            device.FrameReceived -= OnTraffic;
+        }
+    }
+
+    private BaudRateSelectionMode GetBaudRateSelectionMode() => SelectedBaudRateMode switch
+    {
+        FixedBaudRateModeText => BaudRateSelectionMode.Fixed,
+        ProjectBaudRateModeText => BaudRateSelectionMode.Project,
+        _ => BaudRateSelectionMode.Auto
+    };
+
+    private static string ToBaudRateModeText(BaudRateSelectionMode mode) => mode switch
+    {
+        BaudRateSelectionMode.Fixed => FixedBaudRateModeText,
+        BaudRateSelectionMode.Project => ProjectBaudRateModeText,
+        _ => AutoBaudRateModeText
+    };
+
+    private static string NormalizeDeviceType(string? deviceType) =>
+        string.Equals(deviceType?.Trim(), "ZLG USBCAN-2A (4)", StringComparison.OrdinalIgnoreCase)
+            ? "ZLGCAN"
+            : string.IsNullOrWhiteSpace(deviceType) ? "Mock" : deviceType.Trim();
+
+    private static uint ParseFlexibleBaudRate(string value)
+    {
+        var normalized = value.Trim().ToUpperInvariant();
+        if (normalized.EndsWith('M'))
+        {
+            return uint.Parse(normalized[..^1], System.Globalization.CultureInfo.InvariantCulture) * 1_000_000;
+        }
+
+        return HexUtil.ParseBaudRate(normalized);
+    }
+
     private async Task ConnectAsync(CancellationToken cancellationToken)
     {
         try
         {
             IsBusy = true;
-            _canDevice = _canDeviceFactory.Create(SelectedDeviceType);
-            _canDevice.FrameReceived += OnFrameReceived;
-            _canDevice.FrameSent += OnFrameSent;
-
-            await _canDevice.OpenAsync(new CanDeviceOptions
+            if (DetectedCanDeviceInfo is null)
             {
-                DeviceType = SelectedDeviceType,
-                BaudRate = HexUtil.ParseBaudRate(SelectedBaudRate),
-                Channel = uint.TryParse(SelectedCanChannel, out var channel) ? channel : 0
-            }, cancellationToken);
+                await ProbeCanDeviceCoreAsync(cancellationToken);
+            }
+
+            var mode = GetBaudRateSelectionMode();
+            var candidates = ResolveBaudRateCandidates(mode);
+            Exception? lastError = null;
+            foreach (var baudRate in candidates)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                try
+                {
+                    await OpenCanDeviceAsync(baudRate, cancellationToken);
+                    if (mode != BaudRateSelectionMode.Auto
+                        || string.Equals(SelectedDeviceType, "Mock", StringComparison.OrdinalIgnoreCase)
+                        || await HasBusTrafficAsync(_canDevice!, cancellationToken))
+                    {
+                        SelectedBaudRate = baudRate;
+                        break;
+                    }
+
+                    await ReleaseCanDeviceAsync(CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    lastError = ex;
+                    await ReleaseCanDeviceAsync(CancellationToken.None);
+                }
+            }
+
+            if (_canDevice is null)
+            {
+                throw lastError ?? new InvalidOperationException(
+                    mode == BaudRateSelectionMode.Auto
+                        ? "自动波特率搜索期间未监听到总线报文，请确认总线有通信，或改用指定/跟随项目模式。"
+                        : "没有可用的 CAN 波特率。");
+            }
 
             IsConnected = true;
-            SetStatus("CAN connected", DiagnosticStatusKind.Success);
-            AppendLog($"CAN connected: {SelectedDeviceType}, {SelectedBaudRate}, channel={SelectedCanChannel}");
+            ApplyDetectedDeviceInfo(_canDevice.DeviceInfo);
+            SetStatus("CAN 已连接", DiagnosticStatusKind.Success);
+            var requestedProtocol = CanProtocolExtensions.Parse(SelectedProject?.CanProtocol);
+            if (requestedProtocol == CanProtocol.CanFd && _canDevice.ActiveProtocol == CanProtocol.Can)
+            {
+                AppendLog("当前适配器不支持 CAN FD，连接已回退为经典 CAN。");
+            }
+
+            AppendLog($"CAN 已连接：{ConnectedDeviceText}，{SelectedBaudRate}，{_canDevice.ActiveProtocol.ToConfigValue()}，通道 {SelectedCanChannel}");
         }
         catch (Exception ex)
         {
-            SetStatus("Connect failed", DiagnosticStatusKind.Error);
-            AppendLog($"Connect failed: {ex.Message}");
+            await ReleaseCanDeviceAsync(CancellationToken.None);
+            SetStatus("连接失败", DiagnosticStatusKind.Error);
+            AppendLog($"连接失败：{ex.Message}");
             IsConnected = false;
         }
         finally
@@ -1543,18 +1905,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         try
         {
             IsBusy = true;
-            if (_canDevice is not null)
-            {
-                _canDevice.FrameReceived -= OnFrameReceived;
-                _canDevice.FrameSent -= OnFrameSent;
-                await _canDevice.CloseAsync(cancellationToken);
-                await _canDevice.DisposeAsync();
-                _canDevice = null;
-            }
+            await ReleaseCanDeviceAsync(cancellationToken);
 
             IsConnected = false;
-            SetStatus("CAN disconnected", DiagnosticStatusKind.Neutral);
-            AppendLog("CAN disconnected.");
+            SetStatus("CAN 已断开", DiagnosticStatusKind.Neutral);
+            AppendLog("CAN 已断开。");
         }
         finally
         {
@@ -1637,6 +1992,18 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             }
 
             var firmwareSet = LoadFirmwareSet(SelectedProject, bootConfig);
+            var projectProtocol = CanProtocolExtensions.Parse(SelectedProject.CanProtocol);
+            if (projectProtocol == CanProtocol.Can && _canDevice.ActiveProtocol == CanProtocol.CanFd)
+            {
+                throw new InvalidOperationException(
+                    $"当前连接协议为 {_canDevice.ActiveProtocol.ToConfigValue()}，项目要求 {projectProtocol.ToConfigValue()}，请断开后重新连接。");
+            }
+            if (projectProtocol == CanProtocol.CanFd
+                && _canDevice.ActiveProtocol == CanProtocol.Can
+                && _canDevice.DeviceInfo?.SupportsCanFd == true)
+            {
+                throw new InvalidOperationException("当前设备支持 CAN FD，但本次连接使用经典 CAN，请断开后按 CAN FD 项目重新连接。");
+            }
 
             var options = new DiagnosticTransportOptions
             {
@@ -1645,7 +2012,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 ResponseId = HexUtil.ParseUInt32(SelectedProject.ResponseAddressId),
                 Channel = uint.TryParse(SelectedCanChannel, out var selectedChannel)
                     ? selectedChannel
-                    : 0
+                    : 0,
+                FrameDataLength = _canDevice.ActiveProtocol == CanProtocol.CanFd ? 64 : 8
             };
 
             using var transport = new IsoTpTransport(_canDevice, options);
@@ -1705,9 +2073,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         try
         {
             var data = HexUtil.ParseBytes(ManualFrameData);
-            if (data.Length > 8)
+            var maximumLength = _canDevice.ActiveProtocol == CanProtocol.CanFd ? 64 : 8;
+            if (data.Length > maximumLength)
             {
-                throw new InvalidOperationException("Classic CAN frame data is limited to 8 bytes.");
+                throw new InvalidOperationException($"当前协议单帧数据不能超过 {maximumLength} 字节。");
             }
 
             var channel = uint.TryParse(SelectedCanChannel, out var parsedChannel) ? parsedChannel : 0;
@@ -1718,7 +2087,15 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             }
 
             var isExtended = frameId > 0x7FF;
-            var frame = new CanFrame((uint)frameId, data, channel, isExtended, false);
+            var isCanFd = _canDevice.ActiveProtocol == CanProtocol.CanFd;
+            var frame = new CanFrame(
+                (uint)frameId,
+                data,
+                channel,
+                isExtended,
+                false,
+                IsCanFd: isCanFd,
+                BitRateSwitch: isCanFd && UseBitRateSwitch);
             await _canDevice.SendAsync(frame, cancellationToken);
             AppendLog($"Manual TX: {frame}");
         }
@@ -1740,15 +2117,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             driverPath,
             FirmwareImageKind.Driver,
             "驱动",
-            RequiresDownloadStep(bootConfig, FlashStepKind.DownloadDriver),
-            0);
+            RequiresDownloadStep(bootConfig, FlashStepKind.DownloadDriver));
 
         var application = LoadFirmwareImage(
             applicationPath,
             FirmwareImageKind.Application,
             "应用",
-            RequiresDownloadStep(bootConfig, FlashStepKind.DownloadApplication),
-            HexUtil.ParseUInt32(project.AppStartAddress, 0));
+            RequiresDownloadStep(bootConfig, FlashStepKind.DownloadApplication));
 
         return new FirmwareSet { Driver = driver, Application = application };
     }
@@ -1768,8 +2143,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         string path,
         FirmwareImageKind kind,
         string label,
-        bool requiresDownload,
-        uint fallbackAddress)
+        bool requiresDownload)
     {
         if (string.IsNullOrWhiteSpace(path))
         {
@@ -1787,14 +2161,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             throw new FileNotFoundException($"{label} 固件文件不存在：{path}", path);
         }
 
-        var image = _firmwareLoader.Load(path, kind, fallbackAddress);
+        var image = _firmwareLoader.Load(path, kind);
         AppendLog($"{label} image loaded: {Path.GetFileName(path)}, {image.Length} bytes");
         return image;
     }
 
     private void OpenNewProjectEditor()
     {
-        ProjectEditor.BeginNew(BootConfigFiles.FirstOrDefault() ?? string.Empty);
+        ProjectEditor.BeginNew(BootConfigFiles.FirstOrDefault() ?? string.Empty, GetNextProjectNo());
         SetProjectEditorMode(null, "新建项目");
         IsProjectEditorVisible = true;
     }
@@ -1807,7 +2181,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
 
         ProjectEditor.Load(SelectedProject);
-        SetProjectEditorMode(SelectedProject, "编辑项目");
+        SetProjectEditorMode(SelectedProject, "项目详情");
         IsProjectEditorVisible = true;
     }
 
@@ -1895,8 +2269,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
         var projectName = _editingProject.ProjectName;
         if (MessageBox.Show(
-                $"确定删除项目“{projectName}”？",
-                "删除项目",
+                $"删除后将移除项目“{projectName}”的全部项目信息，且无法恢复。是否确认删除？",
+                "确认删除项目",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Warning) != MessageBoxResult.Yes)
         {
@@ -1942,6 +2316,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         var project = new ProjectConfigEntry
         {
             ProjectName = CreateDefaultProjectName(),
+            ProjectNo = GetNextProjectNo(),
+            CanProtocol = "CAN",
             BaudRate = "500K",
             PhysicalRequestId = "0x18DA5535",
             FunctionalRequestId = "0x18DA55FF",
@@ -2013,6 +2389,17 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 issues.Add("Project name cannot be empty.");
             }
 
+            if (project.ProjectNo <= 0)
+            {
+                issues.Add($"项目 {project.ProjectName}：项目码必须大于 0。");
+            }
+
+            if (!string.Equals(project.CanProtocol, "CAN", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(project.CanProtocol, "CANFD", StringComparison.OrdinalIgnoreCase))
+            {
+                issues.Add($"项目 {project.ProjectName}：CAN 协议必须为 CAN 或 CANFD。");
+            }
+
             if (string.IsNullOrWhiteSpace(project.BootConfigFile))
             {
                 issues.Add($"Project {project.ProjectName}: boot config is empty.");
@@ -2022,6 +2409,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         issues.AddRange(projectList.GroupBy(project => project.ProjectName, StringComparer.OrdinalIgnoreCase)
             .Where(group => !string.IsNullOrWhiteSpace(group.Key) && group.Count() > 1)
             .Select(group => $"Duplicate project name: {group.Key}"));
+        issues.AddRange(projectList.GroupBy(project => project.ProjectNo)
+            .Where(group => group.Key > 0 && group.Count() > 1)
+            .Select(group => $"项目码重复：{group.Key}"));
 
         return string.Join(Environment.NewLine, issues.Distinct());
     }
@@ -2357,6 +2747,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         return new ProjectConfigEntry
         {
             ProjectName = projectName,
+            ProjectNo = GetNextProjectNo(),
+            CanProtocol = "CAN",
             BaudRate = "500K",
             PhysicalRequestId = "0x18DA5535",
             FunctionalRequestId = "0x18DA55FF",
@@ -2709,9 +3101,36 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         SelectedBootConfig = string.IsNullOrWhiteSpace(SelectedProject.BootConfigFile)
             ? null
             : SelectedProject.BootConfigFile.Trim();
-        SelectedBaudRate = SelectedProject.BaudRate;
+        if (GetBaudRateSelectionMode() == BaudRateSelectionMode.Project)
+        {
+            SelectedBaudRate = SelectedProject.BaudRate;
+        }
         DriverFilePath = SelectedProject.DriveFilePath;
         ApplicationFilePath = SelectedProject.FlashFilePath;
+        OnPropertyChanged(nameof(RequestedProtocolText));
+        OnPropertyChanged(nameof(ProtocolStatusText));
+    }
+
+    private int GetNextProjectNo()
+    {
+        var used = Projects.Select(project => project.ProjectNo).Where(value => value > 0).ToHashSet();
+        var next = 1;
+        while (used.Contains(next))
+        {
+            next++;
+        }
+
+        return next;
+    }
+
+    private static void NormalizeProjectDefaults(ProjectConfigEntry project, int fallbackProjectNo)
+    {
+        if (project.ProjectNo <= 0)
+        {
+            project.ProjectNo = fallbackProjectNo;
+        }
+
+        project.CanProtocol = CanProtocolExtensions.Parse(project.CanProtocol).ToConfigValue();
     }
 
     private void BrowseFirmware(Action<string> setPath)
@@ -2772,7 +3191,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         try
         {
             var exportFrames = _frameHistory.ToArray();
-            var lines = new[] { "Time,Direction,Channel,ID,Format,DLC,Data" }
+            var lines = new[] { "Time,Direction,Channel,ID,Format,Protocol,BRS,ESI,DLC,Data" }
                 .Concat(exportFrames.Select(frame => string.Join(
                     ",",
                     frame.Timestamp,
@@ -2780,6 +3199,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                     frame.Channel,
                     frame.IdText,
                     frame.FormatText,
+                    frame.ProtocolText,
+                    frame.BrsText,
+                    frame.EsiText,
                     frame.Dlc,
                     frame.DataText)));
             File.WriteAllLines(dialog.FileName, lines);
@@ -2792,7 +3214,68 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
-    private void OnFrameReceived(object? sender, CanFrame frame) => AddFrame("RX", frame);
+    private void OnFrameReceived(object? sender, CanFrame frame)
+    {
+        AddFrame("RX", frame);
+        TryHandleAutoFlashTrigger(frame);
+    }
+
+    private void TryHandleAutoFlashTrigger(CanFrame frame)
+    {
+        if (!AutoFlashEnabled
+            || !IsConnected
+            || IsBusy
+            || StartFlashCommand.IsRunning
+            || frame.Id != AutoFlashTriggerId
+            || frame.Data.Length < 3
+            || frame.Data[0] != 0x55
+            || frame.Data[1] != 0xAA)
+        {
+            return;
+        }
+
+        var projectNo = frame.Data[2];
+        var now = DateTimeOffset.UtcNow;
+        if (projectNo == _lastAutoFlashProjectNo
+            && now - _lastAutoFlashTriggerAt < TimeSpan.FromSeconds(2))
+        {
+            return;
+        }
+
+        _lastAutoFlashProjectNo = projectNo;
+        _lastAutoFlashTriggerAt = now;
+        RunOnUi(() =>
+        {
+            if (IsBusy || StartFlashCommand.IsRunning)
+            {
+                return;
+            }
+
+            if (_draftFlowProject is not null || HasUnsavedFlowChanges())
+            {
+                AppendLog($"收到自动刷写触发：项目码 {projectNo}，但当前有未保存配置，已忽略。");
+                return;
+            }
+
+            var project = Projects.FirstOrDefault(item => item.ProjectNo == projectNo);
+            if (project is null)
+            {
+                AppendLog($"收到自动刷写触发，但未找到项目码 {projectNo} 对应的项目。");
+                return;
+            }
+
+            SelectedProject = project;
+            AppendLog($"收到 0x555 自动刷写触发，已选择项目：{project.ProjectName}（项目码 {projectNo}）。");
+            if (StartFlashCommand.CanExecute(null))
+            {
+                StartFlashCommand.Execute(null);
+            }
+            else
+            {
+                AppendLog("自动刷写触发已识别，但当前状态不允许启动刷写。");
+            }
+        });
+    }
 
     private void OnFrameSent(object? sender, CanFrame frame) => AddFrame("TX", frame);
 
@@ -3308,6 +3791,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         ConnectCommand.RaiseCanExecuteChanged();
         DisconnectCommand.RaiseCanExecuteChanged();
         ToggleConnectionCommand.RaiseCanExecuteChanged();
+        ProbeCanDeviceCommand.RaiseCanExecuteChanged();
         StartFlashCommand.RaiseCanExecuteChanged();
         CancelFlashCommand.RaiseCanExecuteChanged();
         DeleteProjectCommand.RaiseCanExecuteChanged();
@@ -3370,11 +3854,24 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         OnPropertyChanged(nameof(ConnectionSummaryText));
     }
 
+    private void RaiseConnectionDetailProperties()
+    {
+        OnPropertyChanged(nameof(ConnectionText));
+        OnPropertyChanged(nameof(BaudRateStatusText));
+        OnPropertyChanged(nameof(ConnectionSummaryText));
+        OnPropertyChanged(nameof(ConnectedDeviceText));
+        OnPropertyChanged(nameof(RequestedProtocolText));
+        OnPropertyChanged(nameof(ActiveProtocolText));
+        OnPropertyChanged(nameof(ProtocolStatusText));
+        OnPropertyChanged(nameof(StatusBarDeviceText));
+    }
+
     private sealed class AppSettingsSnapshot
     {
         public bool KeepRunningInTray { get; set; }
         public bool AutoFlashEnabled { get; set; }
-        public bool AutoSearchBaudRate { get; set; } = true;
+        public bool? AutoSearchBaudRate { get; set; }
+        public string? BaudRateSelectionMode { get; set; }
         public bool LogFileEnabled { get; set; } = true;
         public string? LogFilePath { get; set; }
         public int? LogRetentionDays { get; set; }
@@ -3383,6 +3880,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         public string? SelectedDeviceType { get; set; }
         public string? SelectedBaudRate { get; set; }
         public string? SelectedCanChannel { get; set; }
+        public string? CanFdDataBaudRate { get; set; }
+        public bool? UseBitRateSwitch { get; set; }
         public string? ProjectConfigPath { get; set; }
         public string? FlowConfigDirectory { get; set; }
     }

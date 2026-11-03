@@ -13,15 +13,17 @@
 
         <Button Grid.Column="0"
                 Command="{Binding PrimaryCommand, ElementName=Root}"
-                Style="{StaticResource Button.PathAction}"
+                MinWidth="52"
+                Padding="8,0"
+                Style="{StaticResource Button.Normal}"
                 Margin="0"
                 AutomationProperties.Name="{Binding PrimaryLabel, ElementName=Root}"
                 ToolTip="{Binding PrimaryLabel, ElementName=Root}">
             <StackPanel Style="{StaticResource Button.InlineContent}">
                 <controls:FluentIcon Kind="FolderOpenOutline"
-                                     Style="{StaticResource Button.PathActionIcon}" />
+                                     Style="{StaticResource Button.Glyph.Current}" />
                 <TextBlock Text="{Binding PrimaryLabel, ElementName=Root}"
-                           Style="{StaticResource Button.PathActionLabel}" />
+                           Style="{StaticResource Button.IconLabel}" />
             </StackPanel>
         </Button>
 
@@ -36,11 +38,15 @@
                 Grid.Column="2"
                 Click="OnChangeMenuButtonClick"
                 Tag="{Binding ElementName=Root}"
-                Style="{StaticResource Button.PathActionDropdown}"
+                Width="24"
+                Height="32"
+                Padding="0"
+                Margin="0"
+                Style="{StaticResource Button.Normal}"
                 AutomationProperties.Name="{Binding ChangeLabel, ElementName=Root}"
                 ToolTip="{Binding ChangeLabel, ElementName=Root}">
             <controls:FluentIcon Kind="ChevronDown"
-                                 Style="{StaticResource Button.PathActionIcon}" />
+                                 Style="{StaticResource Button.Glyph.Current}" />
             <Button.ContextMenu>
                 <ContextMenu Placement="Bottom"
                              DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">

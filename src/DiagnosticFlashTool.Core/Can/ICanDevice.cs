@@ -6,6 +6,8 @@ public interface ICanDevice : IAsyncDisposable
     event EventHandler<CanFrame>? FrameSent;
 
     bool IsOpen { get; }
+    CanDeviceInfo? DeviceInfo => null;
+    CanProtocol ActiveProtocol => CanProtocol.Can;
 
     Task OpenAsync(CanDeviceOptions options, CancellationToken cancellationToken);
     Task CloseAsync(CancellationToken cancellationToken);

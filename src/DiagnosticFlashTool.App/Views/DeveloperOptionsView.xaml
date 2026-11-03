@@ -49,7 +49,7 @@
                             <Button Width="118"
                                     Command="{Binding StartFlashCommand}"
                                     Margin="0"
-                                    Style="{StaticResource Button.Primary}"
+                                    Style="{StaticResource Button.Normal}"
                                     ToolTip="连接 CAN 设备后开始刷写">
                                 <StackPanel Style="{StaticResource Button.InlineContent}">
                                     <controls:FluentIcon Kind="CloudDownloadOutline"
@@ -165,7 +165,7 @@
                                             Margin="0"
                                             HorizontalAlignment="Right"
                                             Command="{Binding SendManualFrameCommand}"
-                                            Style="{StaticResource Button.Primary}"
+                                            Style="{StaticResource Button.Normal}"
                                             ToolTip="连接 CAN 设备后发送报文">
                                         <StackPanel Style="{StaticResource Button.InlineContent}">
                                             <controls:FluentIcon Kind="SendOutline"
@@ -184,7 +184,7 @@
                             <StackPanel Orientation="Horizontal">
                                 <Button Width="98"
                                         Command="{Binding ToggleFrameCaptureCommand}"
-                                        Style="{StaticResource Button.ToolBar}">
+                                        Style="{StaticResource Button.Normal}">
                                     <StackPanel Style="{StaticResource Button.InlineContent}">
                                         <controls:FluentIcon Kind="Pause"
                                                              Style="{StaticResource Button.Glyph.Current}" />
@@ -194,7 +194,7 @@
                                 </Button>
                                 <Button Width="126"
                                         Command="{Binding ToggleFrameFilterCommand}"
-                                        Style="{StaticResource Button.ToolBar}">
+                                        Style="{StaticResource Button.Normal}">
                                     <StackPanel Style="{StaticResource Button.InlineContent}">
                                         <controls:FluentIcon Kind="FilterOutline"
                                                              Style="{StaticResource Button.Glyph.Current}" />
@@ -204,7 +204,7 @@
                                 </Button>
                                 <Button Width="104"
                                         Command="{Binding ExportFramesCommand}"
-                                        Style="{StaticResource Button.ToolBar}">
+                                        Style="{StaticResource Button.Normal}">
                                     <StackPanel Style="{StaticResource Button.InlineContent}">
                                         <controls:FluentIcon Kind="ExportVariant"
                                                              Style="{StaticResource Button.Glyph.Current}" />
@@ -214,7 +214,7 @@
                                 <Button Width="108"
                                         Margin="0"
                                         Command="{Binding ClearFramesCommand}"
-                                        Style="{StaticResource Button.DestructiveToolBar}">
+                                        Style="{StaticResource Button.Danger}">
                                     <StackPanel Style="{StaticResource Button.InlineContent}">
                                         <controls:FluentIcon Kind="DeleteSweepOutline"
                                                              Style="{StaticResource Button.Glyph.Current}" />
@@ -234,6 +234,9 @@
                                 <DataGridTextColumn Header="ID" Binding="{Binding IdText}" Width="140"
                                                     ElementStyle="{StaticResource DataGrid.MonoCellText}" />
                                 <DataGridTextColumn Header="格式" Binding="{Binding FormatText}" Width="140" />
+                                <DataGridTextColumn Header="协议" Binding="{Binding ProtocolText}" Width="100" />
+                                <DataGridTextColumn Header="BRS" Binding="{Binding BrsText}" Width="70" />
+                                <DataGridTextColumn Header="ESI" Binding="{Binding EsiText}" Width="70" />
                                 <DataGridTextColumn Header="长度" Binding="{Binding Dlc}" Width="100"
                                                     ElementStyle="{StaticResource DataGrid.MonoCellText}" />
                                 <DataGridTextColumn Header="数据" Binding="{Binding DataText}" Width="*"

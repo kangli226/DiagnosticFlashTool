@@ -35,11 +35,9 @@ public static class BuiltInFlowTemplateValidator
             issues.Add(Error(step, "内置节点仅允许物理寻址（physical）。"));
         }
 
-        if (!string.IsNullOrWhiteSpace(step.CrcAlgorithm))
+        if (!string.IsNullOrWhiteSpace(step.CrcAlgorithm) && !FlashStepTypes.IsDownload(step.StepType))
         {
-            issues.Add(Error(
-                step,
-                $"crcAlgorithm=“{step.CrcAlgorithm}”尚未实现，请通过“更换模板”清除该配置。"));
+            issues.Add(Error(step, "只有下载节点允许配置 crcAlgorithm。"));
         }
 
         if (template?.AlgorithmUsage != FlowStepTemplateAlgorithmUsage.Security)
@@ -52,6 +50,18 @@ public static class BuiltInFlowTemplateValidator
             if (step.AlgorithmParams.Count > 0)
             {
                 issues.Add(Error(step, "只有发送 Key 节点允许配置 algorithmParams。"));
+            }
+        }
+
+        if (template?.AlgorithmUsage == FlowStepTemplateAlgorithmUsage.CrcVerification)
+        {
+            var requiredVariable = $"{template.RequiredCrcPrefix}.crc";
+            var references = RuntimeParameterExpander.GetReferencedVariables(step.Extend);
+            if (!references.Contains(requiredVariable, StringComparer.OrdinalIgnoreCase))
+            {
+                issues.Add(Error(
+                    step,
+                    $"CRC 校验例程必须在扩展数据中包含 ${{{requiredVariable}:u16be}} 或 ${{{requiredVariable}:u32be}} 等显式占位符。"));
             }
         }
     }

@@ -41,11 +41,25 @@
                 </controls:HeaderedCard>
 
                 <controls:HeaderedCard Header="CAN 适配器设置"
-                                       Style="{StaticResource HeaderedCard.Form.Lead}">
+                                       Style="{StaticResource HeaderedCard.Form.Actions.Lead}">
+                    <controls:HeaderedCard.Actions>
+                        <Button Command="{Binding ProbeCanDeviceCommand}"
+                                Margin="0"
+                                Style="{StaticResource Button.Normal}"
+                                ToolTip="刷新并识别当前 CAN 适配器">
+                            <StackPanel Style="{StaticResource Button.InlineContent}">
+                                <controls:FluentIcon Kind="Refresh"
+                                                     Style="{StaticResource Button.Glyph.Current}" />
+                                <TextBlock Text="刷新设备" Style="{StaticResource Button.IconLabel}" />
+                            </StackPanel>
+                        </Button>
+                    </controls:HeaderedCard.Actions>
                     <controls:CardContentPanel Style="{StaticResource Card.FormRowsContent}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="设备类型" Style="{StaticResource FieldLabelStyle}" />
@@ -54,6 +68,32 @@
                                       ItemsSource="{Binding DeviceTypes}"
                                       SelectedItem="{Binding SelectedDeviceType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                       Style="{StaticResource StandardComboBoxStyle}" />
+                            <TextBlock Grid.Column="3"
+                                       Text="{Binding DeviceProbeStatusText}"
+                                       Style="{StaticResource SettingAssistTextStyle}" />
+                        </Grid>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="已识别设备" Style="{StaticResource FieldLabelStyle}" />
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding DetectedDeviceText}"
+                                       Style="{StaticResource SettingAssistTextStyle}"
+                                       TextWrapping="Wrap" />
+                        </Grid>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="CAN FD 能力" Style="{StaticResource FieldLabelStyle}" />
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding CanFdCapabilityText}"
+                                       Style="{StaticResource SettingAssistTextStyle}" />
                         </Grid>
 
                         <Grid>
@@ -72,16 +112,100 @@
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="波特率选择" Style="{StaticResource FieldLabelStyle}" />
+                            <ComboBox Grid.Column="1"
+                                      HorizontalAlignment="Left"
+                                      ItemsSource="{Binding BaudRateModes}"
+                                      SelectedItem="{Binding SelectedBaudRateMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      Style="{StaticResource StandardComboBoxStyle}" />
+                        </Grid>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="指定波特率" Style="{StaticResource FieldLabelStyle}" />
+                            <ComboBox Grid.Column="1"
+                                      HorizontalAlignment="Left"
+                                      ItemsSource="{Binding BaudRates}"
+                                      SelectedItem="{Binding SelectedBaudRate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <ComboBox.Style>
+                                    <Style TargetType="ComboBox" BasedOn="{StaticResource StandardComboBoxStyle}">
+                                        <Setter Property="IsEnabled" Value="False" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsFixedBaudRateMode}" Value="True">
+                                                <Setter Property="IsEnabled" Value="True" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ComboBox.Style>
+                            </ComboBox>
+                            <TextBlock Grid.Column="3"
+                                       Text="自动搜索会监听总线报文；跟随项目使用当前项目波特率"
+                                       Style="{StaticResource SettingAssistTextStyle}"
+                                       TextWrapping="Wrap" />
+                        </Grid>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="自动连接" Style="{StaticResource FieldLabelStyle}" />
+                            <TextBlock Grid.Column="0" Text="CAN FD 数据段" Style="{StaticResource FieldLabelStyle}" />
+                            <ComboBox Grid.Column="1"
+                                      ItemsSource="{Binding CanFdDataBaudRates}"
+                                      SelectedItem="{Binding SelectedCanFdDataBaudRate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <ComboBox.Style>
+                                    <Style TargetType="ComboBox" BasedOn="{StaticResource StandardComboBoxStyle}">
+                                        <Setter Property="IsEnabled" Value="False" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsCanFdRequested}" Value="True">
+                                                <Setter Property="IsEnabled" Value="True" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ComboBox.Style>
+                            </ComboBox>
+                            <ToggleButton Grid.Column="3"
+                                          IsChecked="{Binding UseBitRateSwitch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <ToggleButton.Style>
+                                    <Style TargetType="ToggleButton" BasedOn="{StaticResource SoftSwitchStyle}">
+                                        <Setter Property="IsEnabled" Value="False" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsCanFdRequested}" Value="True">
+                                                <Setter Property="IsEnabled" Value="True" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ToggleButton.Style>
+                            </ToggleButton>
+                            <TextBlock Grid.Column="5"
+                                       Text="{Binding BitRateSwitchStatusText}"
+                                       Style="{StaticResource SettingAssistTextStyle}" />
+                        </Grid>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="自动刷写触发" Style="{StaticResource FieldLabelStyle}" />
                             <ToggleButton Grid.Column="1"
                                           IsChecked="{Binding AutoFlashEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           Style="{StaticResource SoftSwitchStyle}" />
                             <TextBlock Grid.Column="3"
-                                       Text="软件启动后使用上述设备和通道自动连接"
+                                       Text="{Binding AutoFlashStatusText}"
                                        Style="{StaticResource SettingAssistTextStyle}" />
                         </Grid>
                     </controls:CardContentPanel>
@@ -92,7 +216,7 @@
                     <controls:HeaderedCard.Actions>
                         <StackPanel Orientation="Horizontal">
                             <Button Command="{Binding ImportBuiltinConfigurationCommand}"
-                                    Style="{StaticResource Button.ToolBar}">
+                                    Style="{StaticResource Button.Normal}">
                                 <StackPanel Style="{StaticResource Button.InlineContent}">
                                     <controls:FluentIcon Kind="Restore"
                                                              Style="{StaticResource Button.Glyph.Current}" />
@@ -100,7 +224,7 @@
                                 </StackPanel>
                             </Button>
                             <Button Command="{Binding ClearRuntimeConfigurationCommand}"
-                                    Style="{StaticResource Button.DestructiveToolBar}"
+                                    Style="{StaticResource Button.Danger}"
                                     Margin="0">
                                 <StackPanel Style="{StaticResource Button.InlineContent}">
                                     <controls:FluentIcon Kind="DeleteOutline"
@@ -188,7 +312,7 @@
                                        Style="{StaticResource HeaderedCard.Form}">
                     <controls:HeaderedCard.Actions>
                         <Button Command="{Binding RestoreDefaultLogStorageCommand}"
-                                Style="{StaticResource Button.ToolBar}"
+                                Style="{StaticResource Button.Normal}"
                                 Margin="0">
                             <StackPanel Style="{StaticResource Button.InlineContent}">
                                 <controls:FluentIcon Kind="Restore"

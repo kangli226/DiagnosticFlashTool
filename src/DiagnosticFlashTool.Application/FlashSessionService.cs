@@ -247,7 +247,9 @@ public sealed class FlashSessionService : IAsyncDisposable
             DeviceIndex = options.DeviceIndex,
             Channel = options.Channel,
             BaudRate = options.BaudRate,
-            AutoFlashEnabled = options.AutoFlashEnabled
+            Protocol = options.Protocol,
+            CanFdDataBaudRate = options.CanFdDataBaudRate,
+            UseBitRateSwitch = options.UseBitRateSwitch
         };
     }
 
@@ -257,6 +259,9 @@ public sealed class FlashSessionService : IAsyncDisposable
             && string.Equals(current.DeviceType, connected.DeviceType, StringComparison.OrdinalIgnoreCase)
             && current.DeviceIndex == connected.DeviceIndex
             && current.Channel == connected.Channel
-            && current.BaudRate == connected.BaudRate;
+            && current.BaudRate == connected.BaudRate
+            && current.Protocol == connected.Protocol
+            && current.CanFdDataBaudRate == connected.CanFdDataBaudRate
+            && current.UseBitRateSwitch == connected.UseBitRateSwitch;
     }
 }

@@ -109,37 +109,51 @@ public sealed class IsoTpTransport : IDisposable
     {
         if (payload.Length > 4095)
         {
-            throw new ArgumentOutOfRangeException(nameof(payload), "经典 CAN 的 ISO-TP 数据长度不能超过 4095 字节。");
+            throw new ArgumentOutOfRangeException(nameof(payload), "ISO-TP 数据长度不能超过 4095 字节。");
         }
 
         var requestId = addressing == UdsAddressing.Functional ? _options.FunctionalRequestId : _options.PhysicalRequestId;
+        var frameLength = GetFrameDataLength();
+        var singleFramePayloadLength = frameLength > 8 ? frameLength - 2 : 7;
 
-        if (payload.Length <= 7)
+        if (payload.Length <= singleFramePayloadLength)
         {
-            var data = new byte[8];
-            data[0] = (byte)payload.Length;
-            Buffer.BlockCopy(payload, 0, data, 1, payload.Length);
-            await _device.SendAsync(new CanFrame(requestId, data, _options.Channel, _options.ExtendedFrame), cancellationToken).ConfigureAwait(false);
+            var data = new byte[frameLength];
+            var payloadOffset = 1;
+            if (frameLength > 8)
+            {
+                data[0] = 0;
+                data[1] = (byte)payload.Length;
+                payloadOffset = 2;
+            }
+            else
+            {
+                data[0] = (byte)payload.Length;
+            }
+
+            Buffer.BlockCopy(payload, 0, data, payloadOffset, payload.Length);
+            await SendFrameAsync(requestId, data, cancellationToken).ConfigureAwait(false);
             return;
         }
 
-        var firstFrame = new byte[8];
+        var firstFrame = new byte[frameLength];
         firstFrame[0] = (byte)(0x10 | ((payload.Length >> 8) & 0x0F));
         firstFrame[1] = (byte)(payload.Length & 0xFF);
-        Buffer.BlockCopy(payload, 0, firstFrame, 2, 6);
-        await _device.SendAsync(new CanFrame(requestId, firstFrame, _options.Channel, _options.ExtendedFrame), cancellationToken).ConfigureAwait(false);
+        var firstPayloadLength = Math.Min(frameLength - 2, payload.Length);
+        Buffer.BlockCopy(payload, 0, firstFrame, 2, firstPayloadLength);
+        await SendFrameAsync(requestId, firstFrame, cancellationToken).ConfigureAwait(false);
 
         await WaitForFlowControlAsync(TimeSpan.FromMilliseconds(1000), cancellationToken).ConfigureAwait(false);
 
-        var offset = 6;
+        var offset = firstPayloadLength;
         byte sequence = 1;
         while (offset < payload.Length)
         {
-            var frame = new byte[8];
+            var frame = new byte[frameLength];
             frame[0] = (byte)(0x20 | (sequence & 0x0F));
-            var count = Math.Min(7, payload.Length - offset);
+            var count = Math.Min(frameLength - 1, payload.Length - offset);
             Buffer.BlockCopy(payload, offset, frame, 1, count);
-            await _device.SendAsync(new CanFrame(requestId, frame, _options.Channel, _options.ExtendedFrame), cancellationToken).ConfigureAwait(false);
+            await SendFrameAsync(requestId, frame, cancellationToken).ConfigureAwait(false);
             offset += count;
             sequence = (byte)((sequence + 1) & 0x0F);
 
@@ -205,8 +219,10 @@ public sealed class IsoTpTransport : IDisposable
 
     private void CompleteSingleFrame(CanFrame frame)
     {
-        var length = Math.Min(frame.Data[0] & 0x0F, Math.Max(0, frame.Data.Length - 1));
-        var payload = frame.Data.Skip(1).Take(length).ToArray();
+        var offset = frame.Data.Length > 8 && frame.Data[0] == 0 ? 2 : 1;
+        var declaredLength = offset == 2 ? frame.Data[1] : frame.Data[0] & 0x0F;
+        var length = Math.Min(declaredLength, Math.Max(0, frame.Data.Length - offset));
+        var payload = frame.Data.Skip(offset).Take(length).ToArray();
         CompletePayload(payload);
     }
 
@@ -215,7 +231,7 @@ public sealed class IsoTpTransport : IDisposable
         lock (_sync)
         {
             _expectedLength = ((frame.Data[0] & 0x0F) << 8) | frame.Data[1];
-            _rxBuffer = frame.Data.Skip(2).Take(Math.Min(6, _expectedLength)).ToList();
+            _rxBuffer = frame.Data.Skip(2).Take(Math.Min(frame.Data.Length - 2, _expectedLength)).ToList();
             _nextConsecutiveFrame = 1;
 
             if (_rxBuffer.Count >= _expectedLength)
@@ -253,11 +269,26 @@ public sealed class IsoTpTransport : IDisposable
 
     private async Task SendFlowControlAsync()
     {
-        var data = new byte[8];
+        var data = new byte[GetFrameDataLength()];
         data[0] = 0x30;
         data[1] = (byte)_options.FlowControlBlockSize;
         data[2] = (byte)_options.FlowControlStMinMs;
-        await _device.SendAsync(new CanFrame(_options.PhysicalRequestId, data, _options.Channel, _options.ExtendedFrame), CancellationToken.None).ConfigureAwait(false);
+        await SendFrameAsync(_options.PhysicalRequestId, data, CancellationToken.None).ConfigureAwait(false);
+    }
+
+    private int GetFrameDataLength() => Math.Clamp(_options.FrameDataLength, 8, 64);
+
+    private Task SendFrameAsync(uint id, byte[] data, CancellationToken cancellationToken)
+    {
+        return _device.SendAsync(
+            new CanFrame(
+                id,
+                data,
+                _options.Channel,
+                _options.ExtendedFrame,
+                IsCanFd: GetFrameDataLength() > 8,
+                BitRateSwitch: GetFrameDataLength() > 8),
+            cancellationToken);
     }
 
     private void PrepareReceiveWaiter()
