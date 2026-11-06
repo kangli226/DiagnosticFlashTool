@@ -44,8 +44,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private const string AutoBaudRateModeText = "自动搜索";
     private const string FixedBaudRateModeText = "指定波特率";
     private const string ProjectBaudRateModeText = "跟随项目";
-    private const uint AutoFlashTriggerId = 0x555;
-
     private readonly AppConfigurationPaths _paths = new();
     private readonly JsonApplicationDataLocationRepository _applicationDataLocationRepository;
     private readonly JsonProjectConfigRepository _projectRepository;
@@ -76,8 +74,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private bool _useBitRateSwitch = true;
     private CanDeviceInfo? _detectedCanDeviceInfo;
     private string _deviceProbeStatusText = "尚未检测设备";
-    private DateTimeOffset _lastAutoFlashTriggerAt;
-    private int _lastAutoFlashProjectNo;
     private string _driverFilePath = string.Empty;
     private string _applicationFilePath = string.Empty;
     private string _manualFrameId = "7E0";
@@ -88,7 +84,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private string _selectedLogTimeRangeFilter = "全部";
     private string _logSearchText = string.Empty;
     private bool _keepRunningInTray;
-    private bool _autoFlashEnabled;
     private bool _logFileEnabled = true;
     private bool _logAutoScrollEnabled = true;
     private bool _isFrameCapturePaused;
@@ -609,10 +604,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     public string BitRateSwitchStatusText => UseBitRateSwitch ? "已开启 BRS" : "未开启 BRS";
 
-    public string AutoFlashStatusText => AutoFlashEnabled
-        ? "手动连接后监听 0x555 项目码触发帧"
-        : "仅手动选择项目并启动刷写";
-
     public string DriverFilePath
     {
         get => _driverFilePath;
@@ -667,19 +658,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public string KeepRunningInTrayStatusText => KeepRunningInTray
         ? "关闭窗口时驻留到系统托盘"
         : "关闭窗口时直接退出程序";
-
-    public bool AutoFlashEnabled
-    {
-        get => _autoFlashEnabled;
-        set
-        {
-            if (SetProperty(ref _autoFlashEnabled, value))
-            {
-                OnPropertyChanged(nameof(AutoFlashStatusText));
-                SaveAppSettings();
-            }
-        }
-    }
 
     public bool LogFileEnabled
     {
@@ -1012,8 +990,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     };
 
     public string ProgressText => $"{Progress}%";
-    public string ScriptRootText => _paths.ScriptDirectory;
-    public string AlgorithmCatalogText => AlgorithmRows.Count == 0 ? "未发现算法配置" : $"已发现 {AlgorithmRows.Count} 个算法配置";
 
     public string FlashPageProjectIdText => SelectedProject is null
         ? string.Empty
@@ -1103,11 +1079,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
         var selectedName = SelectedProject?.ProjectName;
         Projects.Clear();
-        var projectIndex = 0;
         foreach (var project in _projectRepository.LoadAll())
         {
-            projectIndex++;
-            NormalizeProjectDefaults(project, projectIndex);
+            NormalizeProjectDefaults(project);
             Projects.Add(project);
         }
 
@@ -1127,7 +1101,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         OnPropertyChanged(nameof(ApplicationDataDirectory));
         OnPropertyChanged(nameof(ApplicationDataDirectoryDisplay));
         OnPropertyChanged(nameof(ApplicationDataDirectoryStatusKind));
-        OnPropertyChanged(nameof(ScriptRootText));
         OnPropertyChanged(nameof(FlowConfigDirectory));
         OnPropertyChanged(nameof(FlowConfigDirectoryDisplay));
         OnPropertyChanged(nameof(FlowConfigFilePath));
@@ -1208,7 +1181,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             }
 
             _keepRunningInTray = settings.KeepRunningInTray;
-            _autoFlashEnabled = settings.AutoFlashEnabled;
             _selectedBaudRateMode = string.IsNullOrWhiteSpace(settings.BaudRateSelectionMode)
                 ? settings.AutoSearchBaudRate is false ? FixedBaudRateModeText : AutoBaudRateModeText
                 : ToBaudRateModeText(BaudRateSelectionModeExtensions.Parse(settings.BaudRateSelectionMode));
@@ -1253,7 +1225,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             var settings = new AppSettingsSnapshot
             {
                 KeepRunningInTray = KeepRunningInTray,
-                AutoFlashEnabled = AutoFlashEnabled,
                 AutoSearchBaudRate = SelectedBaudRateMode == AutoBaudRateModeText,
                 BaudRateSelectionMode = GetBaudRateSelectionMode().ToConfigValue(),
                 LogFileEnabled = LogFileEnabled,
@@ -1583,10 +1554,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         AlgorithmRows.Clear();
         AlgorithmRows.Add(new AlgorithmConfigRow("内置安全算法", "AES128_OneFunc", "DiagnosticFlashTool.Core", "可用"));
 
-        AddAlgorithmScripts("安全算法脚本", Path.Combine(ScriptRootText, "Security"));
-        AddAlgorithmScripts("CRC 算法脚本", Path.Combine(ScriptRootText, "CRC"));
+        AddAlgorithmScripts("安全算法脚本", Path.Combine(_paths.ScriptDirectory, "Security"));
+        AddAlgorithmScripts("CRC 算法脚本", Path.Combine(_paths.ScriptDirectory, "CRC"));
         RefreshFlowAlgorithmOptions();
-        OnPropertyChanged(nameof(AlgorithmCatalogText));
     }
 
     private void RefreshFlowAlgorithmOptions()
@@ -2171,7 +2141,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private void OpenNewProjectEditor()
     {
-        ProjectEditor.BeginNew(BootConfigFiles.FirstOrDefault() ?? string.Empty, GetNextProjectNo());
+        ProjectEditor.BeginNew(BootConfigFiles.FirstOrDefault() ?? string.Empty);
         UpdateProjectEditorFirmwareRequirements();
         SetProjectEditorMode(null, "新建项目");
         IsProjectEditorVisible = true;
@@ -2322,7 +2292,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         var project = new ProjectConfigEntry
         {
             ProjectName = CreateDefaultProjectName(),
-            ProjectNo = GetNextProjectNo(),
             CanProtocol = "CAN",
             BaudRate = "500K",
             PhysicalRequestId = "0x18DA5535",
@@ -2395,11 +2364,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 issues.Add("Project name cannot be empty.");
             }
 
-            if (project.ProjectNo <= 0)
-            {
-                issues.Add($"项目 {project.ProjectName}：项目码必须大于 0。");
-            }
-
             if (!string.Equals(project.CanProtocol, "CAN", StringComparison.OrdinalIgnoreCase)
                 && !string.Equals(project.CanProtocol, "CANFD", StringComparison.OrdinalIgnoreCase))
             {
@@ -2415,10 +2379,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         issues.AddRange(projectList.GroupBy(project => project.ProjectName, StringComparer.OrdinalIgnoreCase)
             .Where(group => !string.IsNullOrWhiteSpace(group.Key) && group.Count() > 1)
             .Select(group => $"Duplicate project name: {group.Key}"));
-        issues.AddRange(projectList.GroupBy(project => project.ProjectNo)
-            .Where(group => group.Key > 0 && group.Count() > 1)
-            .Select(group => $"项目码重复：{group.Key}"));
-
         return string.Join(Environment.NewLine, issues.Distinct());
     }
 
@@ -2756,7 +2716,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         return new ProjectConfigEntry
         {
             ProjectName = projectName,
-            ProjectNo = GetNextProjectNo(),
             CanProtocol = "CAN",
             BaudRate = "500K",
             PhysicalRequestId = "0x18DA5535",
@@ -3120,25 +3079,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         OnPropertyChanged(nameof(ProtocolStatusText));
     }
 
-    private int GetNextProjectNo()
+    private static void NormalizeProjectDefaults(ProjectConfigEntry project)
     {
-        var used = Projects.Select(project => project.ProjectNo).Where(value => value > 0).ToHashSet();
-        var next = 1;
-        while (used.Contains(next))
-        {
-            next++;
-        }
-
-        return next;
-    }
-
-    private static void NormalizeProjectDefaults(ProjectConfigEntry project, int fallbackProjectNo)
-    {
-        if (project.ProjectNo <= 0)
-        {
-            project.ProjectNo = fallbackProjectNo;
-        }
-
         project.CanProtocol = CanProtocolExtensions.Parse(project.CanProtocol).ToConfigValue();
     }
 
@@ -3321,64 +3263,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private void OnFrameReceived(object? sender, CanFrame frame)
     {
         AddFrame("RX", frame);
-        TryHandleAutoFlashTrigger(frame);
-    }
-
-    private void TryHandleAutoFlashTrigger(CanFrame frame)
-    {
-        if (!AutoFlashEnabled
-            || !IsConnected
-            || IsBusy
-            || StartFlashCommand.IsRunning
-            || frame.Id != AutoFlashTriggerId
-            || frame.Data.Length < 3
-            || frame.Data[0] != 0x55
-            || frame.Data[1] != 0xAA)
-        {
-            return;
-        }
-
-        var projectNo = frame.Data[2];
-        var now = DateTimeOffset.UtcNow;
-        if (projectNo == _lastAutoFlashProjectNo
-            && now - _lastAutoFlashTriggerAt < TimeSpan.FromSeconds(2))
-        {
-            return;
-        }
-
-        _lastAutoFlashProjectNo = projectNo;
-        _lastAutoFlashTriggerAt = now;
-        RunOnUi(() =>
-        {
-            if (IsBusy || StartFlashCommand.IsRunning)
-            {
-                return;
-            }
-
-            if (_draftFlowProject is not null || HasUnsavedFlowChanges())
-            {
-                AppendLog($"收到自动刷写触发：项目码 {projectNo}，但当前有未保存配置，已忽略。");
-                return;
-            }
-
-            var project = Projects.FirstOrDefault(item => item.ProjectNo == projectNo);
-            if (project is null)
-            {
-                AppendLog($"收到自动刷写触发，但未找到项目码 {projectNo} 对应的项目。");
-                return;
-            }
-
-            SelectedProject = project;
-            AppendLog($"收到 0x555 自动刷写触发，已选择项目：{project.ProjectName}（项目码 {projectNo}）。");
-            if (StartFlashCommand.CanExecute(null))
-            {
-                StartFlashCommand.Execute(null);
-            }
-            else
-            {
-                AppendLog("自动刷写触发已识别，但当前状态不允许启动刷写。");
-            }
-        });
     }
 
     private void OnFrameSent(object? sender, CanFrame frame) => AddFrame("TX", frame);
@@ -3973,7 +3857,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private sealed class AppSettingsSnapshot
     {
         public bool KeepRunningInTray { get; set; }
-        public bool AutoFlashEnabled { get; set; }
         public bool? AutoSearchBaudRate { get; set; }
         public string? BaudRateSelectionMode { get; set; }
         public bool LogFileEnabled { get; set; } = true;

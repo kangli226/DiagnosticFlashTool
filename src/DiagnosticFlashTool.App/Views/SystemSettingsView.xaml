@@ -193,21 +193,6 @@
                                        Style="{StaticResource SettingAssistTextStyle}" />
                         </Grid>
 
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="自动刷写触发" Style="{StaticResource FieldLabelStyle}" />
-                            <ToggleButton Grid.Column="1"
-                                          IsChecked="{Binding AutoFlashEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          Style="{StaticResource SoftSwitchStyle}" />
-                            <TextBlock Grid.Column="3"
-                                       Text="{Binding AutoFlashStatusText}"
-                                       Style="{StaticResource SettingAssistTextStyle}" />
-                        </Grid>
                     </controls:CardContentPanel>
                 </controls:HeaderedCard>
 

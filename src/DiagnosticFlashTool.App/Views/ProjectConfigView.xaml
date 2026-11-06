@@ -58,8 +58,7 @@
                             <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding EditProjectCommand}" />
                         </DataGrid.InputBindings>
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="项目名称" Binding="{Binding ProjectName}" Width="150" ElementStyle="{StaticResource DataGrid.CellText}" />
-                            <DataGridTextColumn Header="项目码" Binding="{Binding ProjectNo}" Width="76" ElementStyle="{StaticResource DataGrid.CellText}" />
+                            <DataGridTextColumn Header="项目名称" Binding="{Binding ProjectName}" Width="*" MinWidth="150" ElementStyle="{StaticResource DataGrid.CellText}" />
                             <DataGridTextColumn Header="波特率" Binding="{Binding BaudRate}" Width="90" ElementStyle="{StaticResource DataGrid.CellText}" />
                             <DataGridTextColumn Header="物理请求" Binding="{Binding PhysicalRequestId}" Width="135" ElementStyle="{StaticResource DataGrid.CellText}" />
                             <DataGridTextColumn Header="功能请求" Binding="{Binding FunctionalRequestId}" Width="135" ElementStyle="{StaticResource DataGrid.CellText}" />
@@ -217,18 +216,6 @@
                                 <TextBox Grid.Column="1"
                                          Height="32"
                                          Text="{Binding ProjectEditor.ProjectName, UpdateSourceTrigger=PropertyChanged}"
-                                         Style="{StaticResource SoftTextBoxStyle}" />
-                            </Grid>
-
-                            <Grid Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="100" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="项目码" Style="{StaticResource FieldLabelStyle}" />
-                                <TextBox Grid.Column="1"
-                                         Height="32"
-                                         Text="{Binding ProjectEditor.ProjectNoText, UpdateSourceTrigger=PropertyChanged}"
                                          Style="{StaticResource SoftTextBoxStyle}" />
                             </Grid>
 

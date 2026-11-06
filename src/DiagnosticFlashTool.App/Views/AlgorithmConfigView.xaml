@@ -11,17 +11,7 @@
 
         <controls:PageHeader Grid.Row="0" Style="{StaticResource PageHeader.Standard}" Title="算法配置">
             <controls:PageHeader.Actions>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <TextBlock Text="{Binding AlgorithmCatalogText}"
-                               Style="{StaticResource PageHeaderMetaTextStyle}" />
-                    <TextBlock Text="{Binding ScriptRootText}"
-                               ToolTip="{Binding ScriptRootText}"
-                               Margin="12,0,0,0"
-                               MaxWidth="280"
-                               Style="{StaticResource MonoAssistTextStyle}" />
-                    <controls:PageHelpDocumentButton Margin="8,0,0,0"
-                                                     Style="{StaticResource PageHelpDocumentButton.Standard}" />
-                </StackPanel>
+                <controls:PageHelpDocumentButton Style="{StaticResource PageHelpDocumentButton.Standard}" />
             </controls:PageHeader.Actions>
         </controls:PageHeader>
 

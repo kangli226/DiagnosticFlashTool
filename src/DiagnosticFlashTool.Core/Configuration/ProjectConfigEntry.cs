@@ -20,9 +20,6 @@ public sealed class ProjectConfigEntry
     [JsonPropertyName("ProjectName")]
     public string ProjectName { get; set; } = string.Empty;
 
-    [JsonPropertyName("projectNo")]
-    public int ProjectNo { get; set; }
-
     [JsonPropertyName("CanProtocol")]
     public string CanProtocol { get; set; } = "CAN";
 
