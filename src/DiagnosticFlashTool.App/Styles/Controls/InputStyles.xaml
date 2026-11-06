@@ -120,7 +120,7 @@
         </Grid>
         <ControlTemplate.Triggers>
             <Trigger Property="IsChecked" Value="True">
-                <Setter TargetName="SwitchTrack" Property="Background" Value="{StaticResource PrimaryBrush}" />
+                <Setter TargetName="SwitchTrack" Property="Background" Value="{StaticResource AccentBrush}" />
                 <Setter TargetName="SwitchThumb" Property="HorizontalAlignment" Value="Right" />
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
@@ -141,7 +141,7 @@
     <Style x:Key="SoftProgressBarStyle" TargetType="ProgressBar">
         <Setter Property="Height" Value="32" />
         <Setter Property="Background" Value="{StaticResource ProgressTrackBrush}" />
-        <Setter Property="Foreground" Value="{StaticResource PrimaryActiveBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource ProgressFillBrush}" />
     </Style>
 
     <Style TargetType="ProgressBar" BasedOn="{StaticResource SoftProgressBarStyle}" />

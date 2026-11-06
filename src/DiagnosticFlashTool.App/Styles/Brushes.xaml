@@ -20,10 +20,11 @@
     <SolidColorBrush x:Key="InputBackgroundBrush" Color="{StaticResource Color.Card.Background}" />
     <SolidColorBrush x:Key="InputBorderBrush" Color="{StaticResource Color.Border.Input}" />
     <SolidColorBrush x:Key="PrimarySoftBorderBrush" Color="{StaticResource Color.Border.PrimarySoft}" />
-    <SolidColorBrush x:Key="PrimaryBrush" Color="{DynamicResource {x:Static SystemColors.AccentColorKey}}" />
-    <SolidColorBrush x:Key="PrimaryActiveBrush" Color="{DynamicResource {x:Static SystemColors.AccentColorDark1Key}}" />
-    <SolidColorBrush x:Key="PrimaryStrongBrush" Color="{DynamicResource {x:Static SystemColors.AccentColorDark2Key}}" />
-    <SolidColorBrush x:Key="PrimarySoftBrush" Color="{DynamicResource {x:Static SystemColors.AccentColorLight3Key}}" />
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Color.Primary}" />
+    <SolidColorBrush x:Key="PrimaryActiveBrush" Color="{StaticResource Color.Primary.Hover}" />
+    <SolidColorBrush x:Key="PrimaryStrongBrush" Color="{StaticResource Color.Primary.Pressed}" />
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource Color.Primary.Accent}" />
+    <SolidColorBrush x:Key="PrimarySoftBrush" Color="{StaticResource Color.Primary.Soft}" />
     <SolidColorBrush x:Key="PrimaryPressedBrush" Color="{StaticResource Color.Primary.SoftPressed}" />
     <SolidColorBrush x:Key="BrandNavigationBrush" Color="{StaticResource Color.Brand.Navigation}" />
     <SolidColorBrush x:Key="TextBrush" Color="{StaticResource Color.Text.Primary}" />
@@ -50,6 +51,7 @@
     <SolidColorBrush x:Key="TableHeaderBrush" Color="{StaticResource Color.Table.Header}" />
     <SolidColorBrush x:Key="TableAltRowBrush" Color="{StaticResource Color.Table.AlternateRow}" />
     <SolidColorBrush x:Key="ProgressTrackBrush" Color="{StaticResource Color.Progress.Track}" />
+    <SolidColorBrush x:Key="ProgressFillBrush" Color="{StaticResource Color.Progress.Fill}" />
     <SolidColorBrush x:Key="LogPanelBrush" Color="{StaticResource Color.Log.Panel}" />
     <SolidColorBrush x:Key="LogHoverBrush" Color="{StaticResource Color.Log.PanelHover}" />
     <SolidColorBrush x:Key="LogSelectedBrush" Color="{StaticResource Color.Log.PanelSelected}" />
