@@ -6,34 +6,69 @@
         <ResourceDictionary Source="../Typography.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
+    <!--
+        v3.9 内容区挂载（A 方案）：导航只由左侧 Shell 导航驱动，内容区不再渲染任何页签头。
+        模板只放 SelectedContent；TabItem 容器折叠为 0 高度且不可获得焦点，
+        同时关闭 TabControl 自带的键盘切换，避免与侧栏导航形成两套切换入口。
+    -->
+    <Style x:Key="ShellContentTabItemStyle" TargetType="TabItem">
+        <Setter Property="Height" Value="0" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Visibility" Value="Collapsed" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabItem">
+                    <ContentPresenter ContentSource="Header" Visibility="Collapsed" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="ShellContentTabControlStyle" TargetType="TabControl">
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Background" Value="{StaticResource AppBackgroundBrush}" />
+        <Setter Property="ItemContainerStyle" Value="{StaticResource ShellContentTabItemStyle}" />
+        <Setter Property="KeyboardNavigation.TabNavigation" Value="None" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TabControl">
                     <Border Background="{TemplateBinding Background}">
-                        <ContentPresenter ContentSource="SelectedContent" />
+                        <Grid>
+                            <!-- 页头不参与布局：ItemsHost 仅承接容器引用，自身不占高度。 -->
+                            <TabPanel IsItemsHost="True"
+                                      Height="0"
+                                      Visibility="Collapsed" />
+                            <ContentPresenter ContentSource="SelectedContent" />
+                        </Grid>
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
 
+    <!--
+        v3.3 深色框架：侧栏与标题栏、状态栏同为深灰分区，
+        选中态用 2px 左侧蓝色轨 + 深蓝底 + 浅蓝文字，未选中用浅灰文字。
+    -->
     <Style x:Key="ShellNavGroupTextStyle" TargetType="TextBlock">
-        <Setter Property="Width" Value="256" />
-        <Setter Property="Height" Value="28" />
-        <Setter Property="Margin" Value="0,14,0,4" />
-        <Setter Property="Padding" Value="22,0,16,0" />
-        <Setter Property="FontSize" Value="{StaticResource FontSize.Assist}" />
-        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Width" Value="208" />
+        <Setter Property="Height" Value="22" />
+        <Setter Property="Margin" Value="0,10,0,2" />
+        <Setter Property="Padding" Value="18,0,12,0" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Caption}" />
+        <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="Foreground" Value="{StaticResource SidebarMutedTextBrush}" />
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
     <Style x:Key="ShellNavRadioButtonStyle" TargetType="RadioButton">
-        <Setter Property="Width" Value="256" />
-        <Setter Property="Height" Value="42" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="Height" Value="34" />
         <Setter Property="Margin" Value="0" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Background" Value="Transparent" />
@@ -50,21 +85,23 @@
                             SnapsToDevicePixels="True">
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="3" />
-                                <ColumnDefinition Width="26" />
-                                <ColumnDefinition Width="34" />
+                                <ColumnDefinition Width="2" />
+                                <ColumnDefinition Width="22" />
+                                <ColumnDefinition Width="30" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
 
                             <Border x:Name="ActiveRail"
-                                    Background="Transparent" />
+                                    Background="Transparent"
+                                    CornerRadius="{StaticResource CornerRadius.Compact}"
+                                    Margin="0,6,0,6" />
 
                             <controls:FluentIcon x:Name="NavIcon"
                                                  Grid.Column="2"
                                                  Kind="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"
-                                                 Width="18"
-                                                 Height="18"
-                                                 FontSize="16"
+                                                 Width="16"
+                                                 Height="16"
+                                                 FontSize="14"
                                                  Foreground="{StaticResource SidebarTextBrush}"
                                                  HorizontalAlignment="Center"
                                                  VerticalAlignment="Center" />
@@ -83,19 +120,182 @@
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="NavBorder" Property="Background" Value="{StaticResource SidebarHoverBrush}" />
                             <Setter TargetName="NavIcon" Property="Foreground" Value="{StaticResource SidebarTextBrush}" />
-                            <Setter TargetName="NavText" Property="Foreground" Value="{StaticResource InverseTextBrush}" />
+                            <Setter TargetName="NavText" Property="Foreground" Value="{StaticResource SidebarTextBrush}" />
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="NavBorder" Property="Background" Value="{StaticResource SidebarActiveBrush}" />
                             <Setter TargetName="ActiveRail" Property="Background" Value="{StaticResource SidebarActiveRailBrush}" />
                             <Setter TargetName="NavIcon" Property="Foreground" Value="{StaticResource SidebarActiveIconBrush}" />
-                            <Setter TargetName="NavText" Property="Foreground" Value="{StaticResource InverseTextBrush}" />
+                            <Setter TargetName="NavText" Property="Foreground" Value="{StaticResource SidebarActiveIconBrush}" />
                             <Setter TargetName="NavText" Property="FontWeight" Value="Medium" />
                         </Trigger>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
                             <Setter TargetName="ActiveRail" Property="Background" Value="{StaticResource SidebarActiveRailBrush}" />
                         </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="NavText" Property="Foreground" Value="{StaticResource DisabledTextBrush}" />
+                            <Setter TargetName="NavIcon" Property="Foreground" Value="{StaticResource DisabledTextBrush}" />
+                        </Trigger>
                     </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        v3.9 项目区滚动：项目数量超过可用高度时只滚动项目列表，
+        「通用 UDS」分组保持固定在侧栏顶部；滚动条隐藏，保留滚轮与键盘滚动。
+    -->
+    <Style x:Key="ShellProjectScrollHostStyle" TargetType="ScrollViewer">
+        <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+        <Setter Property="VerticalScrollBarVisibility" Value="Hidden" />
+        <Setter Property="PanningMode" Value="VerticalOnly" />
+        <Setter Property="CanContentScroll" Value="False" />
+        <Setter Property="Focusable" Value="False" />
+    </Style>
+
+    <!--
+        项目导航折叠：不用 Fluent 默认的圆形展开按钮（深色侧栏上会变成白色圆点），
+        改为无底色的 12px 箭头 + 整行悬停高亮，展开时箭头由 ChevronRight 转为 ChevronDown。
+    -->
+    <Style x:Key="ShellProjectExpanderStyle" TargetType="Expander">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Foreground" Value="{StaticResource SidebarTextBrush}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
+        <Setter Property="Margin" Value="4,0,0,0" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Expander">
+                    <StackPanel>
+                        <ToggleButton x:Name="HeaderToggle"
+                                      Focusable="False"
+                                      Foreground="{StaticResource SidebarTextBrush}"
+                                      Height="34"
+                                      HorizontalContentAlignment="Stretch"
+                                      IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border x:Name="HeaderBorder"
+                                            Background="Transparent"
+                                            CornerRadius="{StaticResource CornerRadius.Compact}">
+                                        <Grid Margin="6,0,8,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="18" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <controls:FluentIcon x:Name="Chevron"
+                                                                 Grid.Column="0"
+                                                                 Kind="ChevronRight"
+                                                                 Width="12"
+                                                                 Height="12"
+                                                                 FontSize="11"
+                                                                 Foreground="{StaticResource SidebarMutedTextBrush}"
+                                                                 HorizontalAlignment="Center"
+                                                                 VerticalAlignment="Center" />
+                                            <ContentPresenter Grid.Column="1"
+                                                              VerticalAlignment="Center"
+                                                              ContentSource="Content"
+                                                              TextElement.Foreground="{TemplateBinding Foreground}" />
+                                        </Grid>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="HeaderBorder" Property="Background" Value="{StaticResource SidebarHoverBrush}" />
+                                            <Setter TargetName="Chevron" Property="Foreground" Value="{StaticResource SidebarTextBrush}" />
+                                        </Trigger>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter TargetName="Chevron" Property="Kind" Value="ChevronDown" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                            <ContentPresenter ContentSource="Header" />
+                        </ToggleButton>
+                        <ContentPresenter x:Name="ExpandSite" Visibility="Collapsed" />
+                    </StackPanel>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsExpanded" Value="True">
+                            <Setter TargetName="ExpandSite" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- 菜单栏：与标题栏同族浅灰 -->
+    <Style x:Key="ShellContextMenuStyle" TargetType="ContextMenu">
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Assist}" />
+        <Setter Property="Padding" Value="2,4" />
+        <Setter Property="Background" Value="{StaticResource PanelBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    </Style>
+
+    <!-- 菜单项：Fluent 默认前景在自绘菜单里会与面板同色，这里显式绑定语义前景。 -->
+    <Style TargetType="MenuItem">
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Assist}" />
+        <Setter Property="Padding" Value="8,4" />
+    </Style>
+
+    <!-- 底部停靠面板：小页签 + 青色选中下划线。 -->
+    <Style x:Key="ShellDockTabItemStyle" TargetType="TabItem">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabItem">
+                    <Border x:Name="Bd"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="0,0,0,2"
+                            Padding="10,0"
+                            Margin="0,0,2,0">
+                        <ContentPresenter ContentSource="Header"
+                                          VerticalAlignment="Center"
+                                          TextBlock.FontSize="{StaticResource FontSize.Caption}"
+                                          TextBlock.Foreground="{StaticResource BodyTextBrush}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource SidebarHoverBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource PanelBrush}" />
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource PrimaryBrush}" />
+                            <Setter TargetName="Bd" Property="TextBlock.Foreground" Value="{StaticResource TextBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="ShellDockTabControlStyle" TargetType="TabControl">
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Background" Value="{StaticResource PanelBrush}" />
+        <Setter Property="ItemContainerStyle" Value="{StaticResource ShellDockTabItemStyle}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabControl">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="24" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0"
+                                Background="{StaticResource SurfaceBrush}"
+                                BorderBrush="{StaticResource DividerBrush}"
+                                BorderThickness="0,0,0,1">
+                            <TabPanel IsItemsHost="True" Margin="6,0,0,0" />
+                        </Border>
+                        <Border Grid.Row="1" Background="{TemplateBinding Background}">
+                            <ContentPresenter ContentSource="SelectedContent" />
+                        </Border>
+                    </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

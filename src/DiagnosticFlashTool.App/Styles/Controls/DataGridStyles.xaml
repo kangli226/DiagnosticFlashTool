@@ -6,6 +6,11 @@
         <ResourceDictionary Source="../Typography.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
+    <!--
+        桌面工具改版：去掉表头条纹、斑马纹与竖向网格线，行高压到 26，
+        用 1px 底线分隔，靠"线"而不是"色块"组织数据。
+        规范第 6.2 节要求所有页面只能引用这里的全局样式，页面不得覆盖。
+    -->
     <Style x:Key="DataGrid.Base" TargetType="DataGrid">
         <Setter Property="AutoGenerateColumns" Value="False" />
         <Setter Property="CanUserAddRows" Value="False" />
@@ -13,50 +18,68 @@
         <Setter Property="HeadersVisibility" Value="Column" />
         <Setter Property="GridLinesVisibility" Value="Horizontal" />
         <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource DividerBrush}" />
-        <Setter Property="VerticalGridLinesBrush" Value="{StaticResource DividerBrush}" />
+        <Setter Property="VerticalGridLinesBrush" Value="Transparent" />
         <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="controls:CornerRadiusClipBehavior.CornerRadius"
                 Value="{StaticResource CornerRadius.Control}" />
         <Setter Property="Background" Value="{StaticResource PanelBrush}" />
         <Setter Property="RowBackground" Value="{StaticResource PanelBrush}" />
-        <Setter Property="AlternatingRowBackground" Value="{StaticResource TableAltRowBrush}" />
-        <Setter Property="RowHeight" Value="40" />
-        <Setter Property="ColumnHeaderHeight" Value="38" />
+        <Setter Property="AlternatingRowBackground" Value="{StaticResource PanelBrush}" />
+        <Setter Property="RowHeight" Value="26" />
+        <Setter Property="ColumnHeaderHeight" Value="24" />
         <Setter Property="RowHeaderWidth" Value="0" />
         <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
         <Setter Property="SelectionMode" Value="Single" />
         <Setter Property="SelectionUnit" Value="FullRow" />
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
     </Style>
 
     <Style TargetType="DataGridColumnHeader">
         <Setter Property="Background" Value="{StaticResource TableHeaderBrush}" />
-        <Setter Property="Foreground" Value="{StaticResource CardTitleTextBrush}" />
-        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
-        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Foreground" Value="{StaticResource SubtleTextBrush}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Caption}" />
+        <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />
-        <Setter Property="Padding" Value="10,0" />
-        <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
+        <Setter Property="Padding" Value="8,0" />
+        <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}" />
         <Setter Property="BorderThickness" Value="0,0,1,1" />
+        <Setter Property="Height" Value="24" />
     </Style>
 
     <Style TargetType="DataGridCell">
         <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
         <Setter Property="BorderThickness" Value="0,0,0,1" />
         <Setter Property="Foreground" Value="{StaticResource BodyTextBrush}" />
-        <Setter Property="Padding" Value="10,0" />
+        <Setter Property="Padding" Value="8,0" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Style.Triggers>
             <Trigger Property="IsSelected" Value="True">
                 <Setter Property="Background" Value="{StaticResource PrimarySoftBrush}" />
-                <Setter Property="Foreground" Value="{StaticResource BodyTextBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                <Setter Property="Background" Value="{StaticResource PrimarySoftBrush}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="DataGridRow">
+        <Setter Property="Background" Value="{StaticResource PanelBrush}" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource PrimarySoftBrush}" />
+            </Trigger>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="{StaticResource PrimarySoftBrush}" />
             </Trigger>
         </Style.Triggers>
     </Style>
 
     <Style x:Key="DataGrid.CellText" TargetType="TextBlock">
-        <Setter Property="Margin" Value="16,0,0,0" />
+        <!-- Fluent 单元格模板未应用 Padding，文本通过 Margin 复用单元格内边距。 -->
+        <Setter Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource AncestorType=DataGridCell}}" />
         <Setter Property="Foreground" Value="{StaticResource BodyTextBrush}" />
         <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
         <Setter Property="HorizontalAlignment" Value="Left" />
@@ -68,18 +91,44 @@
            TargetType="TextBlock"
            BasedOn="{StaticResource DataGrid.CellText}">
         <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Caption}" />
+        <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
+    </Style>
+
+    <!-- 行级业务状态：错误行 8% 红底、警告行 8% 琥珀底，颜色之外仍有文字说明。
+         页面通过 ItemContainerStyle 引用，不自行定义行样式。 -->
+    <Style x:Key="DataGrid.RowError" TargetType="DataGridRow">
+        <Setter Property="Background" Value="{StaticResource DangerSoftBrush}" />
+    </Style>
+
+    <Style x:Key="DataGrid.RowWarning" TargetType="DataGridRow">
+        <Setter Property="Background" Value="{StaticResource StatusWarningSoftBrush}" />
+    </Style>
+
+    <!-- 执行行：当前刷写节点用 3px 左轨 + 浅蓝底高亮，文字保持可读，
+         仍由页面通过 ItemContainerStyle 引用，不在页面里自定义行样式。 -->
+    <Style x:Key="DataGrid.RowRunning" TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsExecuting}" Value="True">
+                <Setter Property="Background" Value="{StaticResource PrimarySoftBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}" />
+                <Setter Property="BorderThickness" Value="3,0,0,0" />
+            </DataTrigger>
+        </Style.Triggers>
     </Style>
 
     <Style x:Key="DataGrid.StatusText" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{StaticResource StatusNeutralBrush}" />
-        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontSize" Value="14" />
         <Setter Property="HorizontalAlignment" Value="Center" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="TextAlignment" Value="Center" />
     </Style>
 
     <Style x:Key="DataGrid.StatusIcon" TargetType="{x:Type controls:FluentIcon}">
-        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontSize" Value="14" />
         <Setter Property="HorizontalAlignment" Value="Center" />
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>

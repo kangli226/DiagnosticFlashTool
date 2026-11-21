@@ -7,10 +7,11 @@
         <ResourceDictionary Source="PageStyles.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <GridLength x:Key="HeaderedCardHeaderHeight">44</GridLength>
-    <Thickness x:Key="HeaderedCardHeaderTopInset">0,8,0,0</Thickness>
-    <Thickness x:Key="HeaderedCardBodyPadding">16,0,16,16</Thickness>
-    <Thickness x:Key="HeaderedCardCenteredBodyPadding">16,0</Thickness>
+    <!-- 桌面工具改版：标题栏 44→32，正文内边距 16→12，取消投影与悬停抬升。 -->
+    <GridLength x:Key="HeaderedCardHeaderHeight">32</GridLength>
+    <Thickness x:Key="HeaderedCardHeaderTopInset">0,0,0,0</Thickness>
+    <Thickness x:Key="HeaderedCardBodyPadding">12,0,12,12</Thickness>
+    <Thickness x:Key="HeaderedCardCenteredBodyPadding">12,0</Thickness>
 
     <Style x:Key="HeaderedCard.Base" TargetType="{x:Type controls:HeaderedCard}">
         <Setter Property="HeaderHeight" Value="{StaticResource HeaderedCardHeaderHeight}" />
@@ -19,7 +20,6 @@
         <Setter Property="Background" Value="{StaticResource PanelBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Effect" Value="{StaticResource CardShadowEffect}" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Stretch" />
         <Setter Property="HeaderTemplate">

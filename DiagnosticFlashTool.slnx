@@ -13,6 +13,7 @@
     <Project Path="src/DiagnosticFlashTool.SeedKeyWorker/DiagnosticFlashTool.SeedKeyWorker.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/DiagnosticFlashTool.App.Tests/DiagnosticFlashTool.App.Tests.csproj" />
     <Project Path="tests/DiagnosticFlashTool.Application.Tests/DiagnosticFlashTool.Application.Tests.csproj" />
   </Folder>
 </Solution>

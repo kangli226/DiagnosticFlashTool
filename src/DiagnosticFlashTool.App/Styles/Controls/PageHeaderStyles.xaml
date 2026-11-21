@@ -16,14 +16,9 @@
         <Setter Property="HorizontalAlignment" Value="Stretch" />
     </Style>
 
-    <Style x:Key="PageHelpDocumentButton.Standard" TargetType="{x:Type controls:PageHelpDocumentButton}">
-        <Setter Property="HorizontalAlignment" Value="Right" />
-        <Setter Property="VerticalAlignment" Value="Center" />
-    </Style>
-
     <!-- 页头所在行高度：无卡片背景的轻量操作栏 -->
     <Style x:Key="PageHeaderRowStyle" TargetType="RowDefinition">
-        <Setter Property="Height" Value="32" />
+        <Setter Property="Height" Value="26" />
     </Style>
 
     <Style x:Key="PageHeaderTitleTextStyle" TargetType="TextBlock">

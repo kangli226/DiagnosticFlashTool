@@ -1,27 +1,49 @@
-   <UserControl x:Class="DiagnosticFlashTool.App.Views.SystemSettingsView"
+<UserControl x:Class="DiagnosticFlashTool.App.Views.SystemSettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls">
     <Grid Style="{StaticResource PageRootGridStyle}">
-        <Grid.RowDefinitions>
-            <RowDefinition Style="{StaticResource PageHeaderRowStyle}" />
-            <RowDefinition Style="{StaticResource PageHeaderGapRowStyle}" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
-        <controls:PageHeader Grid.Row="0" Style="{StaticResource PageHeader.Standard}" Title="系统设置">
-            <controls:PageHeader.Actions>
-                <controls:PageHelpDocumentButton Style="{StaticResource PageHelpDocumentButton.Standard}" />
-            </controls:PageHeader.Actions>
-        </controls:PageHeader>
-
-        <ScrollViewer Grid.Row="2"
-                      HorizontalScrollBarVisibility="Disabled"
+        <!-- 桌面工具密度：仅内容层滚动；分组用单层浅灰面板 + 组内 1px 分隔，不再卡片套卡片。 -->
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Hidden">
             <StackPanel>
-                <controls:HeaderedCard Header="基础设置"
-                                       Style="{StaticResource HeaderedCard.Form.Lead}">
-                    <controls:CardContentPanel Style="{StaticResource Card.FormRowsContent}">
+
+                <Border Style="{StaticResource SettingGroupPanelStyle}"
+                        Margin="{StaticResource PageCardBottomGap}">
+                    <controls:CardContentPanel Style="{StaticResource Card.FormContent}">
+                        <TextBlock Text="权限设置" Style="{StaticResource SettingGroupTitleTextStyle}" />
+                        <Border Height="1" Margin="0,4" Background="{StaticResource DividerBrush}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="当前角色" Style="{StaticResource FieldLabelStyle}" />
+                            <ComboBox Grid.Column="1" ItemsSource="{Binding UserRoles}"
+                                      SelectedItem="{Binding SelectedUserRole, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      IsEnabled="{Binding CanChangeWorkspace}"
+                                      AutomationProperties.Name="当前角色"
+                                      Style="{StaticResource StandardComboBoxStyle}" />
+                            <TextBlock Grid.Column="3" Text="{Binding RoleDescription}" TextWrapping="Wrap"
+                                       Style="{StaticResource SettingAssistTextStyle}" />
+                        </Grid>
+                    </controls:CardContentPanel>
+                </Border>
+
+                <Border Style="{StaticResource SettingGroupPanelStyle}"
+                        Margin="{StaticResource PageCardBottomGap}">
+                    <controls:CardContentPanel Style="{StaticResource Card.FormContent}">
+                        <Grid>
+                            <TextBlock Text="基础设置" Style="{StaticResource SettingGroupTitleTextStyle}" />
+                        </Grid>
+
+                        <Border Height="1"
+                                Margin="0,4"
+                                Background="{StaticResource DividerBrush}"
+                                SnapsToDevicePixels="True" />
+
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
@@ -38,23 +60,38 @@
                                        Style="{StaticResource SettingAssistTextStyle}" />
                         </Grid>
                     </controls:CardContentPanel>
-                </controls:HeaderedCard>
+                </Border>
 
-                <controls:HeaderedCard Header="CAN 适配器设置"
-                                       Style="{StaticResource HeaderedCard.Form.Actions.Lead}">
-                    <controls:HeaderedCard.Actions>
-                        <Button Command="{Binding ProbeCanDeviceCommand}"
-                                Margin="0"
-                                Style="{StaticResource Button.Normal}"
-                                ToolTip="刷新并识别当前 CAN 适配器">
-                            <StackPanel Style="{StaticResource Button.InlineContent}">
-                                <controls:FluentIcon Kind="Refresh"
-                                                     Style="{StaticResource Button.Glyph.Current}" />
-                                <TextBlock Text="刷新设备" Style="{StaticResource Button.IconLabel}" />
-                            </StackPanel>
-                        </Button>
-                    </controls:HeaderedCard.Actions>
-                    <controls:CardContentPanel Style="{StaticResource Card.FormRowsContent}">
+                <Border Style="{StaticResource SettingGroupPanelStyle}"
+                        IsEnabled="{Binding CanChangeWorkspace}"
+                        Margin="{StaticResource PageCardBottomGap}">
+                    <controls:CardContentPanel Style="{StaticResource Card.FormContent}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="CAN 适配器设置"
+                                       Style="{StaticResource SettingGroupTitleTextStyle}" />
+                            <Button Grid.Column="1"
+                                    Command="{Binding ProbeCanDeviceCommand}"
+                                    Margin="0"
+                                    Style="{StaticResource Button.Normal}"
+                                    ToolTip="刷新并识别当前 CAN 适配器">
+                                <StackPanel Style="{StaticResource Button.InlineContent}">
+                                    <controls:FluentIcon Kind="Refresh"
+                                                         Style="{StaticResource Button.Glyph.Current}" />
+                                    <TextBlock Text="刷新设备" Style="{StaticResource Button.IconLabel}" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <Border Height="1"
+                                Margin="0,4"
+                                Background="{StaticResource DividerBrush}"
+                                SnapsToDevicePixels="True" />
+
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
@@ -192,7 +229,6 @@
                                        Text="{Binding BitRateSwitchStatusText}"
                                        Style="{StaticResource SettingAssistTextStyle}" />
                         </Grid>
-
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
@@ -209,34 +245,46 @@
                                        Style="{StaticResource SettingAssistTextStyle}" />
                         </Grid>
                     </controls:CardContentPanel>
-                </controls:HeaderedCard>
+                </Border>
 
-                <controls:HeaderedCard Header="运行配置管理"
-                                       Style="{StaticResource HeaderedCard.Form.Actions.Lead}">
-                    <controls:HeaderedCard.Actions>
-                        <StackPanel Orientation="Horizontal">
-                            <Button Command="{Binding ImportBuiltinConfigurationCommand}"
-                                    Style="{StaticResource Button.Normal}">
-                                <StackPanel Style="{StaticResource Button.InlineContent}">
-                                    <controls:FluentIcon Kind="Restore"
+                <Border Style="{StaticResource SettingGroupPanelStyle}"
+                        Margin="{StaticResource PageCardBottomGap}">
+                    <controls:CardContentPanel Style="{StaticResource Card.FormContent}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="运行配置管理"
+                                       Style="{StaticResource SettingGroupTitleTextStyle}" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <Button Command="{Binding ImportBuiltinConfigurationCommand}"
+                                        Style="{StaticResource Button.Normal}">
+                                    <StackPanel Style="{StaticResource Button.InlineContent}">
+                                        <controls:FluentIcon Kind="Restore"
                                                              Style="{StaticResource Button.Glyph.Current}" />
-                                    <TextBlock Text="恢复内置配置" Style="{StaticResource Button.IconLabel}" />
-                                </StackPanel>
-                            </Button>
-                            <Button Command="{Binding ClearRuntimeConfigurationCommand}"
-                                    Style="{StaticResource Button.Danger}"
-                                    Margin="0">
-                                <StackPanel Style="{StaticResource Button.InlineContent}">
-                                    <controls:FluentIcon Kind="DeleteOutline"
+                                        <TextBlock Text="恢复内置配置" Style="{StaticResource Button.IconLabel}" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding ClearRuntimeConfigurationCommand}"
+                                        Style="{StaticResource Button.Danger}"
+                                        Margin="0">
+                                    <StackPanel Style="{StaticResource Button.InlineContent}">
+                                        <controls:FluentIcon Kind="DeleteOutline"
                                                              Style="{StaticResource Button.Glyph.Current}" />
-                                    <TextBlock Text="清空运行配置"
-                                               Style="{StaticResource Button.IconLabel}" />
-                                </StackPanel>
-                            </Button>
-                        </StackPanel>
-                    </controls:HeaderedCard.Actions>
+                                        <TextBlock Text="清空运行配置"
+                                                   Style="{StaticResource Button.IconLabel}" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
 
-                    <controls:CardContentPanel Style="{StaticResource Card.FormRowsContent}">
+                        <Border Height="1"
+                                Margin="0,4"
+                                Background="{StaticResource DividerBrush}"
+                                SnapsToDevicePixels="True" />
+
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -306,23 +354,35 @@
                                                             ChangeLabel="更改文件…" />
                         </Grid>
                     </controls:CardContentPanel>
-                </controls:HeaderedCard>
+                </Border>
 
-                <controls:HeaderedCard Header="日志存储"
-                                       Style="{StaticResource HeaderedCard.Form}">
-                    <controls:HeaderedCard.Actions>
-                        <Button Command="{Binding RestoreDefaultLogStorageCommand}"
-                                Style="{StaticResource Button.Normal}"
-                                Margin="0">
-                            <StackPanel Style="{StaticResource Button.InlineContent}">
-                                <controls:FluentIcon Kind="Restore"
-                                                     Style="{StaticResource Button.Glyph.Current}" />
-                                <TextBlock Text="恢复默认" Style="{StaticResource Button.IconLabel}" />
-                            </StackPanel>
-                        </Button>
-                    </controls:HeaderedCard.Actions>
+                <Border Style="{StaticResource SettingGroupPanelStyle}">
+                    <controls:CardContentPanel Style="{StaticResource Card.FormContent}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="日志存储"
+                                       Style="{StaticResource SettingGroupTitleTextStyle}" />
+                            <Button Grid.Column="1"
+                                    Command="{Binding RestoreDefaultLogStorageCommand}"
+                                    Style="{StaticResource Button.Normal}"
+                                    Margin="0">
+                                <StackPanel Style="{StaticResource Button.InlineContent}">
+                                    <controls:FluentIcon Kind="Restore"
+                                                         Style="{StaticResource Button.Glyph.Current}" />
+                                    <TextBlock Text="恢复默认" Style="{StaticResource Button.IconLabel}" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
 
-                    <controls:CardContentPanel Style="{StaticResource Card.FormRowsContent}">
+                        <Border Height="1"
+                                Margin="0,4"
+                                Background="{StaticResource DividerBrush}"
+                                SnapsToDevicePixels="True" />
+
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
@@ -365,19 +425,18 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
                                 <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="20" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
-                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="日志保留" Style="{StaticResource FieldLabelStyle}" />
                             <TextBox Grid.Column="1"
                                      Width="64"
-                                     Height="32"
+                                     Margin="0"
                                      TextAlignment="Right"
-                                     Text="{Binding LogRetentionDays, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
-                                     Style="{StaticResource SoftTextBoxStyle}" />
+                                     Text="{Binding LogRetentionDays, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                             <TextBlock Grid.Column="3"
                                        Text="天"
                                        Style="{StaticResource SettingAssistTextStyle}" />
@@ -386,16 +445,15 @@
                                        Style="{StaticResource FieldLabelStyle}" />
                             <TextBox Grid.Column="6"
                                      Width="64"
-                                     Height="32"
+                                     Margin="0"
                                      TextAlignment="Right"
-                                     Text="{Binding LogMaxFileSizeMb, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
-                                     Style="{StaticResource SoftTextBoxStyle}" />
+                                     Text="{Binding LogMaxFileSizeMb, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                             <TextBlock Grid.Column="8"
                                        Text="MB"
                                        Style="{StaticResource SettingAssistTextStyle}" />
                         </Grid>
                     </controls:CardContentPanel>
-                </controls:HeaderedCard>
+                </Border>
 
             </StackPanel>
         </ScrollViewer>

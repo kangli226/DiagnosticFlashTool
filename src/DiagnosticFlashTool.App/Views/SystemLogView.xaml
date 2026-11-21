@@ -3,218 +3,110 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls">
     <Grid Style="{StaticResource PageRootGridStyle}">
-        <Grid.RowDefinitions>
-            <RowDefinition Style="{StaticResource PageHeaderRowStyle}" />
-            <RowDefinition Style="{StaticResource PageHeaderGapRowStyle}" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
-        <controls:PageHeader Grid.Row="0" Style="{StaticResource PageHeader.Standard}" Title="日志">
-            <controls:PageHeader.Actions>
-                <controls:PageHelpDocumentButton Style="{StaticResource PageHelpDocumentButton.Standard}" />
-            </controls:PageHeader.Actions>
-        </controls:PageHeader>
-
-        <Border Grid.Row="2" Style="{StaticResource Card.Compact}">
+        <Border Style="{StaticResource Card.Compact}">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="12" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <Grid Grid.Row="0">
+                <WrapPanel Grid.Row="0" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
+                        <TextBlock Text="级别" Width="34" Style="{StaticResource FieldLabelStyle}" />
+                        <ComboBox Width="88" Margin="0"
+                                  AutomationProperties.Name="日志级别"
+                                  ItemsSource="{Binding LogLevelFilters}"
+                                  SelectedItem="{Binding SelectedLogLevelFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  Style="{StaticResource StandardComboBoxStyle}" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
+                        <TextBlock Text="关键词" Width="46" Style="{StaticResource FieldLabelStyle}" />
+                        <TextBox Width="144" Margin="0"
+                                 AutomationProperties.Name="日志关键词"
+                                 Text="{Binding LogSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
+                        <TextBlock Text="时间范围" Width="58" Style="{StaticResource FieldLabelStyle}" />
+                        <ComboBox Width="116" Margin="0"
+                                  AutomationProperties.Name="日志时间范围"
+                                  ItemsSource="{Binding LogTimeRangeFilters}"
+                                  SelectedItem="{Binding SelectedLogTimeRangeFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  Style="{StaticResource StandardComboBoxStyle}" />
+                    </StackPanel>
+
+                    <Button Command="{Binding OpenLogFileCommand}"
+                            Style="{StaticResource Button.Normal}"
+                            ToolTip="用系统默认程序打开磁盘上的日志文件；文件日志未开启时不可用"
+                            ToolTipService.ShowOnDisabled="True">
+                        <StackPanel Style="{StaticResource Button.InlineContent}">
+                            <controls:FluentIcon Kind="TextBoxOutline" Style="{StaticResource Button.Glyph.Current}" />
+                            <TextBlock Text="打开文件" Style="{StaticResource Button.IconLabel}" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding ExportLogCommand}" Style="{StaticResource Button.Normal}">
+                        <StackPanel Style="{StaticResource Button.InlineContent}">
+                            <controls:FluentIcon Kind="ExportVariant" Style="{StaticResource Button.Glyph.Current}" />
+                            <TextBlock Text="导出" Style="{StaticResource Button.IconLabel}" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding ClearLogCommand}"
+                            Style="{StaticResource Button.Danger}" Margin="0"
+                            ToolTip="仅清空本次运行的显示日志，不删除磁盘日志文件">
+                        <StackPanel Style="{StaticResource Button.InlineContent}">
+                            <controls:FluentIcon Kind="DeleteSweepOutline" Style="{StaticResource Button.Glyph.Current}" />
+                            <TextBlock Text="清空显示" Style="{StaticResource Button.IconLabel}" />
+                        </StackPanel>
+                    </Button>
+                </WrapPanel>
+
+                <Grid Grid.Row="1" Margin="0,4,0,6">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="10" />
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <Border Grid.Column="0"
-                            Tag="{Binding LogFileStatusKind}"
+                    <Border Grid.Column="0" Tag="{Binding LogFileStatusKind}"
+                            VerticalAlignment="Center" Margin="0,0,10,0"
+                            ToolTip="文件日志关闭时仅保留本次运行记录，可在日志设置中开启"
                             Style="{StaticResource StatusBadgeBorderStyle}">
-                        <TextBlock Text="{Binding LogFileStatusText}"
-                                   Style="{StaticResource StatusBadgeTextStyle}" />
+                        <TextBlock Text="{Binding LogFileStatusText}" Style="{StaticResource StatusBadgeTextStyle}" />
                     </Border>
 
-                    <TextBlock Grid.Column="2"
-                               Text="{Binding LogFileStatusPathText}"
-                               ToolTip="{Binding LogFilePathFullPath}">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock" BasedOn="{StaticResource MonoAssistTextStyle}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding LogFileEnabled}" Value="False">
-                                        <Setter Property="Opacity" Value="0.6" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
+                    <TextBlock Grid.Column="1" Text="{Binding LogFileStatusPathText}"
+                               ToolTip="{Binding LogFilePathFullPath}"
+                               Style="{StaticResource MonoAssistTextStyle}" />
 
-                    <TextBlock Grid.Column="4"
-                               Text="{Binding LogFilterSummaryText}"
-                               Style="{StaticResource SettingAssistTextStyle}"
-                               VerticalAlignment="Center"
-                               HorizontalAlignment="Right" />
-                </Grid>
+                    <Button Grid.Column="2" Command="{Binding NavigateToLogSettingsCommand}"
+                            Style="{StaticResource Button.Normal}" Margin="8,0,12,0" Content="日志设置" />
 
-                <DockPanel Grid.Row="2"
-                           LastChildFill="True">
-                    <WrapPanel VerticalAlignment="Center">
-                        <Button Command="{Binding OpenLogFileCommand}"
-                                Style="{StaticResource Button.Normal}"
-                                ToolTip="用系统默认程序打开磁盘上的日志文件；文件日志未开启时不可用"
-                                ToolTipService.ShowOnDisabled="True">
-                            <StackPanel Style="{StaticResource Button.InlineContent}">
-                                <controls:FluentIcon Kind="TextBoxOutline"
-                                                     Style="{StaticResource Button.Glyph.Current}" />
-                                <TextBlock Text="打开文件" Style="{StaticResource Button.IconLabel}" />
-                            </StackPanel>
-                        </Button>
-
-                        <Button Command="{Binding ExportLogCommand}"
-                                Style="{StaticResource Button.Normal}">
-                            <StackPanel Style="{StaticResource Button.InlineContent}">
-                                <controls:FluentIcon Kind="ExportVariant"
-                                                     Style="{StaticResource Button.Glyph.Current}" />
-                                <TextBlock Text="导出" Style="{StaticResource Button.IconLabel}" />
-                            </StackPanel>
-                        </Button>
-
-                        <Button Command="{Binding ClearLogCommand}"
-                                Style="{StaticResource Button.Danger}"
-                                ToolTip="仅清空本次运行的显示日志，不删除磁盘日志文件">
-                            <StackPanel Style="{StaticResource Button.InlineContent}">
-                                <controls:FluentIcon Kind="DeleteSweepOutline"
-                                                     Style="{StaticResource Button.Glyph.Current}" />
-                                <TextBlock Text="清空显示" Style="{StaticResource Button.IconLabel}" />
-                            </StackPanel>
-                        </Button>
-
-                        <StackPanel Orientation="Horizontal"
-                                    Margin="8,0,12,0">
-                            <TextBlock Text="级别"
-                                       Style="{StaticResource FieldLabelStyle}"
-                                       Width="34" />
-                            <ComboBox Width="96"
-                                      ItemsSource="{Binding LogLevelFilters}"
-                                      SelectedItem="{Binding SelectedLogLevelFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                      Style="{StaticResource StandardComboBoxStyle}" />
-                        </StackPanel>
-
-                        <StackPanel Orientation="Horizontal"
-                                    Margin="0,0,12,0">
-                            <TextBlock Text="关键词"
-                                       Style="{StaticResource FieldLabelStyle}"
-                                       Width="46" />
-                            <TextBox Width="168"
-                                     Height="32"
-                                     Text="{Binding LogSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                     Style="{StaticResource SoftTextBoxStyle}" />
-                        </StackPanel>
-
-                        <StackPanel Orientation="Horizontal"
-                                    Margin="0,0,12,0">
-                            <TextBlock Text="时间范围"
-                                       Style="{StaticResource FieldLabelStyle}"
-                                       Width="58" />
-                            <ComboBox Width="132"
-                                      ItemsSource="{Binding LogTimeRangeFilters}"
-                                      SelectedItem="{Binding SelectedLogTimeRangeFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                      Style="{StaticResource StandardComboBoxStyle}" />
-                        </StackPanel>
-
-                        <StackPanel Orientation="Horizontal"
-                                    Margin="0,0,8,0">
-                            <ToggleButton IsChecked="{Binding LogAutoScrollEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          Style="{StaticResource SoftSwitchStyle}" />
-                            <TextBlock Text="自动滚动"
-                                       Margin="8,0,0,0"
-                                       Style="{StaticResource SettingAssistTextStyle}" />
-                        </StackPanel>
-                    </WrapPanel>
-                </DockPanel>
-
-                <StackPanel Grid.Row="3"
-                            Orientation="Horizontal"
-                            Margin="0,10,0,0">
-                    <StackPanel.Style>
-                        <Style TargetType="StackPanel">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding LogFileEnabled}" Value="False">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </StackPanel.Style>
-                    <TextBlock Text="文件日志未开启，当前仅保留本次运行的日志。"
-                               Style="{StaticResource SettingAssistTextStyle}" />
-                    <Button Command="{Binding NavigateToLogSettingsCommand}"
-                            Width="72"
-                            Margin="8,0,0,0"
-                            Padding="8,0"
-                            Style="{StaticResource Button.Normal}">
-                        <TextBlock Text="去设置"
-                                   Margin="0"
-                                   Style="{StaticResource Button.IconLabel}" />
-                    </Button>
-                </StackPanel>
-
-                <Grid Grid.Row="4"
-                      Margin="0,10,0,0">
-                    <ListBox ItemsSource="{Binding FilteredLogEntries}"
-                             controls:ListBoxAutoScrollBehavior.IsEnabled="{Binding LogAutoScrollEnabled}"
-                             Style="{StaticResource LogListBoxStyle}">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="54" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0"
-                                               Text="{Binding LevelText}"
-                                               Tag="{Binding Kind}"
-                                               Style="{StaticResource StatusValueTextStyle}" />
-                                    <TextBlock Grid.Column="1"
-                                               Text="{Binding Text}"
-                                               Foreground="{StaticResource LogTextBrush}"
-                                               FontFamily="{StaticResource Font.Mono}"
-                                               TextTrimming="CharacterEllipsis" />
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-
-                    <StackPanel VerticalAlignment="Center"
-                                HorizontalAlignment="Center"
-                                IsHitTestVisible="False">
-                        <StackPanel.Style>
-                            <Style TargetType="StackPanel">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsLogListEmpty}" Value="True">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </StackPanel.Style>
-                        <TextBlock Text="{Binding LogEmptyStateText}"
-                                   Foreground="{StaticResource LogTextBrush}"
-                                   Style="{StaticResource EmptyStateTitleTextStyle}" />
-                        <TextBlock Text="{Binding LogEmptyStateHintText}"
-                                   Foreground="{StaticResource LogTextBrush}"
-                                   Opacity="0.7"
-                                   FontSize="{StaticResource FontSize.Assist}"
-                                   Margin="0,8,0,0"
-                                   HorizontalAlignment="Center" />
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                        <ToggleButton IsChecked="{Binding LogAutoScrollEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      AutomationProperties.Name="日志自动滚动"
+                                      Style="{StaticResource SoftSwitchStyle}"
+                                      ToolTip="开启后自动滚动到最新日志" />
+                        <TextBlock Text="自动滚动" Margin="8,0,12,0" Style="{StaticResource SettingAssistTextStyle}" />
                     </StackPanel>
+
+                    <TextBlock Grid.Column="4" Text="{Binding LogFilterSummaryText}"
+                               Style="{StaticResource SettingAssistTextStyle}" VerticalAlignment="Center" />
                 </Grid>
+
+                <!-- 保留滚动条，便于在完整日志中拖动定位；底部显示区沿用隐藏滚动条。 -->
+                <controls:LogEntryList Grid.Row="2"
+                                       ItemsSource="{Binding FilteredLogEntries}"
+                                       AutomationProperties.Name="操作日志列表"
+                                       AutoScrollEnabled="{Binding LogAutoScrollEnabled}"
+                                       VerticalScrollBarVisibility="Auto"
+                                       EmptyText="{Binding LogEmptyStateText}"
+                                       EmptyHintText="{Binding LogEmptyStateHintText}" />
             </Grid>
         </Border>
     </Grid>

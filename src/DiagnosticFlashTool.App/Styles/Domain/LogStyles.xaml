@@ -8,21 +8,21 @@
 
     <Style x:Key="LogListBoxStyle" TargetType="ListBox">
         <Setter Property="Background" Value="{StaticResource LogPanelBrush}" />
-        <Setter Property="BorderBrush" Value="{StaticResource LogPanelBrush}" />
-        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
         <Setter Property="controls:CornerRadiusClipBehavior.CornerRadius"
                 Value="{StaticResource CornerRadius.Control}" />
         <Setter Property="Foreground" Value="{StaticResource LogTextBrush}" />
         <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
-        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Assist}" />
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden" />
-        <Setter Property="Padding" Value="12,10" />
+        <Setter Property="Padding" Value="8,6" />
         <Setter Property="ItemContainerStyle">
             <Setter.Value>
                 <Style TargetType="ListBoxItem">
                     <Setter Property="Foreground" Value="{StaticResource LogTextBrush}" />
                     <Setter Property="Background" Value="Transparent" />
-                    <Setter Property="Padding" Value="0,4" />
+                    <Setter Property="Padding" Value="0,2" />
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                     <Setter Property="Template">
                         <Setter.Value>
@@ -45,19 +45,5 @@
                 </Style>
             </Setter.Value>
         </Setter>
-    </Style>
-
-    <Style x:Key="LogTextBoxStyle" TargetType="TextBox">
-        <Setter Property="Background" Value="{StaticResource LogPanelBrush}" />
-        <Setter Property="BorderBrush" Value="{StaticResource LogPanelBrush}" />
-        <Setter Property="controls:CornerRadiusClipBehavior.CornerRadius"
-                Value="{StaticResource CornerRadius.Control}" />
-        <Setter Property="Foreground" Value="{StaticResource LogTextBrush}" />
-        <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
-        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
-        <Setter Property="Padding" Value="12,10" />
-        <Setter Property="TextWrapping" Value="Wrap" />
-        <Setter Property="AcceptsReturn" Value="True" />
-        <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
     </Style>
 </ResourceDictionary>

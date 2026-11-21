@@ -20,10 +20,11 @@
     -->
     <Thickness x:Key="ComboBoxContentPadding">10,0,8,0</Thickness>
 
+    <!-- 单行输入统一 26；多行输入在控件上显式设置 Height，避免拖高表单行。 -->
     <Style x:Key="SoftTextBoxStyle"
            TargetType="TextBox"
            BasedOn="{StaticResource DefaultTextBoxStyle}">
-        <Setter Property="Height" Value="36" />
+        <Setter Property="Height" Value="26" />
         <Setter Property="Padding" Value="{StaticResource EditableInputContentPadding}" />
         <Setter Property="Margin" Value="0" />
         <Setter Property="BorderThickness" Value="1" />
@@ -39,7 +40,7 @@
     <Style x:Key="SoftPasswordBoxStyle"
            TargetType="PasswordBox"
            BasedOn="{StaticResource DefaultPasswordBoxStyle}">
-        <Setter Property="Height" Value="32" />
+        <Setter Property="Height" Value="26" />
         <Setter Property="Padding" Value="{StaticResource EditableInputContentPadding}" />
         <Setter Property="Margin" Value="0" />
         <Setter Property="PasswordChar" Value="*" />
@@ -53,7 +54,7 @@
     </Style>
 
     <Style x:Key="PathDisplayBorderStyle" TargetType="Border">
-        <Setter Property="Height" Value="32" />
+        <Setter Property="Height" Value="26" />
         <Setter Property="Padding" Value="{StaticResource InputDisplayContentPadding}" />
         <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}" />
@@ -92,7 +93,7 @@
     </Style>
 
     <Style x:Key="InlineStatusValueBorderStyle" TargetType="Border">
-        <Setter Property="Height" Value="32" />
+        <Setter Property="Height" Value="26" />
         <Setter Property="Padding" Value="{StaticResource InputDisplayContentPadding}" />
         <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
@@ -139,7 +140,7 @@
     </Style>
 
     <Style x:Key="SoftProgressBarStyle" TargetType="ProgressBar">
-        <Setter Property="Height" Value="32" />
+        <Setter Property="Height" Value="22" />
         <Setter Property="Background" Value="{StaticResource ProgressTrackBrush}" />
         <Setter Property="Foreground" Value="{StaticResource PrimaryActiveBrush}" />
     </Style>
@@ -147,7 +148,7 @@
     <Style TargetType="ProgressBar" BasedOn="{StaticResource SoftProgressBarStyle}" />
 
     <Style TargetType="TextBox" BasedOn="{StaticResource SoftTextBoxStyle}">
-        <Setter Property="Height" Value="30" />
+        <Setter Property="Height" Value="26" />
         <Setter Property="Margin" Value="0,4,0,8" />
         <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}" />
         <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}" />
@@ -160,8 +161,8 @@
     <Style x:Key="StandardComboBoxItemStyle"
            TargetType="{x:Type ComboBoxItem}"
            BasedOn="{StaticResource DefaultComboBoxItemStyle}">
-        <Setter Property="MinHeight" Value="30" />
-        <Setter Property="Padding" Value="10,5" />
+        <Setter Property="MinHeight" Value="24" />
+        <Setter Property="Padding" Value="8,3" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Foreground" Value="{StaticResource BodyTextBrush}" />
@@ -171,7 +172,7 @@
            TargetType="{x:Type ComboBox}"
            BasedOn="{StaticResource DefaultComboBoxStyle}">
         <Setter Property="Width" Value="280" />
-        <Setter Property="Height" Value="32" />
+        <Setter Property="Height" Value="26" />
         <Setter Property="Margin" Value="0" />
         <Setter Property="Padding" Value="{StaticResource ComboBoxContentPadding}" />
         <Setter Property="BorderThickness" Value="1" />

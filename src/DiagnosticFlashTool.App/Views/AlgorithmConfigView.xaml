@@ -9,7 +9,8 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <controls:PageHeader Grid.Row="0" Style="{StaticResource PageHeader.Standard}" Title="算法配置">
+        <!-- 只读算法清单：页头一行放数量与脚本目录，主体只有一张卡片。 -->
+        <controls:PageHeader Grid.Row="0" Style="{StaticResource PageHeader.Standard}">
             <controls:PageHeader.Actions>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <TextBlock Text="{Binding AlgorithmCatalogText}"
@@ -17,23 +18,41 @@
                     <TextBlock Text="{Binding ScriptRootText}"
                                ToolTip="{Binding ScriptRootText}"
                                Margin="12,0,0,0"
-                               MaxWidth="280"
+                               MaxWidth="240"
                                Style="{StaticResource MonoAssistTextStyle}" />
-                    <controls:PageHelpDocumentButton Margin="8,0,0,0"
-                                                     Style="{StaticResource PageHelpDocumentButton.Standard}" />
                 </StackPanel>
             </controls:PageHeader.Actions>
         </controls:PageHeader>
 
         <Border Grid.Row="2" Style="{StaticResource Card.Compact}">
-            <DataGrid ItemsSource="{Binding AlgorithmRows}" IsReadOnly="True">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="150" ElementStyle="{StaticResource DataGrid.CellText}" />
-                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="180" ElementStyle="{StaticResource DataGrid.CellText}" />
-                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="110" ElementStyle="{StaticResource DataGrid.CellText}" />
-                    <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="*" ElementStyle="{StaticResource DataGrid.CellText}" />
-                </DataGrid.Columns>
-            </DataGrid>
+            <Grid>
+                <DataGrid ItemsSource="{Binding AlgorithmRows}"
+                          IsReadOnly="True"
+                          ScrollViewer.VerticalScrollBarVisibility="Hidden">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="分类" Binding="{Binding Category}" Width="120" ElementStyle="{StaticResource DataGrid.CellText}" />
+                        <DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="160" ElementStyle="{StaticResource DataGrid.MonoCellText}" />
+                        <DataGridTextColumn Header="状态" Binding="{Binding Status}" Width="80" ElementStyle="{StaticResource DataGrid.CellText}" />
+                        <DataGridTextColumn Header="来源" Binding="{Binding Source}" Width="*" MinWidth="150" ElementStyle="{StaticResource DataGrid.MonoCellText}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <TextBlock Text="未发现算法配置；请确认脚本目录下存在安全算法或 CRC 算法脚本。"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           IsHitTestVisible="False">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource SettingAssistTextStyle}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding AlgorithmRows.Count}" Value="0">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Grid>
         </Border>
     </Grid>
 </UserControl>

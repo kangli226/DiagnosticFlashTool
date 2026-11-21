@@ -35,8 +35,8 @@
     <Style x:Key="Button.Base"
            TargetType="Button"
            BasedOn="{StaticResource DefaultButtonStyle}">
-        <Setter Property="Height" Value="32" />
-        <Setter Property="Padding" Value="16,0" />
+        <Setter Property="Height" Value="26" />
+        <Setter Property="Padding" Value="12,0" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="Margin" Value="0,0,8,0" />
         <Setter Property="BorderThickness" Value="0" />
@@ -55,8 +55,8 @@
 
     <Style x:Key="Button.Normal" TargetType="Button" BasedOn="{StaticResource Button.Base}">
         <Setter Property="controls:FluentButtonAssist.StateResources" Value="{StaticResource Button.NormalStateResources}" />
-        <Setter Property="Height" Value="32" />
-        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="Height" Value="26" />
+        <Setter Property="Padding" Value="10,0" />
         <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}" />
@@ -153,4 +153,26 @@
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
+    <!-- 深色框架区按钮：沿用普通按钮模板，只替换前景与交互态画刷。 -->
+    <ResourceDictionary x:Key="Button.OnChromeStateResources">
+        <!-- Fluent 模板的正常态前景取自 ButtonForeground 资源，仅设置 Foreground 属性不会改变菜单文字。 -->
+        <SolidColorBrush x:Key="ButtonForeground" Color="{StaticResource Color.Chrome.Text}" />
+        <SolidColorBrush x:Key="ButtonBackground" Color="Transparent" />
+        <SolidColorBrush x:Key="ButtonBorderBrush" Color="Transparent" />
+        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{StaticResource Color.Chrome.Hover}" />
+        <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="Transparent" />
+        <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="{StaticResource Color.Chrome.Text}" />
+        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="{StaticResource Color.Chrome.Pressed}" />
+        <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="Transparent" />
+        <SolidColorBrush x:Key="ButtonForegroundPressed" Color="{StaticResource Color.Chrome.Text}" />
+        <SolidColorBrush x:Key="ButtonBackgroundDisabled" Color="Transparent" />
+        <SolidColorBrush x:Key="ButtonBorderBrushDisabled" Color="Transparent" />
+        <SolidColorBrush x:Key="ButtonForegroundDisabled" Color="#6B747D" />
+    </ResourceDictionary>
+
+    <Style x:Key="Button.OnChrome" TargetType="Button" BasedOn="{StaticResource Button.Normal}">
+        <Setter Property="TextElement.Foreground" Value="{StaticResource ChromeTextBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource ChromeTextBrush}" />
+        <Setter Property="controls:FluentButtonAssist.StateResources" Value="{StaticResource Button.OnChromeStateResources}" />
+    </Style>
 </ResourceDictionary>

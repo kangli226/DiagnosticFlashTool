@@ -4,13 +4,17 @@
         <ResourceDictionary Source="Colors.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <!-- Shared radius tokens keep cards and their controls visually aligned. -->
-    <CornerRadius x:Key="CornerRadius.Window">10</CornerRadius>
-    <CornerRadius x:Key="CornerRadius.Brand">7</CornerRadius>
-    <CornerRadius x:Key="CornerRadius.Card">8</CornerRadius>
-    <CornerRadius x:Key="CornerRadius.Control">6</CornerRadius>
-    <CornerRadius x:Key="CornerRadius.Compact">4</CornerRadius>
+    <!-- Shared radius tokens keep cards and their controls visually aligned.
+         桌面工具改版：统一收紧为 3 DIP 级小圆角，弱化"卡片"观感。 -->
+    <CornerRadius x:Key="CornerRadius.Window">6</CornerRadius>
+    <CornerRadius x:Key="CornerRadius.Brand">4</CornerRadius>
+    <CornerRadius x:Key="CornerRadius.Card">3</CornerRadius>
+    <CornerRadius x:Key="CornerRadius.Control">3</CornerRadius>
+    <CornerRadius x:Key="CornerRadius.Compact">2</CornerRadius>
 
+    <SolidColorBrush x:Key="ChromeBrush" Color="{StaticResource Color.Chrome.Background}" />
+    <SolidColorBrush x:Key="ChromeBorderBrush" Color="{StaticResource Color.Chrome.Border}" />
+    <SolidColorBrush x:Key="FocusRingBrush" Color="{StaticResource Color.Primary}" />
     <SolidColorBrush x:Key="AppBackgroundBrush" Color="{StaticResource Color.App.Background}" />
     <SolidColorBrush x:Key="PanelBrush" Color="{StaticResource Color.Card.Background}" />
     <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource Color.Surface.Background}" />
@@ -77,4 +81,11 @@
     <SolidColorBrush x:Key="DangerBorderBrush" Color="{StaticResource Color.Danger.Border}" />
     <SolidColorBrush x:Key="DangerTextBrush" Color="{StaticResource Color.Danger.Text}" />
     <SolidColorBrush x:Key="NeutralSoftBrush" Color="{StaticResource Color.Neutral.Soft}" />
+    <!-- 深色框架语义画刷：只用于标题栏、菜单栏、侧栏与状态栏。 -->
+    <SolidColorBrush x:Key="ChromeTextBrush" Color="{StaticResource Color.Chrome.Text}" />
+    <SolidColorBrush x:Key="ChromeMutedTextBrush" Color="{StaticResource Color.Chrome.TextMuted}" />
+    <SolidColorBrush x:Key="ChromeAccentBrush" Color="{StaticResource Color.Chrome.Accent}" />
+    <SolidColorBrush x:Key="ChromeHoverBrush" Color="{StaticResource Color.Chrome.Hover}" />
+    <SolidColorBrush x:Key="ChromePressedBrush" Color="{StaticResource Color.Chrome.Pressed}" />
+    <SolidColorBrush x:Key="ChromeDividerBrush" Color="{StaticResource Color.Chrome.Divider}" />
 </ResourceDictionary>

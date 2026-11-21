@@ -3,179 +3,136 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls">
     <UserControl.Resources>
-        <Style x:Key="FlowConfigCellTextBoxStyle"
+        <!-- 表格内联编辑：沿用全局输入视觉，只收紧行内高度以适配 26px 行高与等宽数据。 -->
+        <Style x:Key="FlowCellTextBoxStyle"
                TargetType="TextBox"
                BasedOn="{StaticResource SoftTextBoxStyle}">
-            <Setter Property="Height" Value="32" />
-            <Setter Property="Margin" Value="0" />
-            <Setter Property="Padding" Value="8,0" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="Padding" Value="6,0" />
+            <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
         </Style>
-
-        <Style x:Key="FlowConfigCellComboBoxStyle"
-               TargetType="ComboBox"
-               BasedOn="{StaticResource StandardComboBoxStyle}">
-            <Setter Property="Width" Value="Auto" />
-            <Setter Property="Height" Value="32" />
-            <Setter Property="Margin" Value="0" />
-            <Setter Property="HorizontalAlignment" Value="Stretch" />
-            <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
-        </Style>
-
     </UserControl.Resources>
 
     <Grid Style="{StaticResource PageRootGridStyle}">
         <Grid.RowDefinitions>
-            <RowDefinition Style="{StaticResource PageHeaderRowStyle}" />
-            <RowDefinition Style="{StaticResource PageHeaderGapRowStyle}" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="12" />
+            <RowDefinition Style="{StaticResource PageSectionGapRowStyle}" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="12" />
-            <RowDefinition Height="44" />
+            <RowDefinition Style="{StaticResource PageSectionGapRowStyle}" />
+            <RowDefinition Height="Auto" MaxHeight="220" />
         </Grid.RowDefinitions>
 
-        <controls:PageHeader Grid.Row="0" Style="{StaticResource PageHeader.Standard}" Title="流程配置">
-            <controls:PageHeader.Actions>
-                <controls:PageHelpDocumentButton Style="{StaticResource PageHelpDocumentButton.Standard}" />
-            </controls:PageHeader.Actions>
-        </controls:PageHeader>
+        <!-- 配置来源与文件级操作：紧凑单行，不随表体滚动。 -->
+        <Border Grid.Row="0" Style="{StaticResource Card.Toolbar}">
+            <Grid Height="26">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-        <Border Grid.Row="2" Style="{StaticResource CardStyle}">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="60" />
-                </Grid.RowDefinitions>
+                <controls:WorkspaceProjectSelector Grid.Column="0" />
 
-                <ScrollViewer Grid.Row="0"
-                              HorizontalScrollBarVisibility="Auto"
-                              VerticalScrollBarVisibility="Disabled">
-                    <Grid MinWidth="780" Margin="{StaticResource CardHorizontalContentPadding}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="320" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <TextBlock Grid.Column="0"
-                                   Text="配置文件："
-                                   Margin="0,0,10,0"
-                                   Style="{StaticResource FieldLabelStyle}" />
-                        <ComboBox Grid.Column="1"
-                                  ItemsSource="{Binding Projects}"
-                                  SelectedItem="{Binding SelectedProject, Mode=TwoWay}"
-                                  ToolTip="{Binding FlowConfigFilePath}"
-                                  Style="{StaticResource StandardComboBoxStyle}">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding BootConfigFile, Converter={StaticResource FileNameConverter}}"
-                                               ToolTip="{Binding BootConfigFile}" />
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-
-                        <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
-                            <Button Command="{Binding LoadFlowCommand}"
-                                    ToolTip="重新加载当前流程配置"
-                                    Style="{StaticResource Button.Normal}">
-                                <StackPanel Style="{StaticResource Button.InlineContent}">
-                                    <controls:FluentIcon Kind="Refresh"
-                                                             Style="{StaticResource Button.Glyph.Current}" />
-                                    <TextBlock Text="重新加载" Style="{StaticResource Button.IconLabel}" />
-                                </StackPanel>
-                            </Button>
-                            <Button Command="{Binding ValidateFlowCommand}"
-                                    ToolTip="校验当前流程配置"
-                                    Style="{StaticResource Button.Normal}">
-                                <StackPanel Style="{StaticResource Button.InlineContent}">
-                                    <controls:FluentIcon Kind="CheckCircleOutline"
-                                                             Style="{StaticResource Button.Glyph.Current}" />
-                                    <TextBlock Text="校验" Style="{StaticResource Button.IconLabel}" />
-                                </StackPanel>
-                            </Button>
-                            <Button Command="{Binding NewFlowCommand}"
-                                    ToolTip="新建流程配置"
-                                    Style="{StaticResource Button.Normal}">
-                                <StackPanel Style="{StaticResource Button.InlineContent}">
-                                    <controls:FluentIcon Kind="Plus"
-                                                             Style="{StaticResource Button.Glyph.Current}" />
-                                    <TextBlock Text="新建配置" Style="{StaticResource Button.IconLabel}" />
-                                </StackPanel>
-                            </Button>
-                            <Button Command="{Binding SaveFlowCommand}"
-                                    ToolTip="保存流程配置"
-                                    Margin="0"
-                                    Style="{StaticResource Button.Normal}">
-                                <StackPanel Style="{StaticResource Button.InlineContent}">
-                                    <controls:FluentIcon Kind="ContentSaveOutline"
-                                                             Style="{StaticResource Button.Glyph.Current}" />
-                                    <TextBlock Text="保存" Style="{StaticResource Button.IconLabel}" />
-                                </StackPanel>
-                            </Button>
+                <StackPanel Grid.Column="1" Margin="10,0,0,0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Command="{Binding LoadFlowCommand}"
+                            ToolTip="重新加载当前流程配置"
+                            Style="{StaticResource Button.Normal}">
+                        <StackPanel Style="{StaticResource Button.InlineContent}">
+                            <controls:FluentIcon Kind="Refresh"
+                                                 Style="{StaticResource Button.Glyph.Current}" />
+                            <TextBlock Text="重新加载" Style="{StaticResource Button.IconLabel}" />
                         </StackPanel>
-                    </Grid>
-                </ScrollViewer>
+                    </Button>
+                    <Button Command="{Binding NewFlowCommand}"
+                            ToolTip="新建流程配置"
+                            Style="{StaticResource Button.Normal}">
+                        <StackPanel Style="{StaticResource Button.InlineContent}">
+                            <controls:FluentIcon Kind="Plus"
+                                                 Style="{StaticResource Button.Glyph.Current}" />
+                            <TextBlock Text="新建配置" Style="{StaticResource Button.IconLabel}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding SaveFlowCommand}"
+                            ToolTip="保存流程配置"
+                            Margin="0"
+                            Style="{StaticResource Button.Normal}">
+                        <StackPanel Style="{StaticResource Button.InlineContent}">
+                            <controls:FluentIcon Kind="ContentSaveOutline"
+                                                 Style="{StaticResource Button.Glyph.Current}" />
+                            <TextBlock Text="保存" Style="{StaticResource Button.IconLabel}" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
             </Grid>
         </Border>
 
-        <controls:HeaderedCard Grid.Row="4"
+        <controls:HeaderedCard Grid.Row="2"
                                Header="流程节点"
                                Style="{StaticResource HeaderedCard.Data.Actions}">
             <controls:HeaderedCard.Actions>
-                <StackPanel Orientation="Horizontal">
-                        <Button Command="{Binding AddFlowStepCommand}"
-                                ToolTip="从模板添加节点"
-                                Style="{StaticResource Button.Normal}">
-                            <StackPanel Style="{StaticResource Button.InlineContent}">
-                                <controls:FluentIcon Kind="Plus"
-                                                         Style="{StaticResource Button.Glyph.Current}" />
-                                <TextBlock Text="添加节点" Style="{StaticResource Button.IconLabel}" />
-                            </StackPanel>
-                        </Button>
-                        <Button Command="{Binding ReplaceFlowStepTemplateCommand}"
-                                ToolTip="更换选中节点的模板并清除不兼容配置"
-                                Style="{StaticResource Button.Normal}">
-                            <StackPanel Style="{StaticResource Button.InlineContent}">
-                                <controls:FluentIcon Kind="Change"
-                                                         Style="{StaticResource Button.Glyph.Current}" />
-                                <TextBlock Text="更换模板" Style="{StaticResource Button.IconLabel}" />
-                            </StackPanel>
-                        </Button>
-                        <Button Command="{Binding DeleteFlowStepCommand}"
-                                ToolTip="删除选中节点"
-                                Style="{StaticResource Button.Danger}">
-                            <StackPanel Style="{StaticResource Button.InlineContent}">
-                                <controls:FluentIcon Kind="DeleteOutline"
-                                                         Style="{StaticResource Button.Glyph.Current}" />
-                                <TextBlock Text="删除节点" Style="{StaticResource Button.IconLabel}" />
-                            </StackPanel>
-                        </Button>
-                        <Button Command="{Binding MoveFlowStepUpCommand}"
-                                ToolTip="上移选中节点"
-                                Style="{StaticResource Button.Normal}">
-                            <StackPanel Style="{StaticResource Button.InlineContent}">
-                                <controls:FluentIcon Kind="HandPointingUp"
-                                                         Style="{StaticResource Button.Glyph.Current}" />
-                                <TextBlock Text="上移" Style="{StaticResource Button.IconLabel}" />
-                            </StackPanel>
-                        </Button>
-                        <Button Command="{Binding MoveFlowStepDownCommand}"
-                                ToolTip="下移选中节点"
-                                Margin="0"
-                                Style="{StaticResource Button.Normal}">
-                            <StackPanel Style="{StaticResource Button.InlineContent}">
-                                <controls:FluentIcon Kind="HandPointingDown"
-                                                         Style="{StaticResource Button.Glyph.Current}" />
-                                <TextBlock Text="下移" Style="{StaticResource Button.IconLabel}" />
-                            </StackPanel>
-                        </Button>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Command="{Binding AddFlowStepCommand}"
+                            ToolTip="从模板添加节点"
+                            Style="{StaticResource Button.Normal}">
+                        <StackPanel Style="{StaticResource Button.InlineContent}">
+                            <controls:FluentIcon Kind="Plus"
+                                                 Style="{StaticResource Button.Glyph.Current}" />
+                            <TextBlock Text="添加节点" Style="{StaticResource Button.IconLabel}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding ReplaceFlowStepTemplateCommand}"
+                            ToolTip="更换选中节点的模板并清除不兼容配置"
+                            Style="{StaticResource Button.Normal}">
+                        <StackPanel Style="{StaticResource Button.InlineContent}">
+                            <controls:FluentIcon Kind="Change"
+                                                 Style="{StaticResource Button.Glyph.Current}" />
+                            <TextBlock Text="更换模板" Style="{StaticResource Button.IconLabel}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding DeleteFlowStepCommand}"
+                            ToolTip="删除选中节点"
+                            Style="{StaticResource Button.Danger}">
+                        <StackPanel Style="{StaticResource Button.InlineContent}">
+                            <controls:FluentIcon Kind="DeleteOutline"
+                                                 Style="{StaticResource Button.Glyph.Current}" />
+                            <TextBlock Text="删除节点" Style="{StaticResource Button.IconLabel}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding MoveFlowStepUpCommand}"
+                            ToolTip="上移选中节点"
+                            Style="{StaticResource Button.Normal}">
+                        <StackPanel Style="{StaticResource Button.InlineContent}">
+                            <controls:FluentIcon Kind="HandPointingUp"
+                                                 Style="{StaticResource Button.Glyph.Current}" />
+                            <TextBlock Text="上移" Style="{StaticResource Button.IconLabel}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding MoveFlowStepDownCommand}"
+                            ToolTip="下移选中节点"
+                            Style="{StaticResource Button.Normal}">
+                        <StackPanel Style="{StaticResource Button.InlineContent}">
+                            <controls:FluentIcon Kind="HandPointingDown"
+                                                 Style="{StaticResource Button.Glyph.Current}" />
+                            <TextBlock Text="下移" Style="{StaticResource Button.IconLabel}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding ValidateFlowCommand}"
+                            ToolTip="校验当前流程配置，结果显示在本页的校验结果区域"
+                            Margin="0"
+                            Style="{StaticResource Button.Normal}">
+                        <StackPanel Style="{StaticResource Button.InlineContent}">
+                            <controls:FluentIcon Kind="CheckCircleOutline"
+                                                 Style="{StaticResource Button.Glyph.Current}" />
+                            <TextBlock Text="校验" Style="{StaticResource Button.IconLabel}" />
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
             </controls:HeaderedCard.Actions>
-            <DataGrid x:Name="FlowDataGrid"
+
+            <Grid>
+                <DataGrid x:Name="FlowDataGrid"
                           ItemsSource="{Binding FlowRows}"
                           SelectedItem="{Binding SelectedFlowStep, Mode=TwoWay}"
+                          ItemContainerStyle="{StaticResource DataGrid.RowRunning}"
                           AutoGenerateColumns="False"
                           AllowDrop="True"
                           PreviewMouseLeftButtonDown="FlowDataGrid_PreviewMouseLeftButtonDown"
@@ -184,16 +141,17 @@
                           DragOver="FlowDataGrid_DragOver"
                           DragLeave="FlowDataGrid_DragLeave"
                           Drop="FlowDataGrid_Drop"
-                          ScrollViewer.VerticalScrollBarVisibility="Hidden">
+                          ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto">
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="ID"
-                                                Width="76"
+                                                Width="56"
                                                 IsReadOnly="True">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="26" />
+                                            <ColumnDefinition Width="20" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0"
@@ -202,7 +160,7 @@
                                                    Cursor="SizeNS"
                                                    ToolTip="拖动调整顺序"
                                                    Foreground="{StaticResource IconMutedBrush}"
-                                                   FontSize="16"
+                                                   FontSize="14"
                                                    HorizontalAlignment="Center"
                                                    VerticalAlignment="Center" />
                                         <TextBlock Grid.Column="1"
@@ -216,7 +174,7 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
-                        <DataGridTemplateColumn Header="名称" Width="180" IsReadOnly="True">
+                        <DataGridTemplateColumn Header="名称" Width="*" MinWidth="120" IsReadOnly="True">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Name}"
@@ -227,37 +185,37 @@
                         </DataGridTemplateColumn>
 
                         <DataGridTemplateColumn Header="服务"
-                                                Width="68"
+                                                Width="52"
                                                 IsReadOnly="True">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Service}"
                                                ToolTip="服务 ID 由节点模板决定"
-                                               Style="{StaticResource DataGrid.CellText}" />
+                                               Style="{StaticResource DataGrid.MonoCellText}" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
                         <DataGridTemplateColumn Header="子服务"
-                                                Width="68"
+                                                Width="56"
                                                 IsReadOnly="True">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding SubService}"
                                                ToolTip="子服务 ID 由节点模板决定"
-                                               Style="{StaticResource DataGrid.CellText}" />
+                                               Style="{StaticResource DataGrid.MonoCellText}" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
-                        <DataGridTemplateColumn Header="扩展数据" Width="300">
+                        <DataGridTemplateColumn Header="扩展数据" Width="240">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Grid>
                                         <TextBox Text="{Binding ExtendText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                  ToolTip="CRC 校验例程需显式填写例程参数及运行时变量，例如 0xF2, 0x04, ${application.start:u32be}, ${application.length:u32be}, ${application.crc:u32be}">
                                             <TextBox.Style>
-                                                <Style TargetType="TextBox" BasedOn="{StaticResource FlowConfigCellTextBoxStyle}">
+                                                <Style TargetType="TextBox" BasedOn="{StaticResource FlowCellTextBoxStyle}">
                                                     <Setter Property="Visibility" Value="Collapsed" />
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding CanEditExtend}" Value="True">
@@ -268,9 +226,9 @@
                                             </TextBox.Style>
                                         </TextBox>
                                         <TextBlock Text="{Binding ExtendText}"
-                                                   ToolTip="扩展数据由节点模板固定">
+                                                   ToolTip="{Binding ExtendText}">
                                             <TextBlock.Style>
-                                                <Style TargetType="TextBlock" BasedOn="{StaticResource DataGrid.CellText}">
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource DataGrid.MonoCellText}">
                                                     <Setter Property="Visibility" Value="Visible" />
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding CanEditExtend}" Value="True">
@@ -285,15 +243,18 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
-                        <DataGridTemplateColumn Header="算法" Width="220">
+                        <DataGridTemplateColumn Header="算法" Width="160">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Grid>
                                         <ComboBox ItemsSource="{Binding DataContext.FlowSecurityAlgorithmOptions, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}"
                                                   SelectedItem="{Binding SecurityAlgorithm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                  ToolTip="仅发送 Key 节点可配置安全算法">
+                                                  ToolTip="仅发送 Key 节点可配置安全算法"
+                                                  Width="Auto"
+                                                  Height="24"
+                                                  HorizontalAlignment="Stretch">
                                             <ComboBox.Style>
-                                                <Style TargetType="ComboBox" BasedOn="{StaticResource FlowConfigCellComboBoxStyle}">
+                                                <Style TargetType="ComboBox" BasedOn="{StaticResource StandardComboBoxStyle}">
                                                     <Setter Property="Visibility" Value="Collapsed" />
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding CanEditSecurityAlgorithm}" Value="True">
@@ -305,9 +266,12 @@
                                         </ComboBox>
                                         <ComboBox ItemsSource="{Binding DataContext.FlowCrcAlgorithmOptions, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}"
                                                   SelectedItem="{Binding CrcAlgorithm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                  ToolTip="下载节点计算固件 CRC；必须由后续 CRC 校验例程显式消费">
+                                                  ToolTip="下载节点计算固件 CRC；必须由后续 CRC 校验例程显式消费"
+                                                  Width="Auto"
+                                                  Height="24"
+                                                  HorizontalAlignment="Stretch">
                                             <ComboBox.Style>
-                                                <Style TargetType="ComboBox" BasedOn="{StaticResource FlowConfigCellComboBoxStyle}">
+                                                <Style TargetType="ComboBox" BasedOn="{StaticResource StandardComboBoxStyle}">
                                                     <Setter Property="Visibility" Value="Collapsed" />
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding CanEditCrcAlgorithm}" Value="True">
@@ -338,41 +302,182 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
-                        <DataGridTemplateColumn Header="算法参数" Width="*">
+                        <DataGridTemplateColumn Header="算法参数" Width="140">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Grid>
-                                        <TextBox Text="{Binding AlgorithmParamsText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 ToolTip="仅发送 Key 节点可配置，多个参数可用逗号分隔"
-                                                 IsEnabled="{Binding CanEditSecurityAlgorithm}"
-                                                 Style="{StaticResource FlowConfigCellTextBoxStyle}" />
-                                    </Grid>
+                                    <TextBox Text="{Binding AlgorithmParamsText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             IsEnabled="{Binding CanEditSecurityAlgorithm}"
+                                             ToolTip="仅发送 Key 节点可配置，多个参数可用逗号分隔"
+                                             Style="{StaticResource FlowCellTextBoxStyle}" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
-            </DataGrid>
+                </DataGrid>
+
+                <StackPanel HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            IsHitTestVisible="False">
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding FlowRows.Count}" Value="0">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <TextBlock Text="当前流程没有节点"
+                               Style="{StaticResource EmptyStateTitleTextStyle}" />
+                    <TextBlock Text="点击「添加节点」从模板添加流程节点。"
+                               Margin="0,6,0,0"
+                               HorizontalAlignment="Center"
+                               Style="{StaticResource SettingAssistTextStyle}" />
+                </StackPanel>
+            </Grid>
         </controls:HeaderedCard>
 
-        <Border Grid.Row="6" Style="{StaticResource CardStyle}">
-            <Grid Margin="{StaticResource CardHorizontalContentPadding}">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="10" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <controls:FluentIcon Grid.Column="0"
-                                         Kind="CheckCircleOutline"
-                                         Style="{StaticResource Button.Glyph.Accent}" />
-                <TextBlock Grid.Column="2"
-                           Text="{Binding FlowValidationText}"
-                           Foreground="{StaticResource BodyTextBrush}"
-                           FontSize="{StaticResource FontSize.Body}"
-                           VerticalAlignment="Center"
-                           TextTrimming="CharacterEllipsis"
-                           ToolTip="{Binding FlowValidationText}" />
+        <controls:HeaderedCard Grid.Row="4"
+                               Header="校验结果"
+                               Style="{StaticResource HeaderedCard.Panel}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- 状态胶囊：底色、图标与文字同时表达结果，不单靠颜色。 -->
+                <Border Grid.Row="0"
+                        Height="24"
+                        Padding="8,0"
+                        Margin="0,0,0,6"
+                        HorizontalAlignment="Left"
+                        BorderThickness="1">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Background" Value="{StaticResource StatusNeutralSoftBrush}" />
+                            <Setter Property="BorderBrush" Value="{StaticResource StatusNeutralBorderBrush}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding FlowValidationStateKind}" Value="Success">
+                                    <Setter Property="Background" Value="{StaticResource StatusSuccessSoftBrush}" />
+                                    <Setter Property="BorderBrush" Value="{StaticResource StatusSuccessBorderBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding FlowValidationStateKind}" Value="Warning">
+                                    <Setter Property="Background" Value="{StaticResource StatusWarningSoftBrush}" />
+                                    <Setter Property="BorderBrush" Value="{StaticResource StatusWarningBorderBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding FlowValidationStateKind}" Value="Error">
+                                    <Setter Property="Background" Value="{StaticResource StatusErrorSoftBrush}" />
+                                    <Setter Property="BorderBrush" Value="{StaticResource StatusErrorBorderBrush}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="●" Margin="0,0,6,0" VerticalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontSize" Value="{StaticResource FontSize.Caption}" />
+                                    <Setter Property="Foreground" Value="{StaticResource StatusNeutralBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding FlowValidationStateKind}" Value="Success">
+                                            <Setter Property="Foreground" Value="{StaticResource StatusSuccessBrush}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding FlowValidationStateKind}" Value="Warning">
+                                            <Setter Property="Foreground" Value="{StaticResource StatusWarningBrush}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding FlowValidationStateKind}" Value="Error">
+                                            <Setter Property="Foreground" Value="{StaticResource StatusErrorBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <TextBlock Text="{Binding FlowValidationStatusText}" FontWeight="Medium" VerticalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontSize" Value="{StaticResource FontSize.Caption}" />
+                                    <Setter Property="Foreground" Value="{StaticResource StatusNeutralBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding FlowValidationStateKind}" Value="Success">
+                                            <Setter Property="Foreground" Value="{StaticResource StatusSuccessBrush}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding FlowValidationStateKind}" Value="Warning">
+                                            <Setter Property="Foreground" Value="{StaticResource StatusWarningBrush}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding FlowValidationStateKind}" Value="Error">
+                                            <Setter Property="Foreground" Value="{StaticResource StatusErrorBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <TextBlock Text="{Binding FlowValidationSummaryText}"
+                                   Margin="8,0,0,0"
+                                   VerticalAlignment="Center"
+                                   FontSize="{StaticResource FontSize.Caption}"
+                                   Foreground="{StaticResource SubtleTextBrush}" />
+                    </StackPanel>
+                </Border>
+
+                <ScrollViewer Grid.Row="1"
+                              MaxHeight="150"
+                              VerticalScrollBarVisibility="Hidden"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding FlowValidationLines}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,0,0,2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="18" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0" Text="{Binding Icon}" VerticalAlignment="Top">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="FontSize" Value="{StaticResource FontSize.Assist}" />
+                                                <Setter Property="Foreground" Value="{StaticResource SubtleTextBrush}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsWarning}" Value="True">
+                                                        <Setter Property="Foreground" Value="{StaticResource StatusWarningBrush}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsError}" Value="True">
+                                                        <Setter Property="Foreground" Value="{StaticResource StatusErrorBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+
+                                    <TextBlock Grid.Column="1" Text="{Binding Text}" TextWrapping="Wrap">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
+                                                <Setter Property="FontSize" Value="{StaticResource FontSize.Assist}" />
+                                                <Setter Property="Foreground" Value="{StaticResource BodyTextBrush}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsWarning}" Value="True">
+                                                        <Setter Property="Foreground" Value="{StaticResource StatusWarningBrush}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsError}" Value="True">
+                                                        <Setter Property="Foreground" Value="{StaticResource StatusErrorBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
             </Grid>
-        </Border>
+        </controls:HeaderedCard>
 
     </Grid>
 </UserControl>

@@ -10,7 +10,7 @@ public interface IFlashFlowExecutor
     /// 可预期的校验、配置和通信故障通过失败的 <see cref="FlashResult"/> 返回。
     /// </summary>
     /// <param name="request">
-    /// 本次刷写的完整输入，包含 BOOT 流程、固件集合以及可选的 UDS 时序配置。
+    /// 本次刷写的完整输入，包含 BOOT 流程、固件集合以及可选的 UDS 时序配置和实时日志接收器。
     /// </param>
     /// <param name="progress">
     /// 可选的进度接收器；用于接收整体完成百分比和当前步骤说明，传入 <see langword="null"/> 时不报告进度。

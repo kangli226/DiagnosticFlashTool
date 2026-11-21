@@ -1,11 +1,13 @@
+using System.ComponentModel;
 using System.Text.Json.Serialization;
 using DiagnosticFlashTool.Core.Firmware;
 using DiagnosticFlashTool.Core.Flashing;
 
 namespace DiagnosticFlashTool.Core.Configuration;
 
-public sealed class ProjectConfigEntry
+public sealed class ProjectConfigEntry : INotifyPropertyChanged
 {
+    public event PropertyChangedEventHandler? PropertyChanged;
     private bool _isDriverFileRequired;
     private bool _isApplicationFileRequired;
     private bool _isDriverFileAvailable;
@@ -168,6 +170,12 @@ public sealed class ProjectConfigEntry
         _isDriverFileError = status.IsError;
         _driverFileStatusIcon = status.Icon;
         _driverFileStatusText = status.Text;
+        PropertyChanged?.Invoke(this, new(nameof(IsDriverFileConfigured)));
+        PropertyChanged?.Invoke(this, new(nameof(IsDriverFileRequired)));
+        PropertyChanged?.Invoke(this, new(nameof(IsDriverFileAvailable)));
+        PropertyChanged?.Invoke(this, new(nameof(IsDriverFileError)));
+        PropertyChanged?.Invoke(this, new(nameof(DriverFileStatusIcon)));
+        PropertyChanged?.Invoke(this, new(nameof(DriverFileStatusText)));
     }
 
     private void ApplyApplicationStatus(FirmwareFileStatus status)
@@ -176,6 +184,12 @@ public sealed class ProjectConfigEntry
         _isApplicationFileError = status.IsError;
         _applicationFileStatusIcon = status.Icon;
         _applicationFileStatusText = status.Text;
+        PropertyChanged?.Invoke(this, new(nameof(IsApplicationFileConfigured)));
+        PropertyChanged?.Invoke(this, new(nameof(IsApplicationFileRequired)));
+        PropertyChanged?.Invoke(this, new(nameof(IsApplicationFileAvailable)));
+        PropertyChanged?.Invoke(this, new(nameof(IsApplicationFileError)));
+        PropertyChanged?.Invoke(this, new(nameof(ApplicationFileStatusIcon)));
+        PropertyChanged?.Invoke(this, new(nameof(ApplicationFileStatusText)));
     }
 
     private readonly record struct FirmwareFileStatus(

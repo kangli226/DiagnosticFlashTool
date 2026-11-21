@@ -8,4 +8,8 @@ namespace DiagnosticFlashTool.Core.Flashing;
 public sealed record FlashExecutionRequest(
     BootConfig BootConfig,
     FirmwareSet FirmwareSet,
-    UdsTimingOptions? Timing = null);
+    UdsTimingOptions? Timing = null)
+{
+    /// <summary>可选的实时日志接收器；执行结果仍保留完整日志，取消时也会报告已产生的日志。</summary>
+    public IProgress<string>? LogProgress { get; init; }
+}

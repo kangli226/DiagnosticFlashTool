@@ -1,0 +1,71 @@
+<UserControl x:Class="DiagnosticFlashTool.App.Views.Controls.FlashConfiguration"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls">
+    <controls:HeaderedCard Header="刷写配置" Style="{StaticResource HeaderedCard.Form}">
+        <controls:CardContentPanel Style="{StaticResource Card.FormRowsContent}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="当前项目" Style="{StaticResource FieldLabelStyle}" />
+                <TextBlock Grid.Column="1"
+                           Text="{Binding SelectedProject.ProjectName, TargetNullValue=未选择项目, FallbackValue=未选择项目}"
+                           ToolTip="{Binding SelectedProject.ProjectName}"
+                           Style="{StaticResource MonoAssistTextStyle}" />
+                <Button Grid.Column="2" Command="{Binding OpenActiveProjectConfigCommand}"
+                        Visibility="{Binding IsSystemAdministrator, Converter={StaticResource BooleanToVisibilityConverter}}"
+                        Style="{StaticResource Button.Normal}" Margin="8,0,0,0">
+                    <TextBlock Text="查看配置" Style="{StaticResource Button.IconLabel}" Margin="0" />
+                </Button>
+            </Grid>
+
+            <Grid Visibility="{Binding HasSelectedProject, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="BOOT 配置" Style="{StaticResource FieldLabelStyle}" />
+                <TextBlock Grid.Column="1" Text="{Binding FlowConfigFileDisplay}" ToolTip="{Binding FlowConfigFilePath}"
+                           Style="{StaticResource MonoAssistTextStyle}" />
+            </Grid>
+
+            <TextBlock Text="{Binding FlashCommunicationSummaryText}" ToolTip="{Binding FlashCommunicationSummaryText}"
+                       Style="{StaticResource HintTextStyle}" />
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="Driver 文件" Style="{StaticResource FieldLabelStyle}" />
+                <Border Grid.Column="1" ToolTip="{Binding DriverFilePath}" Style="{StaticResource PathDisplayBorderStyle}">
+                    <TextBlock Text="{Binding DriverFileDisplay}" Style="{StaticResource PathDisplayTextStyle}" />
+                </Border>
+                <Button Grid.Column="2" Command="{Binding BrowseDriverCommand}"
+                        Style="{StaticResource Button.Normal}" Margin="8,0,0,0">
+                    <TextBlock Text="选择文件…" Style="{StaticResource Button.IconLabel}" Margin="0" />
+                </Button>
+            </Grid>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="App 文件" Style="{StaticResource FieldLabelStyle}" />
+                <Border Grid.Column="1" ToolTip="{Binding ApplicationFilePath}" Style="{StaticResource PathDisplayBorderStyle}">
+                    <TextBlock Text="{Binding ApplicationFileDisplay}" Style="{StaticResource PathDisplayTextStyle}" />
+                </Border>
+                <Button Grid.Column="2" Command="{Binding BrowseApplicationCommand}"
+                        Style="{StaticResource Button.Normal}" Margin="8,0,0,0">
+                    <TextBlock Text="选择文件…" Style="{StaticResource Button.IconLabel}" Margin="0" />
+                </Button>
+            </Grid>
+        </controls:CardContentPanel>
+    </controls:HeaderedCard>
+</UserControl>

@@ -4,247 +4,238 @@
              xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls">
     <Grid Style="{StaticResource PageRootGridStyle}">
         <Grid.RowDefinitions>
-            <RowDefinition Style="{StaticResource PageHeaderRowStyle}" />
-            <RowDefinition Style="{StaticResource PageHeaderGapRowStyle}" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Style="{StaticResource PageSectionGapRowStyle}" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Style="{StaticResource PageSectionGapRowStyle}" />
             <RowDefinition Height="*" />
+            <RowDefinition Style="{StaticResource PageSectionGapRowStyle}" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <controls:PageHeader Grid.Row="0" Style="{StaticResource PageHeader.Standard}" Title="开发者选项">
-            <controls:PageHeader.Actions>
-                <controls:PageHelpDocumentButton Style="{StaticResource PageHelpDocumentButton.Standard}" />
-            </controls:PageHeader.Actions>
-        </controls:PageHeader>
-
-        <Grid Grid.Row="2">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-
-            <controls:HeaderedCard Grid.Row="0"
-                                   Header="刷写配置"
-                                   Style="{StaticResource HeaderedCard.Form.Lead}">
-                <controls:CardContentPanel Style="{StaticResource Card.FormRowsContent}">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <TextBlock Grid.Column="0"
-                                   Text="项目号："
-                                   Style="{StaticResource FieldLabelStyle}"
-                                   Margin="0" />
-                        <ComboBox Grid.Column="2"
-                                  Width="Auto"
-                                  HorizontalAlignment="Stretch"
-                                  ItemsSource="{Binding Projects}"
-                                  DisplayMemberPath="ProjectName"
-                                  SelectedItem="{Binding SelectedProject, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                  Style="{StaticResource StandardComboBoxStyle}" />
-                        <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
-                            <Button Width="118"
-                                    Command="{Binding StartFlashCommand}"
-                                    Margin="0"
-                                    Style="{StaticResource Button.Normal}"
-                                    ToolTip="连接 CAN 设备后开始刷写">
-                                <StackPanel Style="{StaticResource Button.InlineContent}">
-                                    <controls:FluentIcon Kind="CloudDownloadOutline"
-                                                         Style="{StaticResource Button.Glyph.Current}" />
-                                    <TextBlock Text="开始刷写" Style="{StaticResource Button.IconLabel}" />
-                                </StackPanel>
-                            </Button>
-                            <Button Width="96"
-                                    Margin="8,0,0,0"
-                                    Command="{Binding CancelFlashCommand}"
-                                    Style="{StaticResource Button.Danger}"
-                                    ToolTip="中止正在进行的刷写，并让 ECU 退出编程会话">
-                                <StackPanel Style="{StaticResource Button.InlineContent}">
-                                    <controls:FluentIcon Kind="CloseCircleOutline"
-                                                         Style="{StaticResource Button.Glyph.Current}" />
-                                    <TextBlock Text="取消" Style="{StaticResource Button.IconLabel}" />
-                                </StackPanel>
-                            </Button>
-                        </StackPanel>
-                    </Grid>
-                </controls:CardContentPanel>
-            </controls:HeaderedCard>
-
-            <Grid Grid.Row="1">
+        <!-- 项目选择在三个诊断页面间共享，刷写参数随项目联动。 -->
+        <Border Grid.Row="0" Style="{StaticResource Card.Compact}">
+            <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="7*" />
-                    <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
-                    <ColumnDefinition Width="13*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <Grid Grid.Column="0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="112" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
+                <controls:WorkspaceProjectSelector Grid.Column="0" />
 
-                    <controls:HeaderedCard Grid.Row="0"
-                                           Header="下载进度"
-                                           Style="{StaticResource HeaderedCard.Panel.Centered.Lead}">
-                        <Grid>
-                            <ProgressBar Minimum="0"
-                                         Maximum="100"
-                                         Value="{Binding Progress}"
-                                         Style="{StaticResource SoftProgressBarStyle}" />
-                            <TextBlock Text="{Binding ProgressText}"
-                                       Style="{StaticResource ProgressValueTextStyle}" />
-                        </Grid>
-                    </controls:HeaderedCard>
+                <Button Grid.Column="1"
+                        Command="{Binding StartFlashCommand}"
+                        Margin="10,0,0,0"
+                        Style="{StaticResource Button.Normal}"
+                        ToolTip="连接 CAN 设备并选择 BOOT 配置后开始刷写"
+                        ToolTipService.ShowOnDisabled="True">
+                    <StackPanel Style="{StaticResource Button.InlineContent}">
+                        <controls:FluentIcon Kind="CloudDownloadOutline"
+                                             Style="{StaticResource Button.Glyph.Current}" />
+                        <TextBlock Text="开始刷写" Style="{StaticResource Button.IconLabel}" />
+                    </StackPanel>
+                </Button>
 
-                    <controls:HeaderedCard Grid.Row="1"
-                                           Header="下载信息"
-                                           Style="{StaticResource HeaderedCard.Panel}">
-                        <TextBox Text="{Binding DownloadInfoText, Mode=OneWay}"
-                                 Height="Auto"
-                                 Margin="0"
-                                 Padding="0"
-                                 Background="Transparent"
-                                 BorderThickness="0"
-                                 Foreground="{StaticResource BodyTextBrush}"
-                                  FontSize="{StaticResource FontSize.Body}"
-                                 IsReadOnly="True"
-                                 AcceptsReturn="True"
-                                 TextWrapping="Wrap"
-                                 HorizontalContentAlignment="Stretch"
-                                 VerticalContentAlignment="Top"
-                                 VerticalScrollBarVisibility="Auto" />
-                    </controls:HeaderedCard>
-                </Grid>
-
-                <Grid Grid.Column="2">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="112" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-
-                    <controls:HeaderedCard Grid.Row="0"
-                                           Header="报文发送区"
-                                           Style="{StaticResource HeaderedCard.Form.Lead}">
-                        <controls:CardContentPanel Style="{StaticResource Card.FormRowsContent}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="104" />
-                                        <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
-                                        <ColumnDefinition Width="90" />
-                                </Grid.ColumnDefinitions>
-
-                                    <TextBlock Grid.Column="0"
-                                               Text="帧ID:0x"
-                                               Style="{StaticResource FieldLabelStyle}" />
-                                    <TextBox Grid.Column="1"
-                                             Height="32"
-                                             Margin="0"
-                                             Text="{Binding ManualFrameId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             ToolTip="例如 0x7E0 或 7E0"
-                                             Style="{StaticResource MonoTextBoxStyle}" />
-
-                                    <TextBlock Grid.Column="3"
-                                               Text="发送数据："
-                                               Style="{StaticResource FieldLabelStyle}" />
-                                    <TextBox Grid.Column="4"
-                                             Height="32"
-                                             Margin="0"
-                                             Text="{Binding ManualFrameData, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             ToolTip="例如 02 10 03"
-                                             Style="{StaticResource MonoTextBoxStyle}" />
-                                    <Button Grid.Column="6"
-                                            Width="90"
-                                            Height="32"
-                                            Margin="0"
-                                            HorizontalAlignment="Right"
-                                            Command="{Binding SendManualFrameCommand}"
-                                            Style="{StaticResource Button.Normal}"
-                                            ToolTip="连接 CAN 设备后发送报文">
-                                        <StackPanel Style="{StaticResource Button.InlineContent}">
-                                            <controls:FluentIcon Kind="SendOutline"
-                                                                 Style="{StaticResource Button.Glyph.Current}" />
-                                            <TextBlock Text="发送" Style="{StaticResource Button.IconLabel}" />
-                                        </StackPanel>
-                                    </Button>
-                                </Grid>
-                        </controls:CardContentPanel>
-                    </controls:HeaderedCard>
-
-                    <controls:HeaderedCard Grid.Row="1"
-                                           Header="报文接收区"
-                                           Style="{StaticResource HeaderedCard.Data.Actions}">
-                        <controls:HeaderedCard.Actions>
-                            <StackPanel Orientation="Horizontal">
-                                <Button Width="98"
-                                        Command="{Binding ToggleFrameCaptureCommand}"
-                                        Style="{StaticResource Button.Normal}">
-                                    <StackPanel Style="{StaticResource Button.InlineContent}">
-                                        <controls:FluentIcon Kind="Pause"
-                                                             Style="{StaticResource Button.Glyph.Current}" />
-                                        <TextBlock Text="{Binding FrameCaptureActionText}"
-                                                   Style="{StaticResource Button.IconLabel}" />
-                                    </StackPanel>
-                                </Button>
-                                <Button Width="126"
-                                        Command="{Binding ToggleFrameFilterCommand}"
-                                        Style="{StaticResource Button.Normal}">
-                                    <StackPanel Style="{StaticResource Button.InlineContent}">
-                                        <controls:FluentIcon Kind="FilterOutline"
-                                                             Style="{StaticResource Button.Glyph.Current}" />
-                                        <TextBlock Text="{Binding FrameFilterActionText}"
-                                                   Style="{StaticResource Button.IconLabel}" />
-                                    </StackPanel>
-                                </Button>
-                                <Button Width="104"
-                                        Command="{Binding ExportFramesCommand}"
-                                        Style="{StaticResource Button.Normal}">
-                                    <StackPanel Style="{StaticResource Button.InlineContent}">
-                                        <controls:FluentIcon Kind="ExportVariant"
-                                                             Style="{StaticResource Button.Glyph.Current}" />
-                                        <TextBlock Text="导出" Style="{StaticResource Button.IconLabel}" />
-                                    </StackPanel>
-                                </Button>
-                                <Button Width="108"
-                                        Margin="0"
-                                        Command="{Binding ClearFramesCommand}"
-                                        Style="{StaticResource Button.Danger}">
-                                    <StackPanel Style="{StaticResource Button.InlineContent}">
-                                        <controls:FluentIcon Kind="DeleteSweepOutline"
-                                                             Style="{StaticResource Button.Glyph.Current}" />
-                                        <TextBlock Text="清空报文" Style="{StaticResource Button.IconLabel}" />
-                                    </StackPanel>
-                                </Button>
-                            </StackPanel>
-                        </controls:HeaderedCard.Actions>
-
-                        <DataGrid Margin="0"
-                                  ItemsSource="{Binding Frames}"
-                                  IsReadOnly="True"
-                                  Style="{StaticResource DataGrid.Base}">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="方向" Binding="{Binding Direction}" Width="110" ElementStyle="{StaticResource DataGrid.CellText}" />
-                                <DataGridTextColumn Header="ID" Binding="{Binding IdText}" Width="140"
-                                                    ElementStyle="{StaticResource DataGrid.MonoCellText}" />
-                                <DataGridTextColumn Header="格式" Binding="{Binding FormatText}" Width="140" ElementStyle="{StaticResource DataGrid.CellText}" />
-                                <DataGridTextColumn Header="协议" Binding="{Binding ProtocolText}" Width="100" ElementStyle="{StaticResource DataGrid.CellText}" />
-                                <DataGridTextColumn Header="BRS" Binding="{Binding BrsText}" Width="70" ElementStyle="{StaticResource DataGrid.CellText}" />
-                                <DataGridTextColumn Header="ESI" Binding="{Binding EsiText}" Width="70" ElementStyle="{StaticResource DataGrid.CellText}" />
-                                <DataGridTextColumn Header="长度" Binding="{Binding Dlc}" Width="100"
-                                                    ElementStyle="{StaticResource DataGrid.MonoCellText}" />
-                                <DataGridTextColumn Header="数据" Binding="{Binding DataText}" Width="*"
-                                                    ElementStyle="{StaticResource DataGrid.MonoCellText}" />
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </controls:HeaderedCard>
-                </Grid>
+                <Button Grid.Column="2"
+                        Command="{Binding CancelFlashCommand}"
+                        Margin="0"
+                        Style="{StaticResource Button.Danger}"
+                        ToolTip="中止正在进行的刷写，并让 ECU 退出编程会话"
+                        ToolTipService.ShowOnDisabled="True">
+                    <StackPanel Style="{StaticResource Button.InlineContent}">
+                        <controls:FluentIcon Kind="CloseCircleOutline"
+                                             Style="{StaticResource Button.Glyph.Current}" />
+                        <TextBlock Text="取消" Style="{StaticResource Button.IconLabel}" />
+                    </StackPanel>
+                </Button>
             </Grid>
+        </Border>
+
+        <!-- 报文输入行：控件高度固定为 26，发送记录显示在下方报文表，操作结果通过状态栏与日志面板反馈。 -->
+        <Border Grid.Row="2" Style="{StaticResource Card.Compact}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="112" />
+                    <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="帧ID:0x"
+                           Margin="0,0,8,0"
+                           Style="{StaticResource FieldLabelStyle}" />
+                <TextBox Grid.Column="1"
+                         Height="26"
+                         VerticalAlignment="Center"
+                         Text="{Binding ManualFrameId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="例如 0x7E0 或 7E0"
+                         Style="{StaticResource MonoTextBoxStyle}" />
+
+                <TextBlock Grid.Column="3"
+                           Text="发送数据："
+                           Margin="0,0,8,0"
+                           Style="{StaticResource FieldLabelStyle}" />
+                <TextBox Grid.Column="4"
+                         Height="26"
+                         VerticalAlignment="Center"
+                         Text="{Binding ManualFrameData, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="例如 02 10 03"
+                         Style="{StaticResource MonoTextBoxStyle}" />
+
+                <Button Grid.Column="6"
+                        Command="{Binding SendManualFrameCommand}"
+                        Margin="0"
+                        Style="{StaticResource Button.Normal}"
+                        ToolTip="连接 CAN 设备后发送报文"
+                        ToolTipService.ShowOnDisabled="True">
+                    <StackPanel Style="{StaticResource Button.InlineContent}">
+                        <controls:FluentIcon Kind="SendOutline"
+                                             Style="{StaticResource Button.Glyph.Current}" />
+                        <TextBlock Text="发送" Style="{StaticResource Button.IconLabel}" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*" />
+                <ColumnDefinition Style="{StaticResource PageColumnGapStyle}" />
+                <ColumnDefinition Width="7*" />
+            </Grid.ColumnDefinitions>
+            <controls:HeaderedCard Grid.Column="0" Header="下载信息"
+                                   Style="{StaticResource HeaderedCard.Panel}">
+                <TextBox Text="{Binding DownloadInfoText, Mode=OneWay}"
+                         AutomationProperties.Name="下载信息"
+                         Height="Auto" IsReadOnly="True" AcceptsReturn="True"
+                         TextWrapping="Wrap" VerticalContentAlignment="Top"
+                         VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled"
+                         Style="{StaticResource MonoTextBoxStyle}" />
+            </controls:HeaderedCard>
+
+            <!-- 实时报文沿用全局表格样式，并保留滚轮及键盘滚动。 -->
+            <controls:HeaderedCard Grid.Column="2"
+                                   Header="实时报文"
+                                   Style="{StaticResource HeaderedCard.Data.Actions}">
+                <controls:HeaderedCard.Actions>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Command="{Binding ToggleFrameCaptureCommand}"
+                                Style="{StaticResource Button.Normal}"
+                                ToolTip="暂停或继续接收报文显示">
+                            <StackPanel Style="{StaticResource Button.InlineContent}">
+                                <controls:FluentIcon Kind="Pause"
+                                                     Style="{StaticResource Button.Glyph.Current}" />
+                                <TextBlock Text="{Binding FrameCaptureActionText}"
+                                           Style="{StaticResource Button.IconLabel}" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Command="{Binding ToggleFrameFilterCommand}"
+                                Style="{StaticResource Button.Normal}"
+                                ToolTip="按当前配置的物理请求、功能请求和响应地址切换报文过滤">
+                            <StackPanel Style="{StaticResource Button.InlineContent}">
+                                <controls:FluentIcon Kind="FilterOutline"
+                                                     Style="{StaticResource Button.Glyph.Current}" />
+                                <TextBlock Text="{Binding FrameFilterActionText}"
+                                           Style="{StaticResource Button.IconLabel}" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Command="{Binding ExportFramesCommand}"
+                                Style="{StaticResource Button.Normal}"
+                                ToolTip="导出当前报文历史">
+                            <StackPanel Style="{StaticResource Button.InlineContent}">
+                                <controls:FluentIcon Kind="ExportVariant"
+                                                     Style="{StaticResource Button.Glyph.Current}" />
+                                <TextBlock Text="导出" Style="{StaticResource Button.IconLabel}" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Command="{Binding ClearFramesCommand}"
+                                Margin="0"
+                                Style="{StaticResource Button.Danger}"
+                                ToolTip="清空当前显示的报文历史"
+                                ToolTipService.ShowOnDisabled="True">
+                            <StackPanel Style="{StaticResource Button.InlineContent}">
+                                <controls:FluentIcon Kind="DeleteSweepOutline"
+                                                     Style="{StaticResource Button.Glyph.Current}" />
+                                <TextBlock Text="清空报文" Style="{StaticResource Button.IconLabel}" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </controls:HeaderedCard.Actions>
+
+                <Grid>
+                    <DataGrid ItemsSource="{Binding Frames}"
+                              IsReadOnly="True"
+                              ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                              Style="{StaticResource DataGrid.Base}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="方向" Binding="{Binding Direction}" Width="70"
+                                                ElementStyle="{StaticResource DataGrid.CellText}" />
+                            <DataGridTextColumn Header="ID" Binding="{Binding IdText}" Width="104"
+                                                ElementStyle="{StaticResource DataGrid.MonoCellText}" />
+                            <DataGridTextColumn Header="格式" Binding="{Binding FormatText}" Width="64"
+                                                ElementStyle="{StaticResource DataGrid.CellText}" />
+                            <DataGridTextColumn Header="协议" Binding="{Binding ProtocolText}" Width="64"
+                                                ElementStyle="{StaticResource DataGrid.CellText}" />
+                            <DataGridTextColumn Header="BRS" Binding="{Binding BrsText}" Width="44"
+                                                ElementStyle="{StaticResource DataGrid.CellText}" />
+                            <DataGridTextColumn Header="ESI" Binding="{Binding EsiText}" Width="44"
+                                                ElementStyle="{StaticResource DataGrid.CellText}" />
+                            <DataGridTextColumn Header="长度" Binding="{Binding Dlc}" Width="48"
+                                                ElementStyle="{StaticResource DataGrid.MonoCellText}" />
+                            <DataGridTextColumn Header="数据" Binding="{Binding DataText}" Width="*" MinWidth="180"
+                                                ElementStyle="{StaticResource DataGrid.MonoCellText}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <TextBlock Text="暂无报文，连接设备并开始捕获后显示。"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               IsHitTestVisible="False">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource HintTextStyle}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Frames.Count}" Value="0">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+            </controls:HeaderedCard>
         </Grid>
+
+        <!-- 刷写进度：仅显示进度条与百分比，区域随内容收紧，为上方报文表留出空间。 -->
+        <controls:HeaderedCard Grid.Row="6"
+                               Header="刷写进度"
+                               Style="{StaticResource HeaderedCard.Panel}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ProgressBar Grid.Column="0"
+                             Minimum="0"
+                             Maximum="100"
+                             Value="{Binding Progress}"
+                             VerticalAlignment="Center"
+                             Style="{StaticResource SoftProgressBarStyle}" />
+                <TextBlock Grid.Column="1"
+                           Width="52"
+                           Text="{Binding ProgressText}"
+                           Margin="10,0,0,0"
+                           HorizontalAlignment="Right"
+                           Style="{StaticResource ProgressValueTextStyle}" />
+            </Grid>
+        </controls:HeaderedCard>
     </Grid>
 </UserControl>

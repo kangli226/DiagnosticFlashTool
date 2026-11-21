@@ -4,14 +4,16 @@
         .NET 10 WPF Fluent uses the SystemColors accent palette. Keep the
         desktop theme Fluent while pinning the product accent to the stable
         diagnostic-tool brand palette instead of the operator's OS accent.
+        v3.3 深色框架：品牌色由 #1668C4 换为更稳的工业蓝 #1466B8，
+        并同步深色框架上的强调色 #4AA3E8（见 Brushes.ChromeAccentBrush）。
     -->
-    <Color x:Key="{x:Static SystemColors.AccentColorKey}">#2F6FEB</Color>
-    <Color x:Key="{x:Static SystemColors.AccentColorDark1Key}">#285FC7</Color>
-    <Color x:Key="{x:Static SystemColors.AccentColorDark2Key}">#1F4EAA</Color>
-    <Color x:Key="{x:Static SystemColors.AccentColorDark3Key}">#183E88</Color>
-    <Color x:Key="{x:Static SystemColors.AccentColorLight1Key}">#4C8DF6</Color>
-    <Color x:Key="{x:Static SystemColors.AccentColorLight2Key}">#AFC9F5</Color>
-    <Color x:Key="{x:Static SystemColors.AccentColorLight3Key}">#EAF2FF</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorKey}">#1466B8</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorDark1Key}">#0F5599</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorDark2Key}">#0B4479</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorDark3Key}">#08345C</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorLight1Key}">#4A8FD0</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorLight2Key}">#9CC4EE</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorLight3Key}">#E6EFF9</Color>
 
     <SolidColorBrush x:Key="FluentAccentBrush"
                      Color="{DynamicResource {x:Static SystemColors.AccentColorKey}}" />

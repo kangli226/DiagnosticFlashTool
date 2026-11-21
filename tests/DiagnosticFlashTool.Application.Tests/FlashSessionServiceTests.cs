@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using DiagnosticFlashTool.Application;
 using DiagnosticFlashTool.Core.Can;
 using DiagnosticFlashTool.Core.Configuration;
@@ -370,14 +371,18 @@ public sealed class FlashSessionServiceTests
             }
         };
 
+        var logProgress = new RecordingLogProgress();
         var exception = await Record.ExceptionAsync(() => executor.ExecuteAsync(
-            new FlashExecutionRequest(bootConfig, firmwareSet),
+            new FlashExecutionRequest(bootConfig, firmwareSet) { LogProgress = logProgress },
             null,
             cancellation.Token));
 
         Assert.True(
             exception is OperationCanceledException,
             $"期望取消异常，实际为：{exception?.ToString() ?? "（未抛出异常）"}");
+        Assert.Contains(logProgress.Messages, message => message.Contains("开始刷写", StringComparison.Ordinal));
+        Assert.Contains(logProgress.Messages, message => message.Contains("刷写已取消", StringComparison.Ordinal));
+        Assert.Contains(logProgress.Messages, message => message.Contains("已返回默认会话", StringComparison.Ordinal));
 
         var sent = device.SentSingleFramePayloads();
 
@@ -564,6 +569,7 @@ public sealed class FlashSessionServiceTests
             ResponseId = 0x708
         });
         IFlashFlowExecutor executor = new FlashFlowExecutor(new UdsClient(transport));
+        var logProgress = new RecordingLogProgress();
         var execution = executor.ExecuteAsync(new FlashExecutionRequest(
             new BootConfig
             {
@@ -574,15 +580,19 @@ public sealed class FlashSessionServiceTests
                     new FlashStepConfig { Id = 2, Name = "ECU reset", Service = "0x11", SubService = "0x01" }
                 ]
             },
-            new FirmwareSet()));
+            new FirmwareSet()) { LogProgress = logProgress });
 
         await device.FirstRequestReceived.WaitAsync(TimeSpan.FromSeconds(1));
 
         // 第一步尚未响应时，第二步不能提前发送。
         Assert.Equal(new byte[] { 0x10 }, device.SentServices);
+        Assert.False(execution.IsCompleted);
+        Assert.Contains(logProgress.Messages, message => message.Contains("步骤 1：", StringComparison.Ordinal));
+        Assert.DoesNotContain(logProgress.Messages, message => message.Contains("步骤 1 已完成", StringComparison.Ordinal));
 
         device.CompleteFirstRequest(firstStepSucceeds);
         var result = await execution;
+        Assert.Equal(result.LogMessages, logProgress.Messages.ToArray());
 
         if (firstStepSucceeds)
         {
@@ -595,6 +605,13 @@ public sealed class FlashSessionServiceTests
             Assert.Equal(FlashFailureKind.Protocol, result.FailureKind);
             Assert.Equal(new byte[] { 0x10 }, device.SentServices);
         }
+    }
+
+    private sealed class RecordingLogProgress : IProgress<string>
+    {
+        public ConcurrentQueue<string> Messages { get; } = new();
+
+        public void Report(string value) => Messages.Enqueue(value);
     }
 
     private static FlashSessionOptions CreateOptions(

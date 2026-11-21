@@ -5,37 +5,40 @@
         <ResourceDictionary Source="CardStyles.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <Thickness x:Key="PageMargin">16,8,16,16</Thickness>
-    <Thickness x:Key="PageCardBottomGap">0,0,0,16</Thickness>
-    <Thickness x:Key="PageCardTopGap">0,16,0,0</Thickness>
-    <Thickness x:Key="PageContentBottomGap">0,0,0,12</Thickness>
-    <Thickness x:Key="PageContentTopGap">0,12,0,0</Thickness>
-    <Thickness x:Key="FormAssistTextAfterLabelMargin">90,0,0,0</Thickness>
+    <!-- 桌面工具改版：页面外边距与区块间距整体收紧，换取更多可见行数。
+         顶边与左右同为 12：首个卡片/页头到内容区上沿的留白与左侧保持一致。 -->
+    <Thickness x:Key="PageMargin">12,12,12,10</Thickness>
+    <Thickness x:Key="PageCardBottomGap">0,0,0,10</Thickness>
+    <Thickness x:Key="PageCardTopGap">0,10,0,0</Thickness>
+    <Thickness x:Key="PageContentBottomGap">0,0,0,8</Thickness>
+    <Thickness x:Key="PageContentTopGap">0,8,0,0</Thickness>
+    <Thickness x:Key="FormAssistTextAfterLabelMargin">100,0,0,0</Thickness>
 
     <Style x:Key="PageRootGridStyle" TargetType="Grid">
         <Setter Property="Margin" Value="{StaticResource PageMargin}" />
     </Style>
 
     <Style x:Key="PageSectionGapRowStyle" TargetType="RowDefinition">
-        <Setter Property="Height" Value="16" />
+        <Setter Property="Height" Value="10" />
     </Style>
 
     <Style x:Key="PageHeaderGapRowStyle"
            TargetType="RowDefinition"
            BasedOn="{StaticResource PageSectionGapRowStyle}">
-        <Setter Property="Height" Value="8" />
+        <Setter Property="Height" Value="6" />
     </Style>
 
     <Style x:Key="PageSummaryRowStyle" TargetType="RowDefinition">
-        <Setter Property="Height" Value="122" />
+        <Setter Property="Height" Value="96" />
     </Style>
 
     <Style x:Key="PageColumnGapStyle" TargetType="ColumnDefinition">
-        <Setter Property="Width" Value="12" />
+        <Setter Property="Width" Value="10" />
     </Style>
 
+    <!-- 中文标签最长 7 字（如"CAN FD 能力"），100 可容纳而不裁切。 -->
     <Style x:Key="FormLabelColumnStyle" TargetType="ColumnDefinition">
-        <Setter Property="Width" Value="90" />
+        <Setter Property="Width" Value="100" />
     </Style>
 
     <Style x:Key="PageLeadStandardCardStyle" TargetType="Border" BasedOn="{StaticResource Card.Form}">
@@ -53,7 +56,7 @@
     <Style x:Key="PageSubtitleTextStyle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="{StaticResource FontSize.Assist}" />
         <Setter Property="Foreground" Value="{StaticResource SubtleTextBrush}" />
-        <Setter Property="Margin" Value="0,10,0,0" />
+        <Setter Property="Margin" Value="0,6,0,0" />
     </Style>
 
     <Style x:Key="EmptyStateTitleTextStyle" TargetType="TextBlock">

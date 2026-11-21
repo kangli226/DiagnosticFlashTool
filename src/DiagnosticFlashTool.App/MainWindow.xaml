@@ -16,6 +16,19 @@
         TextOptions.TextFormattingMode="Ideal"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True">
+    <Window.Resources>
+        <DataTemplate x:Key="ShellNavigationPageTemplate">
+            <RadioButton Content="{Binding Title}"
+                         Tag="{Binding Icon}"
+                         IsEnabled="{Binding CanNavigate}"
+                         Checked="ShellNavigationPage_Checked"
+                         IsChecked="{Binding IsSelected, Mode=OneWay}"
+                         Visibility="{Binding IsVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                         ToolTip="{Binding Title}"
+                         Margin="18,0,0,0"
+                         Style="{StaticResource ShellNavRadioButtonStyle}" />
+        </DataTemplate>
+    </Window.Resources>
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="0"
                              CornerRadius="{StaticResource CornerRadius.Window}"
@@ -26,18 +39,21 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="46" />
+            <RowDefinition Height="32" />
+            <RowDefinition Height="26" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="36" />
+            <RowDefinition Height="24" />
         </Grid.RowDefinitions>
 
+        <!-- 标题栏：应用标识 + 当前项目与 BOOT 配置 + 窗口控制 -->
         <Border Grid.Row="0"
-                Background="{StaticResource PanelBrush}"
-                BorderBrush="{StaticResource CardBorderBrush}"
+                Background="{StaticResource ChromeBrush}"
+                BorderBrush="{StaticResource ChromeBorderBrush}"
                 BorderThickness="0,0,0,1"
                 MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
             <Grid>
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
@@ -46,35 +62,50 @@
                 <StackPanel Grid.Column="0"
                             Orientation="Horizontal"
                             VerticalAlignment="Center"
-                            Margin="16,0,0,0">
-                    <Border Width="28"
-                            Height="28"
+                            Margin="12,0,0,0">
+                    <Border Width="22"
+                            Height="22"
                             Background="{StaticResource BrandNavigationBrush}"
                             CornerRadius="{StaticResource CornerRadius.Brand}">
                         <TextBlock Text="B"
                                    Foreground="{StaticResource InverseTextBrush}"
-                                   FontSize="{StaticResource FontSize.Body}"
+                                   FontSize="{StaticResource FontSize.Caption}"
                                    FontWeight="Medium"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center" />
                     </Border>
                     <TextBlock Text="BOOT刷写工具"
-                               Margin="10,0,0,0"
-                               FontSize="{StaticResource FontSize.Body}"
+                               Margin="8,0,0,0"
+                               FontSize="{StaticResource FontSize.Assist}"
                                FontWeight="Medium"
-                               Foreground="{StaticResource TextBrush}" />
+                               Foreground="{StaticResource ChromeTextBrush}" />
                 </StackPanel>
 
-                <StackPanel Grid.Column="2"
+                <Border Grid.Column="1"
+                        Width="1"
+                        Height="14"
+                        Margin="12,0"
+                        VerticalAlignment="Center"
+                        Background="{StaticResource ChromeDividerBrush}" />
+
+                <TextBlock Grid.Column="2"
+                           Text="{Binding StatusBarProjectText}"
+                           ToolTip="{Binding StatusBarProjectText}"
+                           TextTrimming="CharacterEllipsis"
+                           VerticalAlignment="Center"
+                           FontSize="{StaticResource FontSize.Assist}"
+                           Foreground="{StaticResource ChromeMutedTextBrush}" />
+
+                <StackPanel Grid.Column="3"
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True">
                     <Button ToolTip="最小化"
-                            Width="46"
-                            Height="46"
+                            Width="40"
+                            Height="32"
                             Padding="0"
                             Margin="0"
-                            Style="{StaticResource Button.Normal}"
+                            Style="{StaticResource Button.OnChrome}"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True"
                             Click="Minimize_Click">
                         <controls:FluentIcon Kind="WindowMinimize"
@@ -82,11 +113,11 @@
                                              Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                     </Button>
                     <Button ToolTip="最大化"
-                            Width="46"
-                            Height="46"
+                            Width="40"
+                            Height="32"
                             Padding="0"
                             Margin="0"
-                            Style="{StaticResource Button.Normal}"
+                            Style="{StaticResource Button.OnChrome}"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True"
                             Click="Maximize_Click">
                         <controls:FluentIcon Kind="WindowMaximize"
@@ -94,11 +125,11 @@
                                              Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                     </Button>
                     <Button ToolTip="关闭"
-                            Width="46"
-                            Height="46"
+                            Width="40"
+                            Height="32"
                             Padding="0"
                             Margin="0"
-                            Style="{StaticResource Button.Normal}"
+                            Style="{StaticResource Button.OnChrome}"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True"
                             Click="Close_Click">
                         <controls:FluentIcon Kind="Close"
@@ -109,119 +140,287 @@
             </Grid>
         </Border>
 
-        <Grid Grid.Row="1">
+        <!-- 菜单栏：自绘下拉。Fluent Menu 的模板与 26px 紧凑行高冲突（内容不绘制），
+             这里用 Button + ContextMenu 保持真实命令与键盘可达性。 -->
+        <Border Grid.Row="1"
+                Background="{StaticResource ChromeBrush}"
+                BorderBrush="{StaticResource ChromeBorderBrush}"
+                BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal"
+                        Margin="4,0"
+                        VerticalAlignment="Center">
+                <Button Style="{StaticResource Button.OnChrome}"
+                        Height="24"
+                        Padding="10,0"
+                        Margin="0"
+                        FontSize="{StaticResource FontSize.Assist}"
+                        Click="MenuButton_Click">
+                    <Button.ContextMenu>
+                        <ContextMenu Style="{StaticResource ShellContextMenuStyle}"
+                                     Placement="Bottom"
+                                     DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                            <MenuItem Header="重新加载配置" Command="{Binding LoadFlowCommand}" InputGestureText="Ctrl+R"
+                                      Visibility="{Binding IsSystemAdministrator, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            <MenuItem Header="保存配置" Command="{Binding SaveFlowCommand}" InputGestureText="Ctrl+S"
+                                      Visibility="{Binding IsSystemAdministrator, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            <Separator />
+                            <MenuItem Header="刷新项目列表" Command="{Binding RefreshProjectsCommand}" />
+                            <Separator />
+                            <MenuItem Header="退出" Click="Close_Click" />
+                        </ContextMenu>
+                    </Button.ContextMenu>
+                
+                    <Button.Content>
+                        <TextBlock Text="文件" Foreground="{StaticResource ChromeTextBrush}" />
+                    </Button.Content>
+                </Button>
+
+                <Button Style="{StaticResource Button.OnChrome}"
+                        Height="24"
+                        Padding="10,0"
+                        Margin="0"
+                        FontSize="{StaticResource FontSize.Assist}"
+                        Click="MenuButton_Click">
+                    <Button.ContextMenu>
+                        <ContextMenu Style="{StaticResource ShellContextMenuStyle}"
+                                     Placement="Bottom"
+                                     DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                            <MenuItem Header="日志面板"
+                                      IsCheckable="True"
+                                      IsChecked="{Binding IsOutputPanelVisible, Mode=TwoWay}" />
+                            <Separator />
+                            <MenuItem Header="当前项目">
+                                <MenuItem Header="固件刷写" Tag="0" Click="NavigateProject_Click" />
+                            </MenuItem>
+                            <MenuItem Header="通用 UDS">
+                                <MenuItem Header="开发者选项" Tag="1" Click="Navigate_Click"
+                                          Visibility="{Binding IsSystemAdministrator, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                <MenuItem Header="操作日志" Tag="2" Click="Navigate_Click" />
+                                <MenuItem Header="全部项目配置" Tag="3" Click="Navigate_Click"
+                                          Visibility="{Binding IsSystemAdministrator, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                <MenuItem Header="流程配置" Tag="4" Click="Navigate_Click"
+                                          Visibility="{Binding IsSystemAdministrator, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                <MenuItem Header="算法配置" Tag="5" Click="Navigate_Click"
+                                          Visibility="{Binding IsSystemAdministrator, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            </MenuItem>
+                            <MenuItem Header="系统设置" Tag="6" Click="Navigate_Click" />
+                        </ContextMenu>
+                    </Button.ContextMenu>
+                
+                    <Button.Content>
+                        <TextBlock Text="视图" Foreground="{StaticResource ChromeTextBrush}" />
+                    </Button.Content>
+                </Button>
+
+                <Button Style="{StaticResource Button.OnChrome}"
+                        Height="24"
+                        Padding="10,0"
+                        Margin="0"
+                        FontSize="{StaticResource FontSize.Assist}"
+                        Click="MenuButton_Click">
+                    <Button.ContextMenu>
+                        <ContextMenu Style="{StaticResource ShellContextMenuStyle}"
+                                     Placement="Bottom"
+                                     DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                            <MenuItem Header="连接设备" Command="{Binding ToggleConnectionCommand}" />
+                            <MenuItem Header="校验当前流程" Command="{Binding ValidateFlowCommand}" InputGestureText="F5"
+                                      Visibility="{Binding IsSystemAdministrator, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            <Separator />
+                            <MenuItem Header="开始刷写" Command="{Binding StartFlashCommand}" />
+                            <MenuItem Header="停止刷写" Command="{Binding CancelFlashCommand}" />
+                            <Separator />
+                            <MenuItem Header="清空日志" Command="{Binding ClearLogCommand}" />
+                            <MenuItem Header="导出日志" Command="{Binding ExportLogCommand}" />
+                        </ContextMenu>
+                    </Button.ContextMenu>
+                
+                    <Button.Content>
+                        <TextBlock Text="刷写" Foreground="{StaticResource ChromeTextBrush}" />
+                    </Button.Content>
+                </Button>
+
+                <Button Style="{StaticResource Button.OnChrome}"
+                        Height="24"
+                        Padding="10,0"
+                        Margin="0"
+                        FontSize="{StaticResource FontSize.Assist}"
+                        Click="MenuButton_Click">
+                    <Button.ContextMenu>
+                        <ContextMenu Style="{StaticResource ShellContextMenuStyle}"
+                                     Placement="Bottom"
+                                     DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                            <MenuItem Header="帮助文档"
+                                      IsEnabled="False"
+                                      ToolTip="暂未提供帮助文档"
+                                      ToolTipService.ShowOnDisabled="True" />
+                            <Separator />
+                            <MenuItem Header="打开日志目录" Command="{Binding OpenLogDirectoryCommand}"
+                                      Visibility="{Binding IsSystemAdministrator, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            <MenuItem Header="打开配置目录" Command="{Binding OpenProjectConfigDirectoryCommand}"
+                                      Visibility="{Binding IsSystemAdministrator, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            <Separator />
+                            <MenuItem Header="系统设置" Tag="6" Click="Navigate_Click" />
+                        </ContextMenu>
+                    </Button.ContextMenu>
+                
+                    <Button.Content>
+                        <TextBlock Text="帮助" Foreground="{StaticResource ChromeTextBrush}" />
+                    </Button.Content>
+                </Button>
+            </StackPanel>
+        </Border>
+
+        <!-- 主体：左侧项目资源管理器 + 右侧内容区与输出面板 -->
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="256" />
-                <ColumnDefinition Width="1079*" />
-                <ColumnDefinition Width="105*"/>
+                <ColumnDefinition Width="208" />
+                <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0"
-                    Background="{StaticResource SidebarBrush}"
-                    BorderBrush="{StaticResource CardBorderBrush}"
+                    Background="{StaticResource ChromeBrush}"
+                    BorderBrush="{StaticResource ChromeBorderBrush}"
                     BorderThickness="0,0,1,0">
-                <ScrollViewer Margin="0,22,0,8"
-                              HorizontalScrollBarVisibility="Disabled"
-                              VerticalScrollBarVisibility="Auto">
-                        <StackPanel>
-                            <TextBlock Text="刷写中心"
-                                       Style="{StaticResource ShellNavGroupTextStyle}" />
-                            <RadioButton Content="固件刷写"
-                                         Tag="{x:Static controls:FluentIconKind.FlashOutline}"
-                                         CommandParameter="0"
-                                         IsChecked="True"
-                                         Checked="ShellNav_Checked"
-                                         Style="{StaticResource ShellNavRadioButtonStyle}" />
-                            <RadioButton Content="开发者选项"
-                                         Tag="{x:Static controls:FluentIconKind.Console}"
-                                         CommandParameter="1"
-                                         Checked="ShellNav_Checked"
-                                         Style="{StaticResource ShellNavRadioButtonStyle}" />
-                            <RadioButton Content="历史记录"
-                                         Tag="{x:Static controls:FluentIconKind.History}"
-                                         CommandParameter="2"
-                                         Checked="ShellNav_Checked"
-                                         Style="{StaticResource ShellNavRadioButtonStyle}" />
+                <!--
+                    v3.9 侧栏分区：上半部「通用 UDS」与「项目刷写」组头固定，
+                    下半部项目列表独占剩余高度并在其内部滚动，项目再多也不会挤走顶部导航。
+                -->
+                <Grid Margin="0,8,0,6">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
 
-                            <TextBlock Text="配置管理"
-                                       Style="{StaticResource ShellNavGroupTextStyle}" />
-                            <RadioButton Content="项目配置"
-                                         Tag="{x:Static controls:FluentIconKind.FolderCogOutline}"
-                                         CommandParameter="3"
-                                         Checked="ShellNav_Checked"
-                                         Style="{StaticResource ShellNavRadioButtonStyle}" />
-                            <RadioButton Content="流程配置"
-                                         Tag="{x:Static controls:FluentIconKind.FileTreeOutline}"
-                                         CommandParameter="4"
-                                         Checked="ShellNav_Checked"
-                                         Style="{StaticResource ShellNavRadioButtonStyle}" />
-                            <RadioButton Content="算法配置"
-                                         Tag="{x:Static controls:FluentIconKind.FunctionVariant}"
-                                         CommandParameter="5"
-                                         Checked="ShellNav_Checked"
-                                         Style="{StaticResource ShellNavRadioButtonStyle}" />
+                    <StackPanel Grid.Row="0">
+                        <!-- 通用 UDS 置于最上方的一级菜单；其下页面即一级条目。 -->
+                        <TextBlock Text="通用 UDS" Style="{StaticResource ShellNavGroupTextStyle}" Margin="0,0,0,2" />
+                        <ItemsControl ItemsSource="{Binding UdsNavigationItems}"
+                                      ItemTemplate="{StaticResource ShellNavigationPageTemplate}" />
+                    </StackPanel>
 
-                            <TextBlock Text="系统"
-                                       Style="{StaticResource ShellNavGroupTextStyle}" />
-                            <RadioButton Content="系统设置"
-                                         Tag="{x:Static controls:FluentIconKind.CogOutline}"
-                                         CommandParameter="6"
-                                         Checked="ShellNav_Checked"
-                                         Style="{StaticResource ShellNavRadioButtonStyle}" />
-                            <RadioButton Content="日志"
-                                         Tag="{x:Static controls:FluentIconKind.TextBoxOutline}"
-                                         CommandParameter="7"
-                                         Checked="ShellNav_Checked"
-                                         Style="{StaticResource ShellNavRadioButtonStyle}" />
-                        </StackPanel>
-                </ScrollViewer>
+                    <!-- 项目：项目名为一级目录（不用折叠控件），其页面为二级条目。 -->
+                    <Grid Grid.Row="1" Margin="0,10,0,0">
+                        <TextBlock Text="项目刷写" Style="{StaticResource ShellNavGroupTextStyle}" Margin="0,0,0,2" />
+                        <Button Command="{Binding NewProjectCommand}"
+                                Visibility="{Binding IsSystemAdministrator, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                HorizontalAlignment="Right" VerticalAlignment="Center"
+                                Width="26" Height="22" Padding="0" Margin="0,4,6,0"
+                                Style="{StaticResource Button.OnChrome}" ToolTip="新增项目">
+                            <controls:FluentIcon Kind="Plus" Style="{StaticResource Button.Glyph.Current}" />
+                        </Button>
+                    </Grid>
+
+                    <ScrollViewer Grid.Row="2"
+                                  Style="{StaticResource ShellProjectScrollHostStyle}">
+                        <Grid VerticalAlignment="Top">
+                            <ItemsControl ItemsSource="{Binding ProjectNavigationItems}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="14,6,12,2">
+                                                <controls:FluentIcon Kind="FolderOpenOutline" Width="14" Height="14" FontSize="13"
+                                                                     Foreground="{StaticResource SidebarMutedTextBrush}"
+                                                                     VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding Project.ProjectName}"
+                                                           ToolTip="{Binding Project.ProjectName}"
+                                                           MaxWidth="150" Margin="6,0,0,0"
+                                                           Foreground="{StaticResource SidebarMutedTextBrush}"
+                                                           FontSize="{StaticResource FontSize.Caption}"
+                                                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                            <ItemsControl ItemsSource="{Binding Pages}"
+                                                          ItemTemplate="{StaticResource ShellNavigationPageTemplate}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock Text="暂无项目，请联系管理员新增"
+                                       Margin="18,8,12,8" TextWrapping="Wrap"
+                                       Style="{StaticResource SettingAssistTextStyle}"
+                                       Visibility="{Binding HasNoProjects, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                        </Grid>
+                    </ScrollViewer>
+                </Grid>
             </Border>
 
-            <TabControl Grid.Column="1"
-                        x:Name="MainTabs"
-                        Style="{StaticResource ShellContentTabControlStyle}"
-                        SelectedIndex="{Binding SelectedShellIndex, Mode=TwoWay}" Grid.ColumnSpan="2">
-                <TabItem>
-                    <views:FirmwareFlashView />
-                </TabItem>
+            <Grid x:Name="LogPanelHost" Grid.Column="1" SizeChanged="LogPanelHost_SizeChanged">
+                <Grid.RowDefinitions>
+                    <RowDefinition x:Name="MainContentRow" Height="*" MinHeight="360" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition x:Name="LogPanelRow" Height="220" MinHeight="180" />
+                </Grid.RowDefinitions>
 
-                <TabItem>
-                    <views:DeveloperOptionsView />
-                </TabItem>
+                <TabControl x:Name="MainTabs"
+                            Grid.Row="0"
+                            Style="{StaticResource ShellContentTabControlStyle}"
+                            SelectedIndex="{Binding SelectedShellIndex, Mode=TwoWay}">
+                    <TabItem>
+                        <views:FirmwareFlashView />
+                    </TabItem>
+                    <TabItem>
+                        <views:DeveloperOptionsView />
+                    </TabItem>
+                    <TabItem>
+                        <views:SystemLogView />
+                    </TabItem>
+                    <TabItem>
+                        <views:ProjectConfigView />
+                    </TabItem>
+                    <TabItem>
+                        <views:FlowConfigView />
+                    </TabItem>
+                    <TabItem>
+                        <views:AlgorithmConfigView />
+                    </TabItem>
+                    <TabItem>
+                        <views:SystemSettingsView />
+                    </TabItem>
+                </TabControl>
 
-                <TabItem>
-                    <views:FlashHistoryView />
-                </TabItem>
+                <GridSplitter x:Name="LogPanelSplitter" Grid.Row="1"
+                              Height="5"
+                              HorizontalAlignment="Stretch"
+                              VerticalAlignment="Center"
+                              ResizeBehavior="PreviousAndNext"
+                              ResizeDirection="Rows"
+                              Background="{StaticResource SurfaceBrush}"
+                              Visibility="{Binding IsOutputPanelVisible, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
-                <TabItem>
-                    <views:ProjectConfigView />
-                </TabItem>
-
-                <TabItem>
-                    <views:FlowConfigView />
-                </TabItem>
-
-                <TabItem>
-                    <views:AlgorithmConfigView />
-                </TabItem>
-
-                <TabItem>
-                    <views:SystemSettingsView />
-                </TabItem>
-
-                <TabItem>
-                    <views:SystemLogView />
-                </TabItem>
-            </TabControl>
+                <!-- 底部仅显示当前操作输出，完整日志管理在“操作日志”页面。 -->
+                <Border Grid.Row="2"
+                        Background="{StaticResource PanelBrush}"
+                        BorderBrush="{StaticResource ChromeBorderBrush}"
+                        BorderThickness="0,1,0,0"
+                        Visibility="{Binding IsOutputPanelVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Grid>
+                        <TabControl Style="{StaticResource ShellDockTabControlStyle}">
+                            <TabItem Header="日志">
+                                <views:RuntimeLogView />
+                            </TabItem>
+                        </TabControl>
+                        <Button Command="{Binding CloseRuntimeLogPanelCommand}"
+                                ToolTip="收起日志面板"
+                                AutomationProperties.Name="收起日志面板"
+                                Style="{StaticResource Button.Normal}"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top"
+                                Width="26" Height="22" Padding="0" Margin="0,0,4,0">
+                            <controls:FluentIcon Kind="Close" Style="{StaticResource Button.Glyph.Current}" />
+                        </Button>
+                    </Grid>
+                </Border>
+            </Grid>
         </Grid>
 
-        <Border Grid.Row="2"
-                Background="{StaticResource AppBackgroundBrush}"
-                BorderBrush="{StaticResource CardBorderBrush}"
-                BorderThickness="1,1,0,0">
+        <!-- 状态栏 -->
+        <Border Grid.Row="3"
+                Background="{StaticResource ChromeBrush}"
+                BorderBrush="{StaticResource ChromeBorderBrush}"
+                BorderThickness="0,1,0,0">
             <Grid VerticalAlignment="Center">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
@@ -235,66 +434,39 @@
 
                 <TextBlock Grid.Column="0"
                            Text="{Binding StatusBarDeviceText}"
-                           Margin="14,0,0,0"
-                           Style="{StaticResource StatusBarTextStyle}" />
-                <Border Grid.Column="1"
-                        Width="1"
-                        Height="16"
-                        Margin="14,0"
-                        Background="{StaticResource DividerBrush}" />
+                           Margin="12,0,0,0"
+                           Style="{StaticResource ShellStatusTextStyle}" />
+                <Border Grid.Column="1" Width="1" Height="14" Margin="12,0" Background="{StaticResource ChromeDividerBrush}" />
                 <TextBlock Grid.Column="2"
                            Text="{Binding StatusBarProjectText}"
                            ToolTip="{Binding StatusBarProjectText}"
                            TextTrimming="CharacterEllipsis"
-                           Style="{StaticResource StatusBarCodeTextStyle}" />
-                <Border Grid.Column="3"
-                        Width="1"
-                        Height="16"
-                        Margin="14,0"
-                        Background="{StaticResource DividerBrush}" />
+                           Style="{StaticResource ShellStatusCodeTextStyle}" />
+                <Border Grid.Column="3" Width="1" Height="14" Margin="12,0" Background="{StaticResource ChromeDividerBrush}" />
                 <TextBlock Grid.Column="4"
                            Text="{Binding StatusBarStateText}"
-                           Style="{StaticResource StatusBarTextStyle}" />
-                <Border Grid.Column="5"
-                        Width="1"
-                        Height="16"
-                        Margin="14,0"
-                        Background="{StaticResource DividerBrush}" />
-
-                <StackPanel Grid.Column="6"
-                            Orientation="Horizontal"
-                            VerticalAlignment="Center"
-                            Margin="0,0,8,0">
-                    <controls:FluentIcon Kind="TextBoxOutline"
-                                         Width="16"
-                                         Height="16"
-                                         FontSize="14"
-                                         Foreground="{StaticResource IconPrimaryBrush}"
-                                         VerticalAlignment="Center" />
-                    <TextBlock Text="最新日志"
-                               Margin="6,0,0,0"
-                               Style="{StaticResource StatusBarLabelTextStyle}" />
-                </StackPanel>
-
-                <TextBlock Grid.Column="7"
+                           Style="{StaticResource ShellStatusTextStyle}" />
+                <Border Grid.Column="5" Width="1" Height="14" Margin="12,0" Background="{StaticResource ChromeDividerBrush}" />
+                <TextBlock Grid.Column="6"
                            Text="{Binding LatestLogText}"
                            ToolTip="{Binding LatestLogText}"
+                           Margin="0,0,10,0"
                            TextTrimming="CharacterEllipsis"
-                           Style="{StaticResource StatusBarCodeTextStyle}" />
-                <TextBlock Grid.Column="8"
+                           Style="{StaticResource ShellStatusCodeTextStyle}" />
+                <TextBlock Grid.Column="7"
                            Text="{Binding LogEntryCountText}"
-                           Margin="14,0,10,0"
-                           Style="{StaticResource StatusBarCountTextStyle}" />
-                <Button Grid.Column="9"
-                        Command="{Binding OpenRuntimeLogPageCommand}"
-                        Style="{StaticResource Button.Normal}"
-                        Margin="0,0,10,0"
-                        Padding="10,0">
+                           Margin="0,0,12,0"
+                           Style="{StaticResource ShellStatusCountTextStyle}" />
+                <Button Grid.Column="8"
+                        Command="{Binding OpenRuntimeLogPanelCommand}"
+                        Style="{StaticResource Button.OnChrome}"
+                        Height="20"
+                        Margin="0,0,8,0"
+                        Padding="8,0"
+                        ToolTip="展开日志面板">
                     <StackPanel Style="{StaticResource Button.InlineContent}">
-                        <controls:FluentIcon Kind="ArrowRight"
-                                             Style="{StaticResource Button.Glyph.Current}" />
-                        <TextBlock Text="查看"
-                                   Style="{StaticResource Button.IconLabel}" />
+                        <controls:FluentIcon Kind="ArrowRight" Style="{StaticResource Button.Glyph.Current}" />
+                        <TextBlock Text="查看" Style="{StaticResource Button.IconLabel}" />
                     </StackPanel>
                 </Button>
             </Grid>
@@ -364,7 +536,7 @@
 
                     <Grid Grid.Row="2">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="36" />
+                            <RowDefinition Height="26" />
                             <RowDefinition Height="16" />
                             <RowDefinition Height="32" />
                         </Grid.RowDefinitions>

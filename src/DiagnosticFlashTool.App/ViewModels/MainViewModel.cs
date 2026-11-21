@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using DiagnosticFlashTool.App.Utilities;
 using DiagnosticFlashTool.App.Views;
 using DiagnosticFlashTool.Core.Algorithms;
@@ -18,7 +19,7 @@ using Microsoft.Win32;
 
 namespace DiagnosticFlashTool.App.ViewModels;
 
-public sealed class MainViewModel : ObservableObject, IAsyncDisposable
+public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
 {
     private static readonly JsonSerializerOptions SettingsJsonOptions = new()
     {
@@ -38,7 +39,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private const int MinimumLogMaxFileSizeMb = 1;
     private const int MaximumLogMaxFileSizeMb = 1024;
     private const int MaxLogEntries = 1000;
-    private const int MaxRecentLogEntries = 10;
     private const int MaxDownloadInfoEntries = 30;
     private const int MaxFrameHistoryEntries = 5000;
     private const string AutoBaudRateModeText = "自动搜索";
@@ -46,7 +46,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private const string ProjectBaudRateModeText = "跟随项目";
     private const uint AutoFlashTriggerId = 0x555;
 
-    private readonly AppConfigurationPaths _paths = new();
+    private readonly AppConfigurationPaths _paths;
     private readonly JsonApplicationDataLocationRepository _applicationDataLocationRepository;
     private readonly JsonProjectConfigRepository _projectRepository;
     private readonly JsonBootConfigRepository _bootConfigRepository;
@@ -110,6 +110,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private DiagnosticStatusKind _statusKind = DiagnosticStatusKind.Neutral;
     private DiagnosticStatusKind _downloadStatusKind = DiagnosticStatusKind.Neutral;
     private string _flowValidationText = "未加载流程配置。";
+    private bool _hasFlowValidationResult;
+    private int? _currentExecutingStepId;
     private string _projectEditorTitle = "新建项目";
     private string _newFlowProjectName = string.Empty;
     private string? _selectedFlowProjectTemplate;
@@ -117,8 +119,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private SystemLogEntry? _latestLogEntry;
     private readonly List<CanFrameRow> _frameHistory = [];
 
-    public MainViewModel()
+    public MainViewModel() : this(new AppConfigurationPaths())
     {
+    }
+
+    public MainViewModel(AppConfigurationPaths paths)
+    {
+        _paths = paths;
         CommandErrorHandler.Current = HandleCommandException;
         _applicationDataLocationRepository = new JsonApplicationDataLocationRepository(_paths);
         LoadAppSettings();
@@ -127,54 +134,68 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         _bootConfigRepository = new JsonBootConfigRepository(_paths);
         ProjectEditor.PropertyChanged += OnProjectEditorPropertyChanged;
 
-        RefreshCommand = new RelayCommand(RefreshWithConfirmation);
+        RefreshCommand = new RelayCommand(RefreshWithConfirmation, () => !IsBusy);
         ConnectCommand = new AsyncRelayCommand(ConnectAsync, () => !IsConnected && !IsBusy);
         DisconnectCommand = new AsyncRelayCommand(DisconnectAsync, () => IsConnected && !IsBusy);
         ToggleConnectionCommand = new AsyncRelayCommand(ToggleConnectionAsync, () => !IsBusy);
         ProbeCanDeviceCommand = new AsyncRelayCommand(ProbeCanDeviceAsync, () => !IsConnected && !IsBusy);
-        BrowseDriverCommand = new RelayCommand(() => BrowseFirmware(path => DriverFilePath = path));
-        BrowseApplicationCommand = new RelayCommand(() => BrowseFirmware(path => ApplicationFilePath = path));
+        BrowseDriverCommand = new RelayCommand(() => BrowseFirmware(path => DriverFilePath = path), () => CanChangeWorkspace);
+        BrowseApplicationCommand = new RelayCommand(() => BrowseFirmware(path => ApplicationFilePath = path), () => CanChangeWorkspace);
         StartFlashCommand = new AsyncRelayCommand(
             StartFlashAsync,
             () => IsConnected
-                && SelectedProject is not null
-                && !ReferenceEquals(SelectedProject, _draftFlowProject)
+                && ActiveFlashConfiguration is not null
+                && !string.IsNullOrWhiteSpace(SelectedBootConfig)
+                && (IsProjectWorkspace || IsSystemAdministrator)
+                && !IsProjectFlowDraft
                 && !IsBusy);
         CancelFlashCommand = new RelayCommand(() => StartFlashCommand.Cancel(), () => StartFlashCommand.IsRunning);
+        StartFlashCommand.CanExecuteChanged += (_, _) => CancelFlashCommand.RaiseCanExecuteChanged();
         ClearLogCommand = new RelayCommand(ClearLogs);
-        OpenLogFileCommand = new RelayCommand(OpenLogFile, () => LogFileEnabled);
+        OpenLogFileCommand = new RelayCommand(OpenLogFile, () => LogFileEnabled && IsSystemAdministrator);
         ExportLogCommand = new RelayCommand(ExportLog);
-        ClearFramesCommand = new RelayCommand(ClearFrames);
-        ToggleFrameCaptureCommand = new RelayCommand(ToggleFrameCapture);
-        ToggleFrameFilterCommand = new RelayCommand(ToggleFrameFilter);
-        ExportFramesCommand = new RelayCommand(ExportFrames);
-        AddProjectCommand = new RelayCommand(AddProject, () => _draftFlowProject is null);
-        DeleteProjectCommand = new RelayCommand(
+        ClearFramesCommand = new RelayCommand(ClearFrames, () => IsSystemAdministrator);
+        ToggleFrameCaptureCommand = new RelayCommand(ToggleFrameCapture, () => IsSystemAdministrator);
+        ToggleFrameFilterCommand = new RelayCommand(ToggleFrameFilter, () => IsSystemAdministrator);
+        ExportFramesCommand = new RelayCommand(ExportFrames, () => IsSystemAdministrator);
+        AddProjectCommand = AdministratorCommand(AddProject, () => _draftFlowProject is null);
+        DeleteProjectCommand = AdministratorCommand(
             DeleteSelectedProject,
             () => _draftFlowProject is null && SelectedProject is not null);
-        SaveProjectsCommand = new RelayCommand(SaveProjects, () => _draftFlowProject is null);
-        RefreshProjectsCommand = new RelayCommand(RefreshProjectList);
-        NewProjectCommand = new RelayCommand(OpenNewProjectEditor, () => _draftFlowProject is null);
+        SaveProjectsCommand = AdministratorCommand(SaveProjects, () => _draftFlowProject is null);
+        RefreshProjectsCommand = new RelayCommand(RefreshProjectList, () => !IsBusy);
+        NewProjectCommand = AdministratorCommand(OpenNewProjectEditor, () => _draftFlowProject is null);
         EditProjectCommand = new RelayCommand(
             EditSelectedProject,
-            () => _draftFlowProject is null && SelectedProject is not null);
+            () => CanChangeWorkspace && _draftFlowProject is null && SelectedProject is not null);
         SaveProjectEditorCommand = new RelayCommand(
             SaveProjectEditor,
-            () => _draftFlowProject is null && IsProjectEditorVisible);
+            () => CanChangeWorkspace && _draftFlowProject is null && IsProjectEditorVisible
+                && (IsSystemAdministrator || IsProjectWorkspace && IsEditingProject));
         CancelProjectEditorCommand = new RelayCommand(CloseProjectEditor, () => IsProjectEditorVisible);
-        DeleteProjectEditorCommand = new RelayCommand(
+        DeleteProjectEditorCommand = AdministratorCommand(
             DeleteProjectEditor,
             () => _draftFlowProject is null && IsEditingProject);
         BrowseProjectEditorDriverCommand = new RelayCommand(() => BrowseFirmware(path => ProjectEditor.DriverFilePath = path));
         BrowseProjectEditorApplicationCommand = new RelayCommand(() => BrowseFirmware(path => ProjectEditor.ApplicationFilePath = path));
-        LoadFlowCommand = new RelayCommand(
+        LoadFlowCommand = AdministratorCommand(
             ReloadFlowFromSelected,
             () => !string.IsNullOrWhiteSpace(SelectedBootConfig)
-                && !ReferenceEquals(SelectedProject, _draftFlowProject));
-        SaveFlowCommand = new RelayCommand(SaveFlowConfig, () => !string.IsNullOrWhiteSpace(SelectedBootConfig) && FlowRows.Count > 0);
-        ValidateFlowCommand = new RelayCommand(() => ValidateFlowConfig());
-        NewFlowCommand = new RelayCommand(OpenNewFlowProjectDialog);
-        ConfirmNewFlowProjectCommand = new RelayCommand(
+                && !IsProjectFlowDraft);
+        SaveFlowCommand = AdministratorCommand(SaveFlowConfig, () => !string.IsNullOrWhiteSpace(SelectedBootConfig) && FlowRows.Count > 0);
+        ValidateFlowCommand = AdministratorCommand(() =>
+        {
+            if (!NavigateToUdsPage(4))
+            {
+                return;
+            }
+            var passed = ValidateFlowConfig();
+            AppendLog(passed
+                ? $"流程校验通过，共 {FlowRows.Count} 个节点。"
+                : "流程校验失败，请在流程配置页查看详细结果。");
+        });
+        NewFlowCommand = AdministratorCommand(OpenNewFlowProjectDialog);
+        ConfirmNewFlowProjectCommand = AdministratorCommand(
             ConfirmNewFlowProject,
             () => IsNewFlowProjectDialogVisible
                 && !string.IsNullOrWhiteSpace(NewFlowProjectName)
@@ -183,11 +204,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         CancelNewFlowProjectCommand = new RelayCommand(
             CloseNewFlowProjectDialog,
             () => IsNewFlowProjectDialogVisible);
-        AddFlowStepCommand = new RelayCommand(OpenAddFlowStepDialog);
-        ReplaceFlowStepTemplateCommand = new RelayCommand(
+        AddFlowStepCommand = AdministratorCommand(OpenAddFlowStepDialog);
+        ReplaceFlowStepTemplateCommand = AdministratorCommand(
             OpenReplaceFlowStepDialog,
             () => SelectedFlowStep is not null);
-        ConfirmAddFlowStepCommand = new RelayCommand(
+        ConfirmAddFlowStepCommand = AdministratorCommand(
             ConfirmSelectedFlowStepTemplate,
             () => IsAddFlowStepDialogVisible
                 && SelectedFlowStepTemplate is not null
@@ -195,23 +216,25 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         CancelAddFlowStepCommand = new RelayCommand(
             CloseAddFlowStepDialog,
             () => IsAddFlowStepDialogVisible);
-        DeleteFlowStepCommand = new RelayCommand(DeleteSelectedFlowStep, () => SelectedFlowStep is not null);
-        MoveFlowStepUpCommand = new RelayCommand(() => MoveSelectedFlowStep(-1), () => SelectedFlowStep is not null);
-        MoveFlowStepDownCommand = new RelayCommand(() => MoveSelectedFlowStep(1), () => SelectedFlowStep is not null);
-        SendManualFrameCommand = new AsyncRelayCommand(SendManualFrameAsync, () => IsConnected && !IsBusy);
-        ImportBuiltinConfigurationCommand = new RelayCommand(ImportBuiltinConfiguration, () => !IsBusy);
-        ClearRuntimeConfigurationCommand = new RelayCommand(ClearRuntimeConfiguration, () => !IsBusy);
+        DeleteFlowStepCommand = AdministratorCommand(DeleteSelectedFlowStep, () => SelectedFlowStep is not null);
+        MoveFlowStepUpCommand = AdministratorCommand(() => MoveSelectedFlowStep(-1), () => SelectedFlowStep is not null);
+        MoveFlowStepDownCommand = AdministratorCommand(() => MoveSelectedFlowStep(1), () => SelectedFlowStep is not null);
+        SendManualFrameCommand = new AsyncRelayCommand(SendManualFrameAsync, () => IsSystemAdministrator && IsConnected && !IsBusy);
+        ImportBuiltinConfigurationCommand = AdministratorCommand(ImportBuiltinConfiguration);
+        ClearRuntimeConfigurationCommand = AdministratorCommand(ClearRuntimeConfiguration);
         OpenApplicationDataDirectoryCommand = new RelayCommand(() => OpenPathLocation(ApplicationDataDirectory));
-        ChooseApplicationDataDirectoryCommand = new AsyncRelayCommand(ChooseApplicationDataDirectoryAsync, () => !IsBusy);
+        ChooseApplicationDataDirectoryCommand = new AsyncRelayCommand(ChooseApplicationDataDirectoryAsync, () => IsSystemAdministrator && !IsBusy);
         OpenFlowConfigDirectoryCommand = new RelayCommand(() => OpenPathLocation(FlowConfigDirectory));
-        ChooseFlowConfigDirectoryCommand = new RelayCommand(ChooseFlowConfigDirectory, () => !IsBusy);
+        ChooseFlowConfigDirectoryCommand = AdministratorCommand(ChooseFlowConfigDirectory);
         OpenProjectConfigDirectoryCommand = new RelayCommand(() => OpenPathLocation(ProjectConfigPath));
-        ChooseProjectConfigFileCommand = new RelayCommand(ChooseProjectConfigFile, () => !IsBusy);
-        OpenLogDirectoryCommand = new RelayCommand(() => OpenPathLocation(LogFilePath));
+        ChooseProjectConfigFileCommand = AdministratorCommand(ChooseProjectConfigFile);
+        OpenLogDirectoryCommand = new RelayCommand(() => OpenPathLocation(LogFilePath), () => IsSystemAdministrator);
         ChooseLogFileCommand = new RelayCommand(ChooseLogFile);
         RestoreDefaultLogStorageCommand = new RelayCommand(RestoreDefaultLogStorage);
-        OpenRuntimeLogPageCommand = new RelayCommand(() => SelectedShellIndex = 7);
+        OpenRuntimeLogPanelCommand = new RelayCommand(() => IsOutputPanelVisible = true);
+        CloseRuntimeLogPanelCommand = new RelayCommand(() => IsOutputPanelVisible = false);
         NavigateToLogSettingsCommand = new RelayCommand(() => SelectedShellIndex = 6);
+        InitializeNavigation();
         Refresh();
     }
 
@@ -228,7 +251,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public ObservableCollection<string> LogTimeRangeFilters { get; } = ["全部", "最近1小时", "今天", "最近24小时", "最近7天"];
     public ObservableCollection<SystemLogEntry> LogEntries { get; } = [];
     public ObservableCollection<SystemLogEntry> FilteredLogEntries { get; } = [];
-    public ObservableCollection<SystemLogEntry> RecentLogEntries { get; } = [];
     public ObservableCollection<CanFrameRow> Frames { get; } = [];
     public ObservableCollection<FlowStepEditorRow> FlowRows { get; } = [];
     public IReadOnlyList<FlowStepTemplate> FlowStepTemplates { get; } = FlowStepTemplate.BuiltIn;
@@ -288,7 +310,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public RelayCommand OpenLogDirectoryCommand { get; }
     public RelayCommand ChooseLogFileCommand { get; }
     public RelayCommand RestoreDefaultLogStorageCommand { get; }
-    public RelayCommand OpenRuntimeLogPageCommand { get; }
+    public RelayCommand OpenRuntimeLogPanelCommand { get; }
+    public RelayCommand CloseRuntimeLogPanelCommand { get; }
     public RelayCommand NavigateToLogSettingsCommand { get; }
     public bool IsProjectEditorVisible
     {
@@ -303,6 +326,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     }
 
     public bool IsEditingProject => _editingProject is not null;
+    public bool CanDeleteEditedProject => IsEditingProject && IsSystemAdministrator;
 
     public bool IsNewFlowProjectDialogVisible
     {
@@ -417,6 +441,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 return;
             }
 
+            if (!_suppressFlowSelectionPrompt && (IsBusy || StartFlashCommand.IsRunning))
+            {
+                OnPropertyChanged(nameof(SelectedProject));
+                return;
+            }
+
             if (!_suppressFlowSelectionPrompt
                 && HasUnsavedFlowChanges()
                 && !ConfirmUnsavedFlowChanges("切换配置", selectFallbackWhenDiscardingDraft: false))
@@ -428,6 +458,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             if (SetProperty(ref _selectedProject, value))
             {
                 ApplySelectedProject();
+                RefreshWorkspaceState();
                 OnPropertyChanged(nameof(StatusBarProjectText));
                 OnPropertyChanged(nameof(FlashPageProjectIdText));
                 OnPropertyChanged(nameof(IsCanFdRequested));
@@ -524,9 +555,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             var normalized = BaudRateModes.Contains(value) ? value : AutoBaudRateModeText;
             if (SetProperty(ref _selectedBaudRateMode, normalized))
             {
-                if (normalized == ProjectBaudRateModeText && SelectedProject is not null)
+                if (normalized == ProjectBaudRateModeText && ActiveFlashConfiguration is not null)
                 {
-                    SelectedBaudRate = SelectedProject.BaudRate;
+                    SelectedBaudRate = ActiveFlashConfiguration.BaudRate;
                 }
 
                 OnPropertyChanged(nameof(IsFixedBaudRateMode));
@@ -537,7 +568,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     }
 
     public bool IsFixedBaudRateMode => SelectedBaudRateMode == FixedBaudRateModeText;
-    public bool IsCanFdRequested => CanProtocolExtensions.Parse(SelectedProject?.CanProtocol) == CanProtocol.CanFd;
+    public bool IsCanFdRequested => CanProtocolExtensions.Parse(ActiveFlashConfiguration?.CanProtocol) == CanProtocol.CanFd;
 
     public string SelectedCanFdDataBaudRate
     {
@@ -595,14 +626,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         ? "检测设备后显示能力"
         : DetectedCanDeviceInfo.SupportsCanFd ? "支持 CAN FD" : "仅支持经典 CAN";
 
-    public string RequestedProtocolText => CanProtocolExtensions.Parse(SelectedProject?.CanProtocol).ToConfigValue();
+    public string RequestedProtocolText => CanProtocolExtensions.Parse(ActiveFlashConfiguration?.CanProtocol).ToConfigValue();
 
     public string ActiveProtocolText => IsConnected && _canDevice is not null
         ? _canDevice.ActiveProtocol.ToConfigValue()
         : RequestedProtocolText;
 
     public string ProtocolStatusText => IsConnected && _canDevice is not null
-        ? _canDevice.ActiveProtocol == CanProtocolExtensions.Parse(SelectedProject?.CanProtocol)
+        ? _canDevice.ActiveProtocol == CanProtocolExtensions.Parse(ActiveFlashConfiguration?.CanProtocol)
             ? ActiveProtocolText
             : $"{ActiveProtocolText}（设备不支持 CAN FD，已回退）"
         : $"待连接：{RequestedProtocolText}";
@@ -616,13 +647,25 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public string DriverFilePath
     {
         get => _driverFilePath;
-        set => SetProperty(ref _driverFilePath, value);
+        set
+        {
+            if (SetProperty(ref _driverFilePath, value))
+            {
+                OnPropertyChanged(nameof(DriverFileDisplay));
+            }
+        }
     }
 
     public string ApplicationFilePath
     {
         get => _applicationFilePath;
-        set => SetProperty(ref _applicationFilePath, value);
+        set
+        {
+            if (SetProperty(ref _applicationFilePath, value))
+            {
+                OnPropertyChanged(nameof(ApplicationFileDisplay));
+            }
+        }
     }
 
     public string ManualFrameId
@@ -784,15 +827,15 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
-    public string LogFilterSummaryText => $"显示 {FilteredLogEntries.Count} / {LogEntries.Count} 条";
+    public string LogFilterSummaryText => $"显示 {FilteredLogEntries.Count} / {WorkspaceLogEntries.Count} 条";
 
     public bool IsLogListEmpty => FilteredLogEntries.Count == 0;
 
-    public string LogEmptyStateText => LogEntries.Count == 0
-        ? "暂无运行日志"
+    public string LogEmptyStateText => WorkspaceLogEntries.Count == 0
+        ? "暂无操作日志"
         : "没有符合筛选条件的日志";
 
-    public string LogEmptyStateHintText => LogEntries.Count == 0
+    public string LogEmptyStateHintText => WorkspaceLogEntries.Count == 0
         ? "连接设备、加载配置或执行刷写后，运行记录将显示在这里。"
         : "调整级别、关键词或时间范围后再试。";
 
@@ -823,9 +866,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public string FrameCaptureActionText => IsFrameCapturePaused ? "继续" : "暂停";
     public string FrameFilterActionText => IsFrameFilterEnabled ? "过滤开启" : "过滤关闭";
 
-    public string DownloadInfoText => LogEntries.Count == 0
-        ? "暂无下载信息"
-        : string.Join(Environment.NewLine, LogEntries.TakeLast(MaxDownloadInfoEntries).Select(entry => entry.Text));
+    public string DownloadInfoText => WorkspaceLogEntries.Count == 0
+        ? "暂无下载信息，开始刷写后将在此显示运行结果。"
+        : string.Join(Environment.NewLine, WorkspaceLogEntries.TakeLast(MaxDownloadInfoEntries).Select(entry => entry.Text));
 
     public int LogRetentionDays
     {
@@ -853,16 +896,39 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
+    private bool _isOutputPanelVisible = true;
+
+    /// <summary>底部日志面板是否可见，由视图菜单和日志查看、收起命令控制。</summary>
+    public bool IsOutputPanelVisible
+    {
+        get => _isOutputPanelVisible;
+        set => SetProperty(ref _isOutputPanelVisible, value);
+    }
+
     public int SelectedShellIndex
     {
         get => _selectedShellIndex;
         set
         {
+            // 项目工作区现在也提供「刷写流程」(4) 与「项目配置」(3)，不再强制跳转到通用 UDS。
+            if (IsProjectWorkspace && value is 1 or 2 or 5)
+            {
+                NavigateToUdsPage(value);
+                return;
+            }
+
+            if (!CanAccessPage(value, IsProjectWorkspace))
+            {
+                OnPropertyChanged(nameof(SelectedShellIndex));
+                return;
+            }
+
             if (SetProperty(ref _selectedShellIndex, value))
             {
                 CloseNewFlowProjectDialog();
                 CloseAddFlowStepDialog();
             }
+            SyncNavigationSelection();
         }
     }
 
@@ -894,7 +960,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             if (SetProperty(ref _isBusy, value))
             {
+                OnPropertyChanged(nameof(CanChangeWorkspace));
                 RaiseCommandStates();
+                RefreshNavigationCommands();
             }
         }
     }
@@ -962,6 +1030,42 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         set => SetProperty(ref _flowValidationText, value);
     }
 
+    public ObservableCollection<FlowValidationLine> FlowValidationLines { get; } = [];
+
+    public bool HasFlowValidationResult => _hasFlowValidationResult;
+
+    public int FlowValidationErrorCount => FlowValidationLines.Count(line => line.IsError);
+
+    public int FlowValidationWarningCount => FlowValidationLines.Count(line => line.IsWarning);
+
+    public DiagnosticStatusKind FlowValidationStateKind => !_hasFlowValidationResult
+        ? DiagnosticStatusKind.Neutral
+        : FlowValidationErrorCount > 0
+            ? DiagnosticStatusKind.Error
+            : FlowValidationWarningCount > 0 ? DiagnosticStatusKind.Warning : DiagnosticStatusKind.Success;
+
+    public string FlowValidationStatusText => !_hasFlowValidationResult
+        ? "尚未校验"
+        : FlowValidationErrorCount > 0
+            ? $"{FlowValidationErrorCount} 项错误"
+            : FlowValidationWarningCount > 0 ? $"{FlowValidationWarningCount} 项提示" : "校验通过";
+
+    public string FlowValidationSummaryText => _hasFlowValidationResult
+        ? $"共 {FlowRows.Count} 个流程节点"
+        : "点击「校验」检查当前流程配置";
+
+    public int? CurrentExecutingStepId
+    {
+        get => _currentExecutingStepId;
+        private set
+        {
+            if (SetProperty(ref _currentExecutingStepId, value))
+            {
+                UpdateExecutingFlowRow();
+            }
+        }
+    }
+
     public string ConnectionText => IsConnected ? $"已连接：{ConnectedDeviceText} / {SelectedBaudRate}" : "未连接";
     public string BaudRateStatusText => IsConnected
         ? $"{SelectedBaudRate} / {SelectedBaudRateMode}"
@@ -1015,9 +1119,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public string ScriptRootText => _paths.ScriptDirectory;
     public string AlgorithmCatalogText => AlgorithmRows.Count == 0 ? "未发现算法配置" : $"已发现 {AlgorithmRows.Count} 个算法配置";
 
-    public string FlashPageProjectIdText => SelectedProject is null
-        ? string.Empty
-        : $"ID: {SelectedProject.ProjectName}";
+    public string FlashPageProjectIdText => WorkspaceDescription;
 
     /// <summary>状态栏运行态：当前 CAN 设备与通道。</summary>
     public string StatusBarDeviceText => IsConnected
@@ -1025,7 +1127,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         : "设备：未连接";
 
     /// <summary>状态栏运行态：当前项目与 BOOT 配置。</summary>
-    public string StatusBarProjectText => SelectedProject is null
+    public string StatusBarProjectText => !IsProjectWorkspace
+        ? $"{WorkspaceDescription} / BOOT：{FilePathDisplayFormatter.GetFileName(SelectedBootConfig)}"
+        : SelectedProject is null
         ? "项目：未选择"
         : string.IsNullOrWhiteSpace(SelectedBootConfig)
             ? $"项目：{SelectedProject.ProjectName}"
@@ -1040,9 +1144,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         private set => SetProperty(ref _latestLogEntry, value);
     }
 
-    public bool HasLogEntries => LogEntries.Count > 0;
+    public bool HasLogEntries => WorkspaceLogEntries.Count > 0;
     public string LatestLogText => LatestLogEntry?.Text ?? "暂无日志";
-    public string LogEntryCountText => HasLogEntries ? $"已记录 {LogEntries.Count} 条" : "暂无日志";
+    public string LogEntryCountText => HasLogEntries ? $"已记录 {WorkspaceLogEntries.Count} 条" : "暂无日志";
 
     public string ConfigRootText => _paths.ConfigDirectory;
     public string ApplicationDataDirectory => _paths.ApplicationDataDirectory;
@@ -1121,8 +1225,17 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
         LoadAlgorithmCatalog();
 
-        SelectedProject = Projects.FirstOrDefault(project => string.Equals(project.ProjectName, selectedName, StringComparison.OrdinalIgnoreCase))
-            ?? Projects.FirstOrDefault();
+        _suppressFlowSelectionPrompt = true;
+        try
+        {
+            SelectedProject = Projects.FirstOrDefault(project => string.Equals(project.ProjectName, selectedName, StringComparison.OrdinalIgnoreCase))
+                ?? Projects.FirstOrDefault();
+        }
+        finally
+        {
+            _suppressFlowSelectionPrompt = false;
+        }
+        RefreshWorkspaceState();
         OnPropertyChanged(nameof(ConfigRootText));
         OnPropertyChanged(nameof(ApplicationDataDirectory));
         OnPropertyChanged(nameof(ApplicationDataDirectoryDisplay));
@@ -1208,6 +1321,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             }
 
             _keepRunningInTray = settings.KeepRunningInTray;
+            _selectedUserRole = settings.UserRole == AdministratorRoleText ? AdministratorRoleText : StandardRoleText;
             _autoFlashEnabled = settings.AutoFlashEnabled;
             _selectedBaudRateMode = string.IsNullOrWhiteSpace(settings.BaudRateSelectionMode)
                 ? settings.AutoSearchBaudRate is false ? FixedBaudRateModeText : AutoBaudRateModeText
@@ -1253,6 +1367,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             var settings = new AppSettingsSnapshot
             {
                 KeepRunningInTray = KeepRunningInTray,
+                UserRole = SelectedUserRole,
                 AutoFlashEnabled = AutoFlashEnabled,
                 AutoSearchBaudRate = SelectedBaudRateMode == AutoBaudRateModeText,
                 BaudRateSelectionMode = GetBaudRateSelectionMode().ToConfigValue(),
@@ -1547,11 +1662,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private void ClearLogs()
     {
-        LogEntries.Clear();
-        FilteredLogEntries.Clear();
-        RecentLogEntries.Clear();
-        LatestLogEntry = null;
-        RaiseLogSummaryProperties();
+        foreach (var entry in LogEntries.Where(LogEntryMatchesWorkspace).ToList())
+        {
+            LogEntries.Remove(entry);
+        }
+        ApplyLogFilters();
     }
 
     private void OpenPathLocation(string path)
@@ -1723,7 +1838,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 DeviceIndex = DetectedCanDeviceInfo?.DeviceIndex ?? 0,
                 BaudRate = HexUtil.ParseBaudRate(baudRate),
                 Channel = uint.TryParse(SelectedCanChannel, out var channel) ? channel : 0,
-                Protocol = CanProtocolExtensions.Parse(SelectedProject?.CanProtocol),
+                Protocol = CanProtocolExtensions.Parse(ActiveFlashConfiguration?.CanProtocol),
                 CanFdDataBaudRate = ParseFlexibleBaudRate(SelectedCanFdDataBaudRate),
                 UseBitRateSwitch = UseBitRateSwitch
             }, cancellationToken);
@@ -1763,12 +1878,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     {
         if (mode == BaudRateSelectionMode.Project)
         {
-            if (SelectedProject is null)
+            if (ActiveFlashConfiguration is null)
             {
                 throw new InvalidOperationException("跟随项目波特率时必须先选择项目。");
             }
 
-            return [SelectedProject.BaudRate];
+            return [ActiveFlashConfiguration.BaudRate];
         }
 
         if (mode == BaudRateSelectionMode.Fixed)
@@ -1776,7 +1891,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             return [SelectedBaudRate];
         }
 
-        return new[] { SelectedProject?.BaudRate, SelectedBaudRate }
+        return new[] { ActiveFlashConfiguration?.BaudRate, SelectedBaudRate }
             .Concat(BaudRates)
             .Where(value => !string.IsNullOrWhiteSpace(value))
             .Select(value => value!)
@@ -1879,7 +1994,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             IsConnected = true;
             ApplyDetectedDeviceInfo(_canDevice.DeviceInfo);
             SetStatus("CAN 已连接", DiagnosticStatusKind.Success);
-            var requestedProtocol = CanProtocolExtensions.Parse(SelectedProject?.CanProtocol);
+            var requestedProtocol = CanProtocolExtensions.Parse(ActiveFlashConfiguration?.CanProtocol);
             if (requestedProtocol == CanProtocol.CanFd && _canDevice.ActiveProtocol == CanProtocol.Can)
             {
                 AppendLog("当前适配器不支持 CAN FD，连接已回退为经典 CAN。");
@@ -1964,7 +2079,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private async Task StartFlashAsync(CancellationToken cancellationToken)
     {
-        if (_canDevice is null || SelectedProject is null)
+        var flashConfiguration = ActiveFlashConfiguration;
+        var logProjectNo = SelectedProject?.ProjectNo;
+        var logProjectName = SelectedProject?.ProjectName;
+        if (_canDevice is null || flashConfiguration is null)
         {
             return;
         }
@@ -1976,7 +2094,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             DownloadStatusKind = DiagnosticStatusKind.Running;
             SetStatus("Flashing", DiagnosticStatusKind.Running);
 
-            var bootFile = SelectedBootConfig ?? SelectedProject.BootConfigFile;
+            var bootFile = SelectedBootConfig ?? flashConfiguration.BootConfigFile;
             var bootConfig = _bootConfigRepository.Load(bootFile);
             var preflightIssues = ValidateAppFlow(bootConfig);
             var preflightErrors = preflightIssues
@@ -1994,8 +2112,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 AppendLog($"流程提示：{warning}");
             }
 
-            var firmwareSet = LoadFirmwareSet(SelectedProject, bootConfig);
-            var projectProtocol = CanProtocolExtensions.Parse(SelectedProject.CanProtocol);
+            var firmwareSet = LoadFirmwareSet(flashConfiguration, bootConfig);
+            var projectProtocol = CanProtocolExtensions.Parse(flashConfiguration.CanProtocol);
             if (projectProtocol == CanProtocol.Can && _canDevice.ActiveProtocol == CanProtocol.CanFd)
             {
                 throw new InvalidOperationException(
@@ -2010,14 +2128,22 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
             var options = new DiagnosticTransportOptions
             {
-                PhysicalRequestId = HexUtil.ParseUInt32(SelectedProject.PhysicalRequestId),
-                FunctionalRequestId = HexUtil.ParseUInt32(SelectedProject.FunctionalRequestId),
-                ResponseId = HexUtil.ParseUInt32(SelectedProject.ResponseAddressId),
+                PhysicalRequestId = HexUtil.ParseUInt32(flashConfiguration.PhysicalRequestId),
+                FunctionalRequestId = HexUtil.ParseUInt32(flashConfiguration.FunctionalRequestId),
+                ResponseId = HexUtil.ParseUInt32(flashConfiguration.ResponseAddressId),
+                ExtendedFrame = HexUtil.ParseUInt32(flashConfiguration.PhysicalRequestId) > 0x7FF
+                    || HexUtil.ParseUInt32(flashConfiguration.FunctionalRequestId) > 0x7FF
+                    || HexUtil.ParseUInt32(flashConfiguration.ResponseAddressId) > 0x7FF,
                 Channel = uint.TryParse(SelectedCanChannel, out var selectedChannel)
                     ? selectedChannel
                     : 0,
                 FrameDataLength = _canDevice.ActiveProtocol == CanProtocol.CanFd ? 64 : 8
             };
+
+            if (_canDevice is MockCanDevice mockDevice)
+            {
+                mockDevice.ConfigureTransport(options);
+            }
 
             using var transport = new IsoTpTransport(_canDevice, options);
             var udsClient = new UdsClient(transport);
@@ -2026,21 +2152,21 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             {
                 Progress = Math.Clamp(item.Percent, 0, 100);
                 DownloadStatusKind = DiagnosticStatusKind.Running;
+                CurrentExecutingStepId = item.StepId;
                 SetStatus(item.Message, DiagnosticStatusKind.Running);
             });
 
             var result = await executor.ExecuteAsync(
                 new FlashExecutionRequest(
                     bootConfig,
-                    firmwareSet),
+                    firmwareSet)
+                {
+                    LogProgress = new Progress<string>(message => AppendLog(message, logProjectNo, logProjectName))
+                },
                 progress,
                 cancellationToken);
 
-            foreach (var message in result.LogMessages)
-            {
-                AppendLog(message);
-            }
-
+            CurrentExecutingStepId = null;
             DownloadStatusKind = result.Success ? DiagnosticStatusKind.Success : DiagnosticStatusKind.Error;
             var resultMessage = result.Success
                 ? "刷写完成"
@@ -2050,12 +2176,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
         catch (OperationCanceledException)
         {
+            CurrentExecutingStepId = null;
             DownloadStatusKind = DiagnosticStatusKind.Warning;
             SetStatus("刷写已取消", DiagnosticStatusKind.Warning);
             AppendLog("刷写已取消。");
         }
         catch (Exception ex)
         {
+            CurrentExecutingStepId = null;
             DownloadStatusKind = DiagnosticStatusKind.Error;
             SetStatus(ex.Message, DiagnosticStatusKind.Error);
             AppendLog($"刷写失败：{ex.Message}");
@@ -2171,6 +2299,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private void OpenNewProjectEditor()
     {
+        if (!NavigateToUdsPage(3))
+        {
+            return;
+        }
         ProjectEditor.BeginNew(BootConfigFiles.FirstOrDefault() ?? string.Empty, GetNextProjectNo());
         UpdateProjectEditorFirmwareRequirements();
         SetProjectEditorMode(null, "新建项目");
@@ -2240,6 +2372,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
         if (editedIndex >= 0)
         {
+            var originalProjectNo = _editingProject!.ProjectNo;
+            for (var index = 0; index < LogEntries.Count; index++)
+            {
+                if (LogEntries[index].ProjectNo == originalProjectNo)
+                {
+                    LogEntries[index] = LogEntries[index] with { ProjectNo = project.ProjectNo, ProjectName = project.ProjectName };
+                }
+            }
             Projects[editedIndex] = project;
         }
         else
@@ -2251,6 +2391,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         SetStatus("项目已保存", DiagnosticStatusKind.Success);
         AppendLog($"项目已保存: {project.ProjectName}");
         CloseProjectEditor();
+        if (IsProjectWorkspace)
+        {
+            EditSelectedProject();
+        }
     }
 
     private void DeleteProjectEditor()
@@ -2274,6 +2418,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
 
         var projectName = _editingProject.ProjectName;
+        var projectNo = _editingProject.ProjectNo;
         if (MessageBox.Show(
                 $"删除后将移除项目“{projectName}”的全部项目信息，且无法恢复。是否确认删除？",
                 "确认删除项目",
@@ -2299,7 +2444,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         Projects.RemoveAt(index);
         SelectedProject = Projects.ElementAtOrDefault(Math.Clamp(index, 0, Math.Max(0, Projects.Count - 1)));
         SetStatus("项目已删除", DiagnosticStatusKind.Success);
-        AppendLog($"项目已删除: {projectName}");
+        AppendLog($"项目已删除: {projectName}", projectNo, projectName);
         CloseProjectEditor();
     }
 
@@ -2314,6 +2459,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         _editingProject = editingProject;
         ProjectEditorTitle = title;
         OnPropertyChanged(nameof(IsEditingProject));
+        OnPropertyChanged(nameof(CanDeleteEditedProject));
         RaiseProjectEditorCommandStates();
     }
 
@@ -2440,9 +2586,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         _flowBaselineFingerprint = null;
         SelectedFlowStep = null;
 
-        if (SelectedProject is null)
+        if (ActiveFlashConfiguration is null)
         {
-            FlowValidationText = "未选择项目。";
+            SetFlowValidationNotice("未选择项目。");
             RefreshFlowAlgorithmOptions();
             MarkFlowAsBaseline();
             return;
@@ -2450,7 +2596,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
         if (string.IsNullOrWhiteSpace(SelectedBootConfig))
         {
-            FlowValidationText = $"项目“{SelectedProject.ProjectName}”未配置 BOOT 配置文件。";
+            SetFlowValidationNotice("请选择 BOOT 配置文件。");
             RefreshFlowAlgorithmOptions();
             MarkFlowAsBaseline();
             return;
@@ -2458,17 +2604,17 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
         try
         {
-            _loadedFlowConfig = ReferenceEquals(SelectedProject, _draftFlowProject)
+            _loadedFlowConfig = IsProjectFlowDraft
                 ? _draftFlowConfig ?? throw new InvalidOperationException("配置草稿不存在。")
                 : _bootConfigRepository.Load(SelectedBootConfig);
 
             PopulateFlowRows(_loadedFlowConfig);
-            var source = ReferenceEquals(SelectedProject, _draftFlowProject) ? "draft" : SelectedBootConfig;
+            var source = IsProjectFlowDraft ? "draft" : SelectedBootConfig;
             AppendLog($"Flow loaded: {source}, steps={FlowRows.Count}");
         }
         catch (Exception ex)
         {
-            FlowValidationText = ex.Message;
+            SetFlowValidationNotice(ex.Message);
             RefreshFlowAlgorithmOptions();
             MarkFlowAsBaseline();
             AppendLog($"Flow load failed: {ex.Message}");
@@ -2493,7 +2639,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
         try
         {
-            var isDraft = ReferenceEquals(SelectedProject, _draftFlowProject);
+            var isDraft = IsProjectFlowDraft;
             var config = _loadedFlowConfig
                 ?? (isDraft
                     ? _draftFlowConfig ?? throw new InvalidOperationException("配置草稿不存在。")
@@ -2554,12 +2700,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private bool HasUnsavedFlowChanges()
     {
-        if (SelectedProject is null)
+        if (ActiveFlashConfiguration is null)
         {
             return false;
         }
 
-        if (ReferenceEquals(SelectedProject, _draftFlowProject))
+        if (IsProjectFlowDraft)
         {
             return true;
         }
@@ -2633,7 +2779,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             return true;
         }
 
-        var configName = SelectedProject?.ProjectName ?? SelectedBootConfig ?? "当前配置";
+        var configName = ActiveFlashConfiguration?.ProjectName ?? SelectedBootConfig ?? "当前配置";
         var dialog = new UnsavedChangesDialog(configName, action);
         _ = dialog.ShowDialog();
         if (dialog.Choice == UnsavedChangesChoice.Cancel)
@@ -2646,7 +2792,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             return TrySaveFlowConfig();
         }
 
-        if (ReferenceEquals(SelectedProject, _draftFlowProject))
+        if (IsProjectFlowDraft)
         {
             DiscardDraftFlowProject(selectFallbackWhenDiscardingDraft);
         }
@@ -2929,15 +3075,60 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             }
         }
 
-        FlowValidationText = issues.Count == 0 && warnings.Count == 0
-            ? $"校验通过：共 {FlowRows.Count} 个流程节点。"
-            : string.Join(
-                Environment.NewLine,
-                issues.Select(text => $"错误：{text}").Concat(warnings.Select(text => $"提示：{text}")));
+        ApplyFlowValidationResult(issues, warnings);
 
         // Warnings must not block saving: a declaration the executor does not honour yet
         // is reported, but it does not stop the operator from editing the flow.
         return issues.Count == 0;
+    }
+
+    private void SetFlowValidationNotice(string message)
+    {
+        _hasFlowValidationResult = false;
+        FlowValidationLines.Clear();
+        FlowValidationLines.Add(new FlowValidationLine(FlowValidationSeverity.Info, message));
+        FlowValidationText = message;
+        RaiseFlowValidationChanged();
+    }
+
+    private void ApplyFlowValidationResult(IReadOnlyList<string> errors, IReadOnlyList<string> warnings)
+    {
+        _hasFlowValidationResult = true;
+        FlowValidationLines.Clear();
+        foreach (var error in errors)
+        {
+            FlowValidationLines.Add(new FlowValidationLine(FlowValidationSeverity.Error, error));
+        }
+
+        foreach (var warning in warnings)
+        {
+            FlowValidationLines.Add(new FlowValidationLine(FlowValidationSeverity.Warning, warning));
+        }
+
+        FlowValidationText = errors.Count == 0 && warnings.Count == 0
+            ? $"校验通过：共 {FlowRows.Count} 个流程节点。"
+            : string.Join(
+                Environment.NewLine,
+                errors.Select(text => $"错误：{text}").Concat(warnings.Select(text => $"提示：{text}")));
+        RaiseFlowValidationChanged();
+    }
+
+    private void RaiseFlowValidationChanged()
+    {
+        OnPropertyChanged(nameof(HasFlowValidationResult));
+        OnPropertyChanged(nameof(FlowValidationErrorCount));
+        OnPropertyChanged(nameof(FlowValidationWarningCount));
+        OnPropertyChanged(nameof(FlowValidationStateKind));
+        OnPropertyChanged(nameof(FlowValidationStatusText));
+        OnPropertyChanged(nameof(FlowValidationSummaryText));
+    }
+
+    private void UpdateExecutingFlowRow()
+    {
+        foreach (var row in FlowRows)
+        {
+            row.IsExecuting = _currentExecutingStepId is { } stepId && row.Id == stepId;
+        }
     }
 
     private IReadOnlyList<FlashFlowIssue> ValidateAppFlow(BootConfig config)
@@ -3104,6 +3295,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         if (SelectedProject is null)
         {
             SelectedBootConfig = null;
+            DriverFilePath = string.Empty;
+            ApplicationFilePath = string.Empty;
             return;
         }
 
@@ -3183,7 +3376,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             if (ReferenceEquals(project, _draftFlowProject) && _draftFlowConfig is not null)
             {
                 project.RefreshFirmwareFileStatuses(_draftFlowConfig, _firmwareLoader);
-                Projects[index] = project;
                 continue;
             }
 
@@ -3194,7 +3386,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                     null,
                     _firmwareLoader,
                     "项目未配置 BOOT 配置文件。");
-                Projects[index] = project;
                 continue;
             }
 
@@ -3213,7 +3404,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             }
 
             project.RefreshFirmwareFileStatuses(result.Config, _firmwareLoader, result.Error);
-            Projects[index] = project;
         }
     }
 
@@ -3262,7 +3452,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         IsFrameFilterEnabled = !IsFrameFilterEnabled;
         Frames.Clear();
         AppendLog(IsFrameFilterEnabled
-            ? "CAN ID 过滤已开启，仅显示当前项目相关 ID"
+            ? "CAN ID 过滤已开启，仅显示当前配置相关 ID"
             : "CAN ID 过滤已关闭");
     }
 
@@ -3326,7 +3516,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private void TryHandleAutoFlashTrigger(CanFrame frame)
     {
-        if (!AutoFlashEnabled
+        if (!IsProjectWorkspace
+            || !AutoFlashEnabled
             || !IsConnected
             || IsBusy
             || StartFlashCommand.IsRunning
@@ -3368,7 +3559,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 return;
             }
 
-            SelectedProject = project;
+            NavigateToProjectPage(project, 0);
             AppendLog($"收到 0x555 自动刷写触发，已选择项目：{project.ProjectName}（项目码 {projectNo}）。");
             if (StartFlashCommand.CanExecute(null))
             {
@@ -3476,16 +3667,16 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             return true;
         }
 
-        if (SelectedProject is null)
+        if (ActiveFlashConfiguration is null)
         {
             return true;
         }
 
         var projectIds = new[]
         {
-            SelectedProject.PhysicalRequestId,
-            SelectedProject.FunctionalRequestId,
-            SelectedProject.ResponseAddressId
+            ActiveFlashConfiguration.PhysicalRequestId,
+            ActiveFlashConfiguration.FunctionalRequestId,
+            ActiveFlashConfiguration.ResponseAddressId
         };
 
         var hasValidProjectId = false;
@@ -3506,21 +3697,24 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private void AppendLog(string message)
     {
-        var entry = new SystemLogEntry(DateTime.Now, ClassifyStatusText(message), message);
+        AppendLog(message, SelectedProject?.ProjectNo, SelectedProject?.ProjectName);
+    }
+
+    private void AppendLog(string message, int? projectNo, string? projectName)
+    {
+        var entry = new SystemLogEntry(DateTime.Now, ClassifyStatusText(message), message)
+        {
+            ProjectNo = projectNo,
+            ProjectName = projectName
+        };
         RunOnUi(() =>
         {
             LogEntries.Add(entry);
-            RecentLogEntries.Add(entry);
             LatestLogEntry = entry;
 
             while (LogEntries.Count > MaxLogEntries)
             {
                 LogEntries.RemoveAt(0);
-            }
-
-            while (RecentLogEntries.Count > MaxRecentLogEntries)
-            {
-                RecentLogEntries.RemoveAt(0);
             }
 
             ApplyLogFilters();
@@ -3531,13 +3725,19 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private void ApplyLogFilters()
     {
+        WorkspaceLogEntries.Clear();
+        foreach (var entry in LogEntries.Where(LogEntryMatchesWorkspace))
+        {
+            WorkspaceLogEntries.Add(entry);
+        }
+        LatestLogEntry = WorkspaceLogEntries.LastOrDefault();
         FilteredLogEntries.Clear();
-        foreach (var entry in LogEntries.Where(LogEntryMatchesFilter))
+        foreach (var entry in WorkspaceLogEntries.Where(LogEntryMatchesFilter))
         {
             FilteredLogEntries.Add(entry);
         }
 
-        RaiseLogListStateProperties();
+        RaiseLogSummaryProperties();
     }
 
     private bool LogEntryMatchesFilter(SystemLogEntry entry)
@@ -3892,6 +4092,17 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private void RaiseCommandStates()
     {
+        RefreshCommand.RaiseCanExecuteChanged();
+        RefreshProjectsCommand.RaiseCanExecuteChanged();
+        BrowseDriverCommand.RaiseCanExecuteChanged();
+        BrowseApplicationCommand.RaiseCanExecuteChanged();
+        OpenActiveProjectConfigCommand.RaiseCanExecuteChanged();
+        OpenLogFileCommand.RaiseCanExecuteChanged();
+        OpenLogDirectoryCommand.RaiseCanExecuteChanged();
+        ClearFramesCommand.RaiseCanExecuteChanged();
+        ToggleFrameCaptureCommand.RaiseCanExecuteChanged();
+        ToggleFrameFilterCommand.RaiseCanExecuteChanged();
+        ExportFramesCommand.RaiseCanExecuteChanged();
         ConnectCommand.RaiseCanExecuteChanged();
         DisconnectCommand.RaiseCanExecuteChanged();
         ToggleConnectionCommand.RaiseCanExecuteChanged();
@@ -3905,6 +4116,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         RaiseProjectEditorCommandStates();
         LoadFlowCommand.RaiseCanExecuteChanged();
         SaveFlowCommand.RaiseCanExecuteChanged();
+        ValidateFlowCommand.RaiseCanExecuteChanged();
         NewFlowCommand.RaiseCanExecuteChanged();
         RaiseAddFlowStepCommandStates();
         ReplaceFlowStepTemplateCommand.RaiseCanExecuteChanged();
@@ -3938,8 +4150,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         OnPropertyChanged(nameof(HasLogEntries));
         OnPropertyChanged(nameof(LatestLogText));
         OnPropertyChanged(nameof(LogEntryCountText));
-        RaiseLogListStateProperties();
         OnPropertyChanged(nameof(DownloadInfoText));
+        RaiseLogListStateProperties();
     }
 
     private void RaiseLogListStateProperties()
@@ -3972,6 +4184,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     private sealed class AppSettingsSnapshot
     {
+        [JsonPropertyName("UserRole")]
+        public string? UserRole { get; set; }
         public bool KeepRunningInTray { get; set; }
         public bool AutoFlashEnabled { get; set; }
         public bool? AutoSearchBaudRate { get; set; }

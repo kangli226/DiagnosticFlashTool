@@ -1,0 +1,86 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        桌面工具调色板（浅色为唯一交付主题）。
+        中性石墨灰打底 + 单一仪表青强调；圆角、边框、密度由 Brushes.xaml 与各 Style 承载。
+        色值只在此处定义，业务页面与样式不得再硬编码十六进制颜色。
+    -->
+    <Color x:Key="Color.App.Background">#FAFAFA</Color>
+    <Color x:Key="Color.Chrome.Background">#F3F3F3</Color>
+    <Color x:Key="Color.Chrome.Border">#E0E2E5</Color>
+    <Color x:Key="Color.Card.Background">#FFFFFF</Color>
+    <Color x:Key="Color.Surface.Background">#F7F8F9</Color>
+    <Color x:Key="Color.Surface.Overlay">#66000000</Color>
+    <Color x:Key="Color.Shadow">#000000</Color>
+    <Color x:Key="Color.Border.Card">#E2E4E7</Color>
+    <Color x:Key="Color.Border.Divider">#EDEFF1</Color>
+    <Color x:Key="Color.Border.Input">#CFD3D8</Color>
+    <Color x:Key="Color.Border.PrimarySoft">#BBD5F0</Color>
+
+    <Color x:Key="Color.Primary">#1668C4</Color>
+    <Color x:Key="Color.Primary.Hover">#1259A8</Color>
+    <Color x:Key="Color.Primary.Pressed">#0E4A8C</Color>
+    <Color x:Key="Color.Primary.Accent">#4C93E0</Color>
+    <Color x:Key="Color.Primary.Soft">#E8F1FB</Color>
+    <Color x:Key="Color.Primary.SoftPressed">#D5E5F8</Color>
+    <Color x:Key="Color.Brand.Navigation">#1668C4</Color>
+
+    <Color x:Key="Color.Text.Primary">#1B1D1F</Color>
+    <Color x:Key="Color.Text.CardTitle">#1B1D1F</Color>
+    <Color x:Key="Color.Text.Secondary">#4A525A</Color>
+    <Color x:Key="Color.Text.Label">#5A6068</Color>
+    <Color x:Key="Color.Text.Muted">#8A9098</Color>
+    <Color x:Key="Color.Text.Disabled">#A9B0B8</Color>
+    <Color x:Key="Color.Text.Placeholder">#A9B0B8</Color>
+    <Color x:Key="Color.Text.Inverse">#FFFFFF</Color>
+
+    <Color x:Key="Color.Icon.Default">#5A6068</Color>
+    <Color x:Key="Color.Icon.Primary">#1668C4</Color>
+    <Color x:Key="Color.Icon.Success">#1B7F45</Color>
+    <Color x:Key="Color.Icon.Warning">#9A6400</Color>
+    <Color x:Key="Color.Icon.Error">#B5342A</Color>
+    <Color x:Key="Color.Icon.Muted">#9AA1A8</Color>
+
+    <!-- Shell 侧栏与窗口框架：桌面工具不再是深色侧栏，改用同族浅灰分区。 -->
+    <Color x:Key="Color.Sidebar.Background">#F3F3F3</Color>
+    <Color x:Key="Color.Sidebar.Hover">#E9EBED</Color>
+    <Color x:Key="Color.Sidebar.Active">#E3EEFA</Color>
+    <Color x:Key="Color.Sidebar.ActiveRail">#1668C4</Color>
+    <Color x:Key="Color.Sidebar.IconActive">#1259A8</Color>
+    <Color x:Key="Color.Sidebar.Text">#454C54</Color>
+    <Color x:Key="Color.Sidebar.TextMuted">#8A9098</Color>
+
+    <Color x:Key="Color.Table.Header">#F0F1F2</Color>
+    <Color x:Key="Color.Table.AlternateRow">#FFFFFF</Color>
+    <Color x:Key="Color.Progress.Track">#E2E4E7</Color>
+
+    <Color x:Key="Color.Log.Panel">#F7F8F9</Color>
+    <Color x:Key="Color.Log.PanelHover">#F3F5F6</Color>
+    <Color x:Key="Color.Log.PanelSelected">#E8F1FB</Color>
+    <Color x:Key="Color.Log.Text">#2B3138</Color>
+
+    <Color x:Key="Color.Success">#1B7F45</Color>
+    <Color x:Key="Color.Success.Soft">#E8F5EE</Color>
+    <Color x:Key="Color.Success.Border">#A8D5BC</Color>
+
+    <Color x:Key="Color.Warning">#9A6400</Color>
+    <Color x:Key="Color.Warning.Hover">#7E5200</Color>
+    <Color x:Key="Color.Warning.Pressed">#664200</Color>
+    <Color x:Key="Color.Warning.Soft">#FDF3E2</Color>
+    <Color x:Key="Color.Warning.Border">#EBC98A</Color>
+    <Color x:Key="Color.Warning.Text">#2B2112</Color>
+
+    <Color x:Key="Color.Error">#B5342A</Color>
+    <Color x:Key="Color.Error.Soft">#FBEAE8</Color>
+    <Color x:Key="Color.Error.Border">#E7AEA6</Color>
+
+    <Color x:Key="Color.Danger">#B5342A</Color>
+    <Color x:Key="Color.Danger.Hover">#9C2A22</Color>
+    <Color x:Key="Color.Danger.Pressed">#84231C</Color>
+    <Color x:Key="Color.Danger.Soft">#FBEAE8</Color>
+    <Color x:Key="Color.Danger.Border">#E7AEA6</Color>
+    <Color x:Key="Color.Danger.Text">#FFFFFF</Color>
+
+    <Color x:Key="Color.Neutral.Soft">#F3F4F5</Color>
+    <Color x:Key="Color.Neutral.Border">#E2E4E7</Color>
+</ResourceDictionary>

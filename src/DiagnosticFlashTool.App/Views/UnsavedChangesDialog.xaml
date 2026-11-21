@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls"
         Title="未保存的修改"
-        Width="520"
-        MinHeight="280"
+        Width="440"
+        MinHeight="180"
         SizeToContent="Height"
         ResizeMode="NoResize"
         WindowStyle="None"
@@ -16,63 +16,72 @@
         TextOptions.TextFormattingMode="Ideal"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True">
-    <Border Margin="16"
-            Padding="28"
-            Style="{StaticResource DialogPanelStyle}"
-            Effect="{StaticResource CardElevatedShadowEffect}">
+    <Border Margin="12"
+            Style="{StaticResource DialogPanelStyle}">
         <Grid KeyboardNavigation.TabNavigation="Cycle">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="20" />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="24" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <Grid Grid.Row="0">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="36" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <controls:FluentIcon Grid.Column="0"
-                                         Kind="WarningOutline"
-                                         Width="24"
-                                         Height="24"
-                                         FontSize="24"
-                                         Foreground="{StaticResource StatusWarningBrush}"
-                                         HorizontalAlignment="Left"
-                                         VerticalAlignment="Center" />
+                                    Kind="WarningOutline"
+                                    Width="20"
+                                    Height="20"
+                                    FontSize="18"
+                                    Margin="0,0,8,0"
+                                    Foreground="{StaticResource StatusWarningBrush}"
+                                    VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1"
                            Text="未保存的修改"
                            Style="{StaticResource DialogTitleTextStyle}" />
+                <Button Grid.Column="2"
+                        Width="26"
+                        Height="26"
+                        Padding="0"
+                        Margin="0"
+                        Style="{StaticResource Button.Normal}"
+                        ToolTip="关闭（取消）"
+                        Click="Close_Click">
+                    <controls:FluentIcon Kind="Close"
+                                         Style="{StaticResource Button.Glyph.Current}" />
+                </Button>
             </Grid>
 
-            <Border Grid.Row="2" Style="{StaticResource SettingGroupPanelStyle}">
+            <Border Grid.Row="1"
+                    Margin="0,10,0,0"
+                    Style="{StaticResource SettingGroupPanelStyle}">
                 <StackPanel>
                     <TextBlock x:Name="PromptTextBlock"
                                FontSize="{StaticResource FontSize.Body}"
                                Foreground="{StaticResource TextBrush}"
                                TextWrapping="Wrap" />
-                    <TextBlock Margin="0,10,0,0"
+                    <TextBlock Margin="0,6,0,0"
                                Text="选择“保存”保留修改，选择“不保存”放弃修改，或选择“取消”继续编辑。"
                                Style="{StaticResource HintTextStyle}" />
                 </StackPanel>
             </Border>
 
-            <StackPanel Grid.Row="4"
+            <StackPanel Grid.Row="2"
                         Orientation="Horizontal"
-                        HorizontalAlignment="Right">
-                <Button Width="96"
-                        Height="32"
-                        Margin="0,0,12,0"
+                        HorizontalAlignment="Right"
+                        Margin="0,14,0,0">
+                <Button Width="88"
                         Style="{StaticResource Button.Danger}"
                         Click="Discard_Click">
                     <TextBlock Text="不保存"
                                Style="{StaticResource Button.IconLabel}"
                                Margin="0" />
                 </Button>
-                <Button Width="88"
-                        Margin="0,0,12,0"
+                <Button Width="80"
+                        Margin="0,0,8,0"
                         IsCancel="True"
                         Style="{StaticResource Button.Normal}">
                     <TextBlock Text="取消"
@@ -80,7 +89,7 @@
                                Margin="0" />
                 </Button>
                 <Button x:Name="SaveButton"
-                        Width="88"
+                        Width="80"
                         IsDefault="True"
                         Margin="0"
                         Style="{StaticResource Button.Normal}"

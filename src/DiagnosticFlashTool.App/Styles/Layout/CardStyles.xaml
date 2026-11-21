@@ -6,39 +6,37 @@
         <ResourceDictionary Source="../Typography.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <Thickness x:Key="CardContentPadding">16</Thickness>
-    <Thickness x:Key="CardHorizontalContentPadding">16,0</Thickness>
-    <Thickness x:Key="CardHeaderContentPadding">16,0</Thickness>
+    <!--
+        桌面工具改版：卡片退化为"1px 边框分区"，去掉投影与悬停抬升，
+        内边距由 16 压到 12，让窗口在 1440×860 下能多放两行数据。
+    -->
+    <Thickness x:Key="CardContentPadding">12</Thickness>
+    <Thickness x:Key="CardHorizontalContentPadding">12,0</Thickness>
+    <Thickness x:Key="CardHeaderContentPadding">12,0</Thickness>
+
+    <!-- 保留键名以兼容既有引用；桌面工具不使用投影，值统一为 null。 -->
     <DropShadowEffect x:Key="CardShadowEffect"
                       Color="{StaticResource Color.Shadow}"
                       Direction="270"
-                      ShadowDepth="1"
-                      BlurRadius="2"
-                      Opacity="0.04" />
+                      ShadowDepth="0"
+                      BlurRadius="0"
+                      Opacity="0" />
     <DropShadowEffect x:Key="CardElevatedShadowEffect"
                       Color="{StaticResource Color.Shadow}"
                       Direction="270"
-                      ShadowDepth="4"
-                      BlurRadius="12"
-                      Opacity="0.06" />
+                      ShadowDepth="0"
+                      BlurRadius="0"
+                      Opacity="0" />
 
     <Style x:Key="CardStyle" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource PanelBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="{StaticResource CornerRadius.Card}" />
-        <Setter Property="Effect" Value="{StaticResource CardShadowEffect}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Style.Triggers>
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Effect" Value="{StaticResource CardElevatedShadowEffect}" />
-            </Trigger>
-        </Style.Triggers>
     </Style>
 
-    <Style x:Key="Card.Elevated" TargetType="Border" BasedOn="{StaticResource CardStyle}">
-        <Setter Property="Effect" Value="{StaticResource CardElevatedShadowEffect}" />
-    </Style>
+    <Style x:Key="Card.Elevated" TargetType="Border" BasedOn="{StaticResource CardStyle}" />
 
     <Style x:Key="Card.Compact" TargetType="Border" BasedOn="{StaticResource CardStyle}">
         <Setter Property="Padding" Value="{StaticResource CardContentPadding}" />
@@ -58,11 +56,11 @@
         <Setter Property="Padding" Value="{StaticResource CardContentPadding}" />
     </Style>
 
-    <!-- Standard form card rhythm: title gap 10, row gap 12, no extra last-row gap. -->
+    <!-- Standard form card rhythm: title gap 8, row gap 8, no extra last-row gap. -->
     <Style x:Key="Card.FormContent" TargetType="{x:Type controls:CardContentPanel}">
         <Setter Property="FirstChildIsHeader" Value="True" />
-        <Setter Property="HeaderSpacing" Value="10" />
-        <Setter Property="RowSpacing" Value="12" />
+        <Setter Property="HeaderSpacing" Value="8" />
+        <Setter Property="RowSpacing" Value="8" />
         <Setter Property="LastRowBottomSpacing" Value="0" />
     </Style>
 
@@ -73,7 +71,7 @@
     </Style>
 
     <Style x:Key="DialogPanelStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}">
-        <Setter Property="Padding" Value="24" />
+        <Setter Property="Padding" Value="16" />
         <Setter Property="CornerRadius" Value="{StaticResource CornerRadius.Card}" />
     </Style>
 
@@ -82,6 +80,7 @@
         <Setter Property="Visibility" Value="Collapsed" />
     </Style>
 
+    <!-- 设置分组：浅灰底 + 1px 分隔，替代卡片内再套卡片。 -->
     <Style x:Key="SettingGroupPanelStyle" TargetType="Border">
         <Setter Property="Padding" Value="{StaticResource CardContentPadding}" />
         <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
@@ -107,11 +106,11 @@
         <Setter Property="Foreground" Value="{StaticResource LabelTextBrush}" />
         <Setter Property="HorizontalAlignment" Value="Right" />
         <Setter Property="VerticalAlignment" Value="Center" />
-        <Setter Property="Margin" Value="0,0,12,0" />
+        <Setter Property="Margin" Value="0,0,8,0" />
     </Style>
 
     <Style x:Key="PathDisplayLabelStyle" TargetType="TextBlock" BasedOn="{StaticResource FieldLabelStyle}">
-        <Setter Property="Height" Value="32" />
-        <Setter Property="Padding" Value="0,8" />
+        <Setter Property="Height" Value="26" />
+        <Setter Property="Padding" Value="0,4" />
     </Style>
 </ResourceDictionary>

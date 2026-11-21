@@ -23,11 +23,18 @@ public partial class MainWindow : Window
     private Vector _newFlowProjectDialogStartOffset;
     private IInputElement? _newFlowProjectDialogPreviousFocus;
     private bool _exitRequested;
+    private readonly double _logPanelMinimumHeight;
+    private double _logPanelHeight;
 
-    public MainWindow()
+    public MainWindow() : this(new MainViewModel())
+    {
+    }
+
+    public MainWindow(MainViewModel viewModel)
     {
         InitializeComponent();
-        var viewModel = new MainViewModel();
+        _logPanelMinimumHeight = LogPanelRow.MinHeight;
+        _logPanelHeight = LogPanelRow.Height.Value;
         viewModel.PropertyChanged += MainViewModel_PropertyChanged;
         DataContext = viewModel;
         SyncNotifyIcon(viewModel);
@@ -111,11 +118,45 @@ public partial class MainWindow : Window
 
     private void MainViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(MainViewModel.IsOutputPanelVisible)
+            && sender is MainViewModel logViewModel)
+        {
+            // GridSplitter 会直接设置行高；在视图层收起并恢复行高，保留用户拖拽后的尺寸。
+            if (logViewModel.IsOutputPanelVisible)
+            {
+                LogPanelRow.MinHeight = _logPanelMinimumHeight;
+                SetLogPanelHeight(_logPanelHeight);
+            }
+            else
+            {
+                _logPanelHeight = Math.Max(_logPanelMinimumHeight, LogPanelRow.ActualHeight);
+                LogPanelRow.MinHeight = 0;
+                LogPanelRow.Height = new GridLength(0);
+            }
+        }
+
         if (e.PropertyName == nameof(MainViewModel.KeepRunningInTray)
             && sender is MainViewModel viewModel)
         {
             SyncNotifyIcon(viewModel);
         }
+    }
+
+    private void LogPanelHost_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (DataContext is MainViewModel { IsOutputPanelVisible: true })
+        {
+            SetLogPanelHeight(LogPanelRow.Height.Value);
+        }
+    }
+
+    private void SetLogPanelHeight(double height)
+    {
+        // 缩小窗口或重新展开时，为业务页面保留最小高度，避免固定日志行把状态栏挤出窗口。
+        var maximumHeight = Math.Max(
+            _logPanelMinimumHeight,
+            LogPanelHost.ActualHeight - MainContentRow.MinHeight - LogPanelSplitter.Height);
+        LogPanelRow.Height = new GridLength(Math.Clamp(height, _logPanelMinimumHeight, maximumHeight));
     }
 
     private void SyncNotifyIcon(MainViewModel viewModel)
@@ -132,17 +173,50 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ShellNav_Checked(object sender, RoutedEventArgs e)
+    private void MenuButton_Click(object sender, RoutedEventArgs e)
     {
-        if (DataContext is not MainViewModel viewModel
-            || sender is not RadioButton radioButton
-            || radioButton.CommandParameter is null
-            || !int.TryParse(radioButton.CommandParameter.ToString(), out var shellIndex))
+        if (sender is not System.Windows.Controls.Button button || button.ContextMenu is null)
         {
             return;
         }
 
-        viewModel.SelectedShellIndex = shellIndex;
+        button.ContextMenu.PlacementTarget = button;
+        button.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        button.ContextMenu.IsOpen = true;
+    }
+
+    private void Navigate_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel viewModel
+            || sender is not System.Windows.Controls.MenuItem menuItem
+            || menuItem.Tag is null
+            || !int.TryParse(menuItem.Tag.ToString(), out var shellIndex))
+        {
+            return;
+        }
+
+        viewModel.NavigateToUdsPage(shellIndex);
+    }
+
+    private void NavigateProject_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel viewModel
+            || sender is not System.Windows.Controls.MenuItem menuItem
+            || !int.TryParse(menuItem.Tag?.ToString(), out var shellIndex))
+        {
+            return;
+        }
+
+        viewModel.NavigateToProjectPage(viewModel.SelectedProject, shellIndex);
+    }
+
+    private void ShellNavigationPage_Checked(object sender, RoutedEventArgs e)
+    {
+        if (sender is RadioButton { DataContext: ShellNavigationItemViewModel { IsSelected: false } page })
+        {
+            // Checked 同时覆盖鼠标、方向键和辅助功能触发；业务选择由同一个命令处理。
+            page.NavigateCommand.Execute(null);
+        }
     }
 
     private void FlowStepTemplateDialogOverlay_IsVisibleChanged(

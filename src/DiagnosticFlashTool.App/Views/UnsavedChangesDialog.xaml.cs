@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Windows;
 
 namespace DiagnosticFlashTool.App.Views;
@@ -36,5 +37,22 @@ public sealed partial class UnsavedChangesDialog : Window
     {
         Choice = UnsavedChangesChoice.Discard;
         DialogResult = false;
+    }
+
+    private void Close_Click(object sender, RoutedEventArgs e)
+    {
+        Choice = UnsavedChangesChoice.Cancel;
+        Close();
+    }
+
+    // 标题栏关闭、Alt+F4 等所有关闭路径都必须落到“取消”，不得把默认值之外的结果交给宿主。
+    protected override void OnClosing(CancelEventArgs e)
+    {
+        if (DialogResult is null)
+        {
+            Choice = UnsavedChangesChoice.Cancel;
+        }
+
+        base.OnClosing(e);
     }
 }

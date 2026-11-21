@@ -66,7 +66,7 @@ public sealed class FlashFlowExecutor : IFlashFlowExecutor
         IProgress<FlashProgress>? progress,
         CancellationToken cancellationToken)
     {
-        var context = new FlashExecutionContext();
+        var context = new FlashExecutionContext(request.LogProgress);
 
         try
         {
@@ -113,7 +113,8 @@ public sealed class FlashFlowExecutor : IFlashFlowExecutor
                     var overall = totalWeight > 0 ? completed / totalWeight : 0;
                     progress?.Report(new FlashProgress(
                         Math.Clamp((int)Math.Round(overall * 100), 0, 100),
-                        message));
+                        message,
+                        step.Id));
                 }
 
                 ReportStepProgress(0, $"步骤 {step.Id}：{step.Name}");

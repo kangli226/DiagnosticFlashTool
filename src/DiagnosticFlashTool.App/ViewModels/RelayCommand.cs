@@ -19,6 +19,11 @@ public sealed class RelayCommand : ICommand
 
     public void Execute(object? parameter)
     {
+        if (!CanExecute(parameter))
+        {
+            return;
+        }
+
         try
         {
             _execute();

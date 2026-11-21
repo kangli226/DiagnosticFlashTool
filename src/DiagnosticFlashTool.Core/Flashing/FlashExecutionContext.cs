@@ -3,7 +3,7 @@ using DiagnosticFlashTool.Core.Diagnostics;
 namespace DiagnosticFlashTool.Core.Flashing;
 
 /// <summary>仅在单次刷写期间存活的可变状态。</summary>
-internal sealed class FlashExecutionContext
+internal sealed class FlashExecutionContext(IProgress<string>? logProgress = null)
 {
     private readonly Dictionary<string, ulong> _runtimeVariables = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _pendingCrcVerifications = new(StringComparer.OrdinalIgnoreCase);
@@ -56,5 +56,6 @@ internal sealed class FlashExecutionContext
     {
         var line = $"[{DateTime.Now:HH:mm:ss}] {message}";
         Logs.Add(line);
+        logProgress?.Report(line);
     }
 }

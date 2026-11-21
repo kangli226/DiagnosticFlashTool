@@ -11,11 +11,11 @@
     <system:Double x:Key="FontSize.Caption">11</system:Double>
     <system:Double x:Key="FontSize.Assist">12</system:Double>
     <system:Double x:Key="FontSize.Body">13</system:Double>
-    <system:Double x:Key="FontSize.CardTitle">15</system:Double>
-    <system:Double x:Key="FontSize.PageTitle">18</system:Double>
+    <system:Double x:Key="FontSize.CardTitle">14</system:Double>
+    <system:Double x:Key="FontSize.PageTitle">17</system:Double>
     <system:Double x:Key="LineHeight.Assist">19</system:Double>
     <system:Double x:Key="LineHeight.Body">22</system:Double>
-    <system:Double x:Key="LineHeight.CardTitle">24</system:Double>
+    <system:Double x:Key="LineHeight.CardTitle">22</system:Double>
 
     <Style TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource Font.UI}" />
@@ -124,4 +124,22 @@
         <Setter Property="TextWrapping" Value="NoWrap" />
         <Setter Property="TextTrimming" Value="CharacterEllipsis" />
     </Style>
-</ResourceDictionary>
+    <!-- 深色状态栏：与框架同族的前景，不复用内容区文字令牌。 -->
+    <Style x:Key="ShellStatusTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Caption}" />
+        <Setter Property="Foreground" Value="{StaticResource ChromeTextBrush}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="ShellStatusCodeTextStyle"
+           TargetType="TextBlock"
+           BasedOn="{StaticResource ShellStatusTextStyle}">
+        <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
+    </Style>
+
+    <Style x:Key="ShellStatusCountTextStyle"
+           TargetType="TextBlock"
+           BasedOn="{StaticResource ShellStatusTextStyle}">
+        <Setter Property="Foreground" Value="{StaticResource ChromeMutedTextBrush}" />
+    </Style>
+    </ResourceDictionary>

@@ -6,6 +6,7 @@ namespace DiagnosticFlashTool.App.ViewModels;
 public sealed class FlowStepEditorRow : ObservableObject
 {
     private int _id;
+    private bool _isExecuting;
     private string _templateId = string.Empty;
     private string _name = string.Empty;
     private string _stepType = string.Empty;
@@ -27,6 +28,13 @@ public sealed class FlowStepEditorRow : ObservableObject
     {
         get => _id;
         set => SetProperty(ref _id, value);
+    }
+
+    /// <summary>刷写执行到该节点时为 true，表格按行样式高亮。</summary>
+    public bool IsExecuting
+    {
+        get => _isExecuting;
+        set => SetProperty(ref _isExecuting, value);
     }
 
     public string TemplateId

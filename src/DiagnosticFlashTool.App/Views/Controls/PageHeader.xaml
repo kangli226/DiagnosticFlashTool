@@ -6,13 +6,29 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
-        <TextBlock Grid.Column="0"
-                   Text="{Binding Title, ElementName=Root}"
-                   Style="{StaticResource PageHeaderTitleTextStyle}"
-                   TextTrimming="CharacterEllipsis" />
-        <ContentControl Grid.Column="1"
+        <!-- 视图名称由 Shell 导航展示，页头仅承载元信息和页面操作。 -->
+        <!-- 页头元信息徽标：BadgeText 为空时整块隐藏，避免占位留白。 -->
+        <Border Grid.Column="1"
+                Margin="8,0,0,0"
+                Padding="6,1"
+                VerticalAlignment="Center">
+            <Border.Style>
+                <Style TargetType="Border" BasedOn="{StaticResource PageHeaderBadgeStyle}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding BadgeText, ElementName=Root}" Value="">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <TextBlock Text="{Binding BadgeText, ElementName=Root}"
+                       Style="{StaticResource PageHeaderBadgeTextStyle}" />
+        </Border>
+        <ContentControl Grid.Column="2"
                         Content="{Binding Actions, ElementName=Root}"
+                        Margin="8,0,0,0"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center" />
     </Grid>
