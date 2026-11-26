@@ -63,6 +63,7 @@ public sealed class WorkspaceNavigationTests : IDisposable
         Assert.Same(secondGroup.Pages[1],
             Assert.Single(_viewModel.ProjectNavigationItems.SelectMany(group => group.Pages), page => page.IsSelected));
         Assert.Equal(6, _viewModel.UdsNavigationItems.Count);
+        Assert.Equal(2, _viewModel.VisibleToolCount);
         Assert.DoesNotContain(_viewModel.UdsNavigationItems, page => page.PageIndex == 0);
         Assert.Equal(new[] { 2, 6 }, _viewModel.UdsNavigationItems
             .Where(page => page.IsVisible)
@@ -71,6 +72,51 @@ public sealed class WorkspaceNavigationTests : IDisposable
         Assert.False(_viewModel.NewFlowCommand.CanExecute(null));
         Assert.False(_viewModel.SaveFlowCommand.CanExecute(null));
         Assert.False(_viewModel.SendManualFrameCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void ProjectExpansion_IsIndependentOfTheCurrentPage()
+    {
+        var first = _viewModel.ProjectNavigationItems[0];
+        var second = _viewModel.ProjectNavigationItems[1];
+        Assert.True(first.IsExpanded);
+        Assert.False(second.IsExpanded);
+
+        second.IsExpanded = true;
+        first.IsExpanded = false;
+        Assert.Same(first.Project, _viewModel.SelectedProject);
+        Assert.All(second.Pages, page => Assert.True(page.IsVisible));
+        Assert.All(first.Pages, page => Assert.False(page.IsVisible));
+
+        Assert.True(_viewModel.NavigateToUdsPage(2));
+        Assert.False(first.IsExpanded);
+        Assert.True(second.IsExpanded);
+
+        second.IsExpanded = false;
+        second.OpenCommand.Execute(null);
+        Assert.True(second.IsExpanded);
+        Assert.Same(second.Project, _viewModel.SelectedProject);
+        Assert.Equal(0, _viewModel.SelectedShellIndex);
+    }
+
+    [Fact]
+    public void ProjectFilter_FollowsProjectChangesWithoutChangingSelection()
+    {
+        var selected = _viewModel.SelectedProject;
+        _viewModel.ProjectNavigationFilter = "  ecu-7  ";
+        Assert.True(_viewModel.ProjectNavigationView.IsEmpty);
+
+        var project = new ProjectConfigEntry { ProjectName = "ECU-7107" };
+        _viewModel.Projects.Add(project);
+        Assert.Same(project, Assert.Single(_viewModel.ProjectNavigationView.Cast<ProjectNavigationGroupViewModel>()).Project);
+        Assert.Same(selected, _viewModel.SelectedProject);
+
+        _viewModel.Projects.Remove(project);
+        Assert.True(_viewModel.ProjectNavigationView.IsEmpty);
+
+        _viewModel.ProjectNavigationFilter = string.Empty;
+        Assert.Equal(_viewModel.ProjectNavigationItems, _viewModel.ProjectNavigationView.Cast<ProjectNavigationGroupViewModel>());
+        Assert.Same(selected, _viewModel.SelectedProject);
     }
 
     [Theory]
@@ -169,6 +215,7 @@ public sealed class WorkspaceNavigationTests : IDisposable
         Assert.Equal("项目一", first!.ProjectName);
         Assert.True(_viewModel.NavigateToUdsPage(1));
         Assert.Equal(6, _viewModel.UdsNavigationItems.Count(page => page.IsVisible));
+        Assert.Equal(6, _viewModel.VisibleToolCount);
         Assert.False(_viewModel.NavigateToUdsPage(0));
 
         _viewModel.SelectedProject = _viewModel.Projects[1];

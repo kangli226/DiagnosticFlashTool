@@ -68,6 +68,7 @@ public sealed class FluentIcon : TextBlock
             FluentIconKind.FilterOutline => "\uE71C",
             FluentIconKind.FlashOutline => "\uE945",
             FluentIconKind.FolderCogOutline => "\uE912",
+            FluentIconKind.FolderOutline => "\uE8B7",
             FluentIconKind.FolderOpenOutline => "\uE838",
             FluentIconKind.FolderPlusOutline => "\uE8F4",
             FluentIconKind.FunctionVariant => "\uE8EF",
@@ -79,6 +80,7 @@ public sealed class FluentIcon : TextBlock
             FluentIconKind.PowerPlugOutline => "\uE839",
             FluentIconKind.Refresh => "\uE72C",
             FluentIconKind.Restore => "\uE777",
+            FluentIconKind.Search => "\uE721",
             FluentIconKind.SendOutline => "\uE724",
             FluentIconKind.TextBoxOutline => "\uE8A5",
             FluentIconKind.WarningOutline => "\uE7BA",
@@ -125,5 +127,7 @@ public enum FluentIconKind
     TextBoxOutline,
     WarningOutline,
     WindowMaximize,
-    WindowMinimize
+    WindowMinimize,
+    FolderOutline,
+    Search
 }

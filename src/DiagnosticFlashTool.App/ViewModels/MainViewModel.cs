@@ -459,6 +459,7 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
 
                 ApplySelectedProject();
                 RefreshWorkspaceState();
+                ExpandActiveProjectNavigation();
                 OnPropertyChanged(nameof(StatusBarProjectText));
                 OnPropertyChanged(nameof(FlashPageProjectIdText));
                 OnPropertyChanged(nameof(IsCanFdRequested));

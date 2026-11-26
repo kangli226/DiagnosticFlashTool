@@ -25,7 +25,6 @@
                          IsChecked="{Binding IsSelected, Mode=OneWay}"
                          Visibility="{Binding IsVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
                          ToolTip="{Binding Title}"
-                         Margin="18,0,0,0"
                          Style="{StaticResource ShellNavRadioButtonStyle}" />
         </DataTemplate>
     </Window.Resources>
@@ -272,77 +271,117 @@
         <!-- 主体：左侧项目资源管理器 + 右侧内容区与输出面板 -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="208" />
+                <ColumnDefinition Width="{StaticResource ShellSidebarWidth}" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0"
                     Background="{StaticResource ChromeBrush}"
                     BorderBrush="{StaticResource ChromeBorderBrush}"
-                    BorderThickness="0,0,1,0">
-                <!--
-                    侧栏上半部「工具与设置」与「刷写项目」组头固定，
-                    下半部项目列表独占剩余高度并在其内部滚动，项目再多也不会挤走顶部导航。
-                -->
-                <Grid Margin="0,8,0,6">
+                    BorderThickness="0,0,1,0"
+                    KeyboardNavigation.TabNavigation="Local"
+                    Padding="{StaticResource ShellSidebarPadding}">
+                <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <StackPanel Grid.Row="0">
-                        <!-- 工具与设置分组的页面直接作为一级条目。 -->
-                        <TextBlock Text="工具与设置" Style="{StaticResource ShellNavGroupTextStyle}" Margin="0,0,0,2" />
-                        <ItemsControl ItemsSource="{Binding UdsNavigationItems}"
+                    <Expander IsExpanded="True"
+                              AutomationProperties.Name="工具与设置"
+                              Style="{StaticResource ShellNavigationExpanderStyle}">
+                        <Expander.Header>
+                            <Grid Margin="0,0,8,0">
+                                <TextBlock Text="工具与设置" Style="{StaticResource ShellNavGroupTextStyle}" />
+                                <Border Style="{StaticResource ShellNavCountBadgeStyle}">
+                                    <TextBlock Text="{Binding VisibleToolCount}"
+                                               Style="{StaticResource ShellNavCountTextStyle}" />
+                                </Border>
+                            </Grid>
+                        </Expander.Header>
+                        <ItemsControl Focusable="False"
+                                      ItemsSource="{Binding UdsNavigationItems}"
                                       ItemTemplate="{StaticResource ShellNavigationPageTemplate}" />
-                    </StackPanel>
+                    </Expander>
 
-                    <!-- 项目名打开该项目的固件刷写页，二级条目随当前项目显示。 -->
-                    <Grid Grid.Row="1" Margin="0,10,0,0">
-                        <TextBlock Text="刷写项目" Style="{StaticResource ShellNavGroupTextStyle}" Margin="0,0,0,2" />
-                        <Button Command="{Binding NewProjectCommand}"
-                                Visibility="{Binding IsSystemAdministrator, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                HorizontalAlignment="Right" VerticalAlignment="Center"
-                                Width="26" Height="22" Padding="0" Margin="0,4,6,0"
-                                Style="{StaticResource Button.OnChrome}" ToolTip="新增项目">
-                            <controls:FluentIcon Kind="Plus" Style="{StaticResource Button.Glyph.Current}" />
-                        </Button>
-                    </Grid>
+                    <StackPanel Grid.Row="1">
+                        <Border Style="{StaticResource ShellNavDividerStyle}" />
+                        <Grid Height="{StaticResource ShellSectionHeaderHeight}" Margin="8,0">
+                            <TextBlock Text="刷写项目" Style="{StaticResource ShellNavGroupTextStyle}" />
+                        </Grid>
+                        <Border Style="{StaticResource ShellProjectSearchBorderStyle}">
+                            <Grid>
+                                <TextBox Text="{Binding ProjectNavigationFilter, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.Name="筛选项目编号"
+                                         Style="{StaticResource ShellProjectSearchTextBoxStyle}" />
+                                <controls:FluentIcon Kind="Search"
+                                                     Margin="10,0,0,0"
+                                                     FontSize="{StaticResource FontSize.Assist}"
+                                                     Foreground="{StaticResource SidebarMutedTextBrush}"
+                                                     HorizontalAlignment="Left"
+                                                     IsHitTestVisible="False" />
+                                <TextBlock Text="筛选项目编号..."
+                                           Style="{StaticResource ShellProjectSearchHintStyle}" />
+                            </Grid>
+                        </Border>
+                    </StackPanel>
 
                     <ScrollViewer Grid.Row="2"
                                   Style="{StaticResource ShellProjectScrollHostStyle}">
                         <Grid VerticalAlignment="Top">
-                            <ItemsControl ItemsSource="{Binding ProjectNavigationItems}">
+                            <ItemsControl Focusable="False"
+                                          ItemsSource="{Binding ProjectNavigationView}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel>
-                                            <Button Command="{Binding OpenCommand}"
-                                                    AutomationProperties.Name="{Binding Project.ProjectName}"
-                                                    ToolTip="{Binding Project.ProjectName}"
-                                                    HorizontalContentAlignment="Stretch"
-                                                    Padding="14,0,12,0" Margin="0"
-                                                    Style="{StaticResource Button.OnChrome}">
-                                                <DockPanel>
-                                                    <controls:FluentIcon DockPanel.Dock="Left" Kind="FolderOpenOutline"
-                                                                         Style="{StaticResource Button.Glyph.Current}" />
-                                                    <TextBlock Text="{Binding Project.ProjectName}"
-                                                               TextTrimming="CharacterEllipsis"
-                                                               FontSize="{StaticResource FontSize.Caption}"
-                                                               Style="{StaticResource Button.IconLabel}" />
-                                                </DockPanel>
-                                            </Button>
-                                            <ItemsControl ItemsSource="{Binding Pages}"
-                                                          ItemTemplate="{StaticResource ShellNavigationPageTemplate}" />
+                                            <Grid Height="{StaticResource ShellNavigationRowHeight}"
+                                                  Margin="{StaticResource ShellNavigationRowGap}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="{StaticResource ShellNavigationArrowColumnWidth}" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <ToggleButton Style="{StaticResource ShellNavigationToggleStyle}"
+                                                              IsChecked="{Binding IsExpanded, Mode=TwoWay}"
+                                                              AutomationProperties.Name="{Binding Project.ProjectName, StringFormat=展开或收起项目 {0}}"
+                                                              ToolTip="展开或收起项目" />
+                                                <Button Grid.Column="1"
+                                                        Command="{Binding OpenCommand}"
+                                                        AutomationProperties.Name="{Binding Project.ProjectName}"
+                                                        ToolTip="{Binding Project.ProjectName}"
+                                                        Height="Auto"
+                                                        HorizontalAlignment="Stretch"
+                                                        VerticalAlignment="Stretch"
+                                                        HorizontalContentAlignment="Stretch"
+                                                        Padding="2,0,8,0" Margin="0"
+                                                        Style="{StaticResource Button.OnChrome}">
+                                                    <DockPanel>
+                                                        <controls:FluentIcon x:Name="ProjectFolder"
+                                                                             DockPanel.Dock="Left"
+                                                                             Kind="FolderOutline"
+                                                                             Style="{StaticResource Button.Glyph.Current}" />
+                                                        <TextBlock Text="{Binding Project.ProjectName}"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   Style="{StaticResource Button.IconLabel}" />
+                                                    </DockPanel>
+                                                </Button>
+                                            </Grid>
+                                            <Border Style="{StaticResource ShellProjectChildrenStyle}">
+                                                <ItemsControl Focusable="False"
+                                                              ItemsSource="{Binding Pages}"
+                                                              ItemTemplate="{StaticResource ShellNavigationPageTemplate}" />
+                                            </Border>
                                         </StackPanel>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding IsExpanded}" Value="True">
+                                                <Setter TargetName="ProjectFolder" Property="Kind" Value="FolderOpenOutline" />
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
 
-                            <TextBlock Text="暂无项目，请联系管理员新增"
-                                       Margin="18,8,12,8" TextWrapping="Wrap"
-                                       Style="{StaticResource SettingAssistTextStyle}"
-                                       Visibility="{Binding HasNoProjects, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            <TextBlock Style="{StaticResource ShellProjectEmptyTextStyle}" />
                         </Grid>
                     </ScrollViewer>
                 </Grid>

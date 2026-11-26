@@ -55,6 +55,10 @@ public sealed class ProjectNavigationGroupViewModel : ObservableObject
         Project = project;
         Pages = [firmwareFlashPage, flashFlowPage];
         OpenCommand = firmwareFlashPage.NavigateCommand;
+        foreach (var page in Pages)
+        {
+            page.IsVisible = false;
+        }
     }
 
     public ProjectConfigEntry Project { get; }
@@ -64,6 +68,15 @@ public sealed class ProjectNavigationGroupViewModel : ObservableObject
     public bool IsExpanded
     {
         get => _isExpanded;
-        set => SetProperty(ref _isExpanded, value);
+        set
+        {
+            if (SetProperty(ref _isExpanded, value))
+            {
+                foreach (var page in Pages)
+                {
+                    page.IsVisible = value;
+                }
+            }
+        }
     }
 }

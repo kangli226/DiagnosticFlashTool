@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Windows.Data;
 using DiagnosticFlashTool.App.Utilities;
 using DiagnosticFlashTool.App.Views.Controls;
 using DiagnosticFlashTool.Core.Configuration;
@@ -13,10 +15,13 @@ public sealed partial class MainViewModel
     private const string AdministratorRoleText = "系统管理员";
     private string _selectedUserRole = StandardRoleText;
     private bool _isProjectWorkspace = true;
+    private string _projectNavigationFilter = string.Empty;
 
     public IReadOnlyList<string> UserRoles { get; } = [StandardRoleText, AdministratorRoleText];
     public ObservableCollection<ProjectNavigationGroupViewModel> ProjectNavigationItems { get; } = [];
+    public ICollectionView ProjectNavigationView { get; private set; } = null!;
     public ObservableCollection<ShellNavigationItemViewModel> UdsNavigationItems { get; } = [];
+    public int VisibleToolCount => UdsNavigationItems.Count(page => page.IsVisible);
     public ObservableCollection<SystemLogEntry> WorkspaceLogEntries { get; } = [];
     public RelayCommand OpenActiveProjectConfigCommand { get; private set; } = null!;
     public bool IsProjectWorkspace => _isProjectWorkspace;
@@ -43,6 +48,22 @@ public sealed partial class MainViewModel
     public string RoleDescription => IsSystemAdministrator
         ? "可使用各项目的固件刷写并查看刷写流程，也可在「工具与设置」中管理项目和流程配置。"
         : "可使用各项目的固件刷写、查看刷写流程，并访问操作日志和系统设置。";
+
+    public string ProjectNavigationFilter
+    {
+        get => _projectNavigationFilter;
+        set
+        {
+            if (SetProperty(ref _projectNavigationFilter, value))
+            {
+                var filter = value.Trim();
+                ProjectNavigationView.Filter = filter.Length == 0
+                    ? null
+                    : item => item is ProjectNavigationGroupViewModel group
+                        && group.Project.ProjectName?.Contains(filter, StringComparison.OrdinalIgnoreCase) == true;
+            }
+        }
+    }
 
     public string SelectedUserRole
     {
@@ -97,6 +118,7 @@ public sealed partial class MainViewModel
         }
 
         SelectedShellIndex = pageIndex;
+        ExpandActiveProjectNavigation();
         return true;
     }
 
@@ -158,6 +180,7 @@ public sealed partial class MainViewModel
     {
         OpenActiveProjectConfigCommand = AdministratorCommand(
             OpenActiveProjectConfig, () => SelectedProject is not null);
+        ProjectNavigationView = new ListCollectionView(ProjectNavigationItems);
         Projects.CollectionChanged += (_, _) => RefreshProjectNavigation();
         (string Title, FluentIconKind Icon, int Index)[] pages =
         [
@@ -213,19 +236,23 @@ public sealed partial class MainViewModel
 
     private void OpenActiveProjectConfig() => NavigateToUdsPage(3);
 
+    private void ExpandActiveProjectNavigation()
+    {
+        if (IsProjectWorkspace && ProjectNavigationItems.FirstOrDefault(
+                group => ReferenceEquals(group.Project, SelectedProject)) is { } activeGroup)
+        {
+            activeGroup.IsExpanded = true;
+        }
+    }
+
     private void SyncNavigationSelection()
     {
         foreach (var group in ProjectNavigationItems)
         {
             var selected = IsProjectWorkspace && ReferenceEquals(group.Project, SelectedProject);
 
-            // 只展开当前工作区选中的项目。
-            group.IsExpanded = selected;
-
             foreach (var page in group.Pages)
             {
-                // 页面条目跟随所属项目是否展开，未展开的项目只保留项目名一行。
-                page.IsVisible = selected && CanAccessPage(page.PageIndex, projectWorkspace: true);
                 page.IsSelected = selected && page.PageIndex == SelectedShellIndex;
             }
         }
@@ -234,6 +261,7 @@ public sealed partial class MainViewModel
             page.IsVisible = CanAccessPage(page.PageIndex, false);
             page.IsSelected = (IsUdsWorkspace || page.PageIndex == 6) && page.PageIndex == SelectedShellIndex;
         }
+        OnPropertyChanged(nameof(VisibleToolCount));
         RefreshNavigationCommands();
     }
 

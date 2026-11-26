@@ -1,9 +1,11 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls">
+                    xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls"
+                    xmlns:system="clr-namespace:System;assembly=System.Runtime">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="../Brushes.xaml" />
         <ResourceDictionary Source="../Typography.xaml" />
+        <ResourceDictionary Source="../Controls/InputStyles.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
     <!--
@@ -51,19 +53,39 @@
         </Setter>
     </Style>
 
-    <!--
-        v3.3 深色框架：侧栏与标题栏、状态栏同为深灰分区，
-        选中态用 2px 左侧蓝色轨 + 深蓝底 + 浅蓝文字，未选中用浅灰文字。
-    -->
+    <GridLength x:Key="ShellSidebarWidth">250</GridLength>
+    <GridLength x:Key="ShellNavigationArrowColumnWidth">28</GridLength>
+    <system:Double x:Key="ShellNavigationRowHeight">36</system:Double>
+    <system:Double x:Key="ShellSectionHeaderHeight">30</system:Double>
+    <Thickness x:Key="ShellSidebarPadding">8,11,7,6</Thickness>
+    <Thickness x:Key="ShellNavigationRowGap">0,0,0,2</Thickness>
+    <CornerRadius x:Key="ShellNavigationCornerRadius">8</CornerRadius>
+
     <Style x:Key="ShellNavGroupTextStyle" TargetType="TextBlock">
-        <Setter Property="Width" Value="208" />
-        <Setter Property="Height" Value="22" />
-        <Setter Property="Margin" Value="0,10,0,2" />
-        <Setter Property="Padding" Value="18,0,12,0" />
-        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{StaticResource SidebarTextBrush}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="ShellNavCountTextStyle" TargetType="TextBlock"
+           BasedOn="{StaticResource ShellNavGroupTextStyle}">
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Caption}" />
         <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="Foreground" Value="{StaticResource SidebarMutedTextBrush}" />
-        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="ShellNavFocusVisualStyle" TargetType="Control">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Control">
+                    <Border BorderBrush="{StaticResource SidebarActiveRailBrush}"
+                            BorderThickness="1"
+                            CornerRadius="{StaticResource ShellNavigationCornerRadius}" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style x:Key="ShellNavRadioButtonStyle" TargetType="RadioButton">
@@ -77,41 +99,36 @@
         <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="GroupName" Value="ShellNavigation" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource ShellNavFocusVisualStyle}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
                     <Border x:Name="NavBorder"
                             Background="{TemplateBinding Background}"
+                            CornerRadius="{StaticResource ShellNavigationCornerRadius}"
                             SnapsToDevicePixels="True">
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="2" />
-                                <ColumnDefinition Width="22" />
-                                <ColumnDefinition Width="30" />
+                                <ColumnDefinition Width="38" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
 
-                            <Border x:Name="ActiveRail"
-                                    Background="Transparent"
-                                    CornerRadius="{StaticResource CornerRadius.Compact}"
-                                    Margin="0,6,0,6" />
-
                             <controls:FluentIcon x:Name="NavIcon"
-                                                 Grid.Column="2"
                                                  Kind="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"
                                                  Width="16"
                                                  Height="16"
-                                                 FontSize="14"
+                                                 FontSize="{StaticResource FontSize.Body}"
                                                  Foreground="{StaticResource SidebarTextBrush}"
                                                  HorizontalAlignment="Center"
                                                  VerticalAlignment="Center" />
 
                             <TextBlock x:Name="NavText"
-                                       Grid.Column="3"
+                                       Grid.Column="1"
                                        Text="{TemplateBinding Content}"
                                        Foreground="{Binding Foreground, RelativeSource={RelativeSource TemplatedParent}}"
                                        FontSize="{TemplateBinding FontSize}"
                                        FontWeight="{TemplateBinding FontWeight}"
+                                       Margin="0,0,8,0"
                                        VerticalAlignment="Center"
                                        TextTrimming="CharacterEllipsis" />
                         </Grid>
@@ -119,18 +136,15 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="NavBorder" Property="Background" Value="{StaticResource SidebarHoverBrush}" />
-                            <Setter TargetName="NavIcon" Property="Foreground" Value="{StaticResource SidebarTextBrush}" />
-                            <Setter TargetName="NavText" Property="Foreground" Value="{StaticResource SidebarTextBrush}" />
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="NavBorder" Property="Background" Value="{StaticResource SidebarActiveBrush}" />
-                            <Setter TargetName="ActiveRail" Property="Background" Value="{StaticResource SidebarActiveRailBrush}" />
                             <Setter TargetName="NavIcon" Property="Foreground" Value="{StaticResource SidebarActiveIconBrush}" />
                             <Setter TargetName="NavText" Property="Foreground" Value="{StaticResource SidebarActiveIconBrush}" />
                             <Setter TargetName="NavText" Property="FontWeight" Value="Medium" />
                         </Trigger>
-                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                            <Setter TargetName="ActiveRail" Property="Background" Value="{StaticResource SidebarActiveRailBrush}" />
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="NavBorder" Property="Background" Value="{StaticResource ChromePressedBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="NavText" Property="Foreground" Value="{StaticResource DisabledTextBrush}" />
@@ -140,12 +154,15 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Project}" Value="{x:Null}">
+                <Setter Property="Height" Value="{StaticResource ShellNavigationRowHeight}" />
+                <Setter Property="Margin" Value="{StaticResource ShellNavigationRowGap}" />
+            </DataTrigger>
+        </Style.Triggers>
     </Style>
 
-    <!--
-        v3.9 项目区滚动：项目数量超过可用高度时只滚动项目列表，
-        「通用 UDS」分组保持固定在侧栏顶部；滚动条隐藏，保留滚轮与键盘滚动。
-    -->
+    <!-- 项目列表独立滚动，保留滚轮、触控板和键盘滚动。 -->
     <Style x:Key="ShellProjectScrollHostStyle" TargetType="ScrollViewer">
         <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
         <Setter Property="VerticalScrollBarVisibility" Value="Hidden" />
@@ -154,67 +171,64 @@
         <Setter Property="Focusable" Value="False" />
     </Style>
 
-    <!--
-        项目导航折叠：不用 Fluent 默认的圆形展开按钮（深色侧栏上会变成白色圆点），
-        改为无底色的 12px 箭头 + 整行悬停高亮，展开时箭头由 ChevronRight 转为 ChevronDown。
-    -->
-    <Style x:Key="ShellProjectExpanderStyle" TargetType="Expander">
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="Padding" Value="0" />
+    <Style x:Key="ShellNavigationToggleStyle" TargetType="ToggleButton">
+        <Setter Property="MinHeight" Value="{StaticResource ShellSectionHeaderHeight}" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-        <Setter Property="Foreground" Value="{StaticResource SidebarTextBrush}" />
-        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
-        <Setter Property="Margin" Value="4,0,0,0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource ShellNavFocusVisualStyle}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="HeaderBorder"
+                            Background="Transparent"
+                            CornerRadius="{StaticResource ShellNavigationCornerRadius}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="{StaticResource ShellNavigationArrowColumnWidth}" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <controls:FluentIcon x:Name="Chevron"
+                                                 Kind="ChevronRight"
+                                                 FontSize="{StaticResource FontSize.Caption}"
+                                                 Foreground="{StaticResource SidebarMutedTextBrush}" />
+                            <ContentPresenter Grid.Column="1"
+                                              ContentSource="Content"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="HeaderBorder" Property="Background" Value="{StaticResource SidebarHoverBrush}" />
+                            <Setter TargetName="Chevron" Property="Foreground" Value="{StaticResource SidebarTextBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="HeaderBorder" Property="Background" Value="{StaticResource ChromePressedBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Chevron" Property="Kind" Value="ChevronDown" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="ShellNavigationExpanderStyle" TargetType="Expander">
+        <Setter Property="Focusable" Value="False" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Expander">
                     <StackPanel>
-                        <ToggleButton x:Name="HeaderToggle"
-                                      Focusable="False"
-                                      Foreground="{StaticResource SidebarTextBrush}"
-                                      Height="34"
-                                      HorizontalContentAlignment="Stretch"
-                                      IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
-                            <ToggleButton.Template>
-                                <ControlTemplate TargetType="ToggleButton">
-                                    <Border x:Name="HeaderBorder"
-                                            Background="Transparent"
-                                            CornerRadius="{StaticResource CornerRadius.Compact}">
-                                        <Grid Margin="6,0,8,0">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="18" />
-                                                <ColumnDefinition Width="*" />
-                                            </Grid.ColumnDefinitions>
-                                            <controls:FluentIcon x:Name="Chevron"
-                                                                 Grid.Column="0"
-                                                                 Kind="ChevronRight"
-                                                                 Width="12"
-                                                                 Height="12"
-                                                                 FontSize="11"
-                                                                 Foreground="{StaticResource SidebarMutedTextBrush}"
-                                                                 HorizontalAlignment="Center"
-                                                                 VerticalAlignment="Center" />
-                                            <ContentPresenter Grid.Column="1"
-                                                              VerticalAlignment="Center"
-                                                              ContentSource="Content"
-                                                              TextElement.Foreground="{TemplateBinding Foreground}" />
-                                        </Grid>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="HeaderBorder" Property="Background" Value="{StaticResource SidebarHoverBrush}" />
-                                            <Setter TargetName="Chevron" Property="Foreground" Value="{StaticResource SidebarTextBrush}" />
-                                        </Trigger>
-                                        <Trigger Property="IsChecked" Value="True">
-                                            <Setter TargetName="Chevron" Property="Kind" Value="ChevronDown" />
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </ToggleButton.Template>
-                            <ContentPresenter ContentSource="Header" />
-                        </ToggleButton>
-                        <ContentPresenter x:Name="ExpandSite" Visibility="Collapsed" />
+                        <ToggleButton x:Name="HeaderSite"
+                                      Style="{StaticResource ShellNavigationToggleStyle}"
+                                      Content="{TemplateBinding Header}"
+                                      ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                      AutomationProperties.Name="{TemplateBinding AutomationProperties.Name}"
+                                      IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" />
+                        <ContentPresenter x:Name="ExpandSite"
+                                          Margin="0,1,0,0"
+                                          Visibility="Collapsed" />
                     </StackPanel>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsExpanded" Value="True">
@@ -224,6 +238,87 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <Style x:Key="ShellNavCountBadgeStyle" TargetType="Border">
+        <Setter Property="Height" Value="15" />
+        <Setter Property="MinWidth" Value="19" />
+        <Setter Property="Padding" Value="4,0" />
+        <Setter Property="Background" Value="{StaticResource SidebarHoverBrush}" />
+        <Setter Property="CornerRadius" Value="{StaticResource CornerRadius.Brand}" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="ShellNavDividerStyle" TargetType="Border">
+        <Setter Property="Height" Value="1" />
+        <Setter Property="Margin" Value="8,14,8,14" />
+        <Setter Property="Background" Value="{StaticResource ChromeDividerBrush}" />
+    </Style>
+
+    <Style x:Key="ShellProjectChildrenStyle" TargetType="Border">
+        <Setter Property="Margin" Value="23,0,0,4" />
+        <Setter Property="Padding" Value="2,0,0,0" />
+        <Setter Property="BorderThickness" Value="1,0,0,0" />
+        <Setter Property="BorderBrush" Value="{StaticResource ChromeDividerBrush}" />
+        <Setter Property="Visibility" Value="{Binding IsExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" />
+    </Style>
+
+    <Style x:Key="ShellProjectSearchBorderStyle" TargetType="Border"
+           BasedOn="{StaticResource InputGroupBorderStyle}">
+        <Setter Property="Height" Value="{StaticResource ShellSectionHeaderHeight}" />
+        <Setter Property="Margin" Value="4,5,4,6" />
+        <Setter Property="Background" Value="{StaticResource ChromeBorderBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ChromeDividerBrush}" />
+        <Setter Property="CornerRadius" Value="{StaticResource CornerRadius.Window}" />
+    </Style>
+
+    <Style x:Key="ShellProjectSearchTextBoxStyle" TargetType="TextBox"
+           BasedOn="{StaticResource SoftTextBoxStyle}">
+        <Style.Resources>
+            <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="Transparent" />
+            <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="Transparent" />
+            <Thickness x:Key="TextControlBorderThemeThicknessFocused">0</Thickness>
+        </Style.Resources>
+        <Setter Property="Height" Value="Auto" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="Padding" Value="30,0,8,0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Foreground" Value="{StaticResource SidebarTextBrush}" />
+        <Setter Property="CaretBrush" Value="{StaticResource SidebarTextBrush}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Assist}" />
+    </Style>
+
+    <Style x:Key="ShellProjectSearchHintStyle" TargetType="TextBlock">
+        <Setter Property="Margin" Value="32,0,8,0" />
+        <Setter Property="Foreground" Value="{StaticResource SidebarMutedTextBrush}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Assist}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="IsHitTestVisible" Value="False" />
+        <Setter Property="Visibility" Value="Collapsed" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding ProjectNavigationFilter}" Value="">
+                <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="ShellProjectEmptyTextStyle" TargetType="TextBlock">
+        <Setter Property="Margin" Value="8,8" />
+        <Setter Property="Foreground" Value="{StaticResource SidebarMutedTextBrush}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Assist}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Text" Value="暂无匹配的项目" />
+        <Setter Property="Visibility" Value="Collapsed" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding ProjectNavigationView.IsEmpty}" Value="True">
+                <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding HasNoProjects}" Value="True">
+                <Setter Property="Text" Value="暂无项目，请联系管理员新增" />
+            </DataTrigger>
+        </Style.Triggers>
     </Style>
 
     <!-- 菜单栏：与标题栏同族浅灰 -->
