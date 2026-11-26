@@ -1,7 +1,6 @@
 [
     {
         "ProjectName": "7107",
-        "projectNo": 1,
         "CanProtocol": "CAN",
         "BaudRate": "500K",
         "PhysicalRequestId": "0x18DA5535",
@@ -13,7 +12,6 @@
     },
     {
         "ProjectName": "ZHILI 10KW",
-        "projectNo": 2,
         "CanProtocol": "CAN",
         "BaudRate": "250K",
         "PhysicalRequestId": "0x18DA5537",
@@ -25,7 +23,6 @@
     },
     {
         "ProjectName": "7104",
-        "projectNo": 3,
         "CanProtocol": "CAN",
         "BaudRate": "500K",
         "PhysicalRequestId": "0x18DA5535",
@@ -37,7 +34,6 @@
     },
     {
         "ProjectName": "TE8E0",
-        "projectNo": 4,
         "CanProtocol": "CAN",
         "BaudRate": "500K",
         "PhysicalRequestId": "0x18DA5535",
@@ -49,7 +45,6 @@
     },
     {
         "ProjectName": "TE9B0",
-        "projectNo": 5,
         "CanProtocol": "CAN",
         "BaudRate": "500K",
         "PhysicalRequestId": "0x18DA82F1",
@@ -61,7 +56,6 @@
     },
     {
         "ProjectName": "TN6Q",
-        "projectNo": 6,
         "CanProtocol": "CAN",
         "BaudRate": "500K",
         "PhysicalRequestId": "0x18DA82F1",
@@ -73,7 +67,6 @@
     },
     {
         "ProjectName": "KHAD0",
-        "projectNo": 7,
         "CanProtocol": "CAN",
         "BaudRate": "500K",
         "PhysicalRequestId": "0x18DA5535",
@@ -85,7 +78,6 @@
     },
     {
         "ProjectName": "CNHTC HH",
-        "projectNo": 8,
         "CanProtocol": "CAN",
         "BaudRate": "250K",
         "PhysicalRequestId": "0x18DA5535",

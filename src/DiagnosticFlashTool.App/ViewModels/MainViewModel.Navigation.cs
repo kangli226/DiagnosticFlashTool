@@ -281,7 +281,8 @@ public sealed partial class MainViewModel
     }
 
     private bool LogEntryMatchesWorkspace(SystemLogEntry entry) => !IsProjectWorkspace
-        || SelectedProject is not null && entry.ProjectNo == SelectedProject.ProjectNo;
+        || SelectedProject is not null
+        && string.Equals(entry.ProjectName, SelectedProject.ProjectName, StringComparison.OrdinalIgnoreCase);
 
     private RelayCommand AdministratorCommand(Action execute, Func<bool>? canExecute = null) =>
         new(execute, () => IsSystemAdministrator && CanChangeWorkspace && (canExecute?.Invoke() ?? true));

@@ -30,8 +30,8 @@ public sealed class WorkspaceNavigationTests : IDisposable
         bootRepository.Save("standalone.json", new BootConfig { Name = "独立配置" });
         new JsonProjectConfigRepository(_paths).SaveAll(
         [
-            new() { ProjectName = "项目一", ProjectNo = 1, BootConfigFile = "first.json", DriveFilePath = "first.bin" },
-            new() { ProjectName = "项目二", ProjectNo = 2, BootConfigFile = "second.json", DriveFilePath = "second.bin" }
+            new() { ProjectName = "项目一", BootConfigFile = "first.json", DriveFilePath = "first.bin" },
+            new() { ProjectName = "项目二", BootConfigFile = "second.json", DriveFilePath = "second.bin" }
         ]);
         _viewModel = new(_paths);
     }
@@ -169,8 +169,8 @@ public sealed class WorkspaceNavigationTests : IDisposable
     public void SharedLog_ShowsAndClearsAllProjectRecords()
     {
         _viewModel.LogEntries.Clear();
-        _viewModel.LogEntries.Add(new(DateTime.Now, DiagnosticStatusKind.Neutral, "项目一的记录") { ProjectNo = 1, ProjectName = "项目一" });
-        _viewModel.LogEntries.Add(new(DateTime.Now, DiagnosticStatusKind.Error, "项目二的记录") { ProjectNo = 2, ProjectName = "项目二" });
+        _viewModel.LogEntries.Add(new(DateTime.Now, DiagnosticStatusKind.Neutral, "项目一的记录") { ProjectName = "项目一" });
+        _viewModel.LogEntries.Add(new(DateTime.Now, DiagnosticStatusKind.Error, "项目二的记录") { ProjectName = "项目二" });
         _viewModel.LogEntries.Add(new(DateTime.Now, DiagnosticStatusKind.Neutral, "全局记录"));
         Assert.False(_viewModel.NavigateToProjectPage(_viewModel.Projects[1], 2));
         Assert.True(_viewModel.NavigateToUdsPage(2));
@@ -208,20 +208,21 @@ public sealed class WorkspaceNavigationTests : IDisposable
     {
         _viewModel.SelectedUserRole = "系统管理员";
         _viewModel.SelectedProject = _viewModel.Projects[1];
+        var originalLog = new SystemLogEntry(DateTime.Now, DiagnosticStatusKind.Neutral, "项目二的历史记录") { ProjectName = "项目二" };
+        _viewModel.LogEntries.Add(originalLog);
         _viewModel.NavigateToUdsPage(3);
         _viewModel.EditProjectCommand.Execute(null);
         _viewModel.ProjectEditor.ProjectName = "项目二已更新";
-        _viewModel.ProjectEditor.ProjectNoText = "12";
         _viewModel.SaveProjectEditorCommand.Execute(null);
 
         var saved = new JsonProjectConfigRepository(_paths).LoadAll();
         Assert.Equal("项目一", saved[0].ProjectName);
         Assert.Equal("项目二已更新", saved[1].ProjectName);
-        Assert.Equal(12, saved[1].ProjectNo);
         Assert.False(_viewModel.IsProjectEditorVisible);
-        Assert.DoesNotContain(_viewModel.LogEntries, entry => entry.ProjectNo == 2);
-        Assert.Contains(_viewModel.WorkspaceLogEntries, entry => entry.ProjectNo == 12);
+        Assert.DoesNotContain(_viewModel.LogEntries, entry => entry.ProjectName == "项目二");
         Assert.Equal("项目二已更新", _viewModel.SelectedProject!.ProjectName);
+        Assert.True(_viewModel.NavigateToProjectPage(_viewModel.SelectedProject, 0));
+        Assert.Contains(originalLog with { ProjectName = "项目二已更新" }, _viewModel.WorkspaceLogEntries);
     }
 
     [Fact]
@@ -342,7 +343,7 @@ public sealed class WorkspaceNavigationTests : IDisposable
         Assert.Contains(_viewModel.Frames, frame => frame.IdText == "0x00000710");
         Assert.Contains(_viewModel.Frames, frame => frame.IdText == "0x00000718");
         Assert.Contains("刷写完成", _viewModel.DownloadInfoText);
-        Assert.Contains(_viewModel.LogEntries, entry => entry.Message.Contains("刷写完成") && entry.ProjectNo == project.ProjectNo);
+        Assert.Contains(_viewModel.LogEntries, entry => entry.Message.Contains("刷写完成") && entry.ProjectName == project.ProjectName);
     }
 
     [Fact]

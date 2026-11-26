@@ -58,12 +58,11 @@
                         </DataGrid.InputBindings>
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="项目名称" Binding="{Binding ProjectName}" Width="*" MinWidth="130" ElementStyle="{StaticResource DataGrid.CellText}" />
-                            <DataGridTextColumn Header="项目码" Binding="{Binding ProjectNo}" Width="56" ElementStyle="{StaticResource DataGrid.MonoCellText}" />
-                            <DataGridTextColumn Header="波特率" Binding="{Binding BaudRate}" Width="56" ElementStyle="{StaticResource DataGrid.MonoCellText}" />
-                            <DataGridTextColumn Header="物理请求" Binding="{Binding PhysicalRequestId}" Width="90" ElementStyle="{StaticResource DataGrid.MonoCellText}" />
-                            <DataGridTextColumn Header="功能请求" Binding="{Binding FunctionalRequestId}" Width="90" ElementStyle="{StaticResource DataGrid.MonoCellText}" />
-                            <DataGridTextColumn Header="响应地址" Binding="{Binding ResponseAddressId}" Width="90" ElementStyle="{StaticResource DataGrid.MonoCellText}" />
-                            <DataGridTemplateColumn Header="BOOT 配置" Width="108">
+                            <DataGridTextColumn Header="波特率" Binding="{Binding BaudRate}" Width="56" MinWidth="56" ElementStyle="{StaticResource DataGrid.MonoCellText}" />
+                            <DataGridTextColumn Header="物理请求" Binding="{Binding PhysicalRequestId}" Width="108" MinWidth="108" ElementStyle="{StaticResource DataGrid.MonoCellText}" />
+                            <DataGridTextColumn Header="功能请求" Binding="{Binding FunctionalRequestId}" Width="108" MinWidth="108" ElementStyle="{StaticResource DataGrid.MonoCellText}" />
+                            <DataGridTextColumn Header="响应地址" Binding="{Binding ResponseAddressId}" Width="108" MinWidth="108" ElementStyle="{StaticResource DataGrid.MonoCellText}" />
+                            <DataGridTemplateColumn Header="BOOT 配置" Width="108" MinWidth="108">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding BootConfigFile, Converter={StaticResource FileNameConverter}}"
@@ -72,8 +71,8 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="CAN 协议" Binding="{Binding CanProtocol}" Width="64" ElementStyle="{StaticResource DataGrid.CellText}" />
-                            <DataGridTemplateColumn Width="64">
+                            <DataGridTextColumn Header="CAN 协议" Binding="{Binding CanProtocol}" Width="76" MinWidth="76" ElementStyle="{StaticResource DataGrid.CellText}" />
+                            <DataGridTemplateColumn Width="64" MinWidth="64">
                                 <DataGridTemplateColumn.Header>
                                     <TextBlock Text="Driver"
                                                FontSize="{StaticResource FontSize.Caption}"
@@ -125,7 +124,7 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Width="52">
+                            <DataGridTemplateColumn Width="52" MinWidth="52">
                                 <DataGridTemplateColumn.Header>
                                     <TextBlock Text="App"
                                                FontSize="{StaticResource FontSize.Caption}"
@@ -284,18 +283,6 @@
                                     <TextBox Grid.Column="1"
                                              Height="26"
                                              Text="{Binding ProjectEditor.ProjectName, UpdateSourceTrigger=PropertyChanged}"
-                                             Style="{StaticResource SoftTextBoxStyle}" />
-                                </Grid>
-
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Style="{StaticResource FormLabelColumnStyle}" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="项目码" Style="{StaticResource FieldLabelStyle}" />
-                                    <TextBox Grid.Column="1"
-                                             Height="26"
-                                             Text="{Binding ProjectEditor.ProjectNoText, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource SoftTextBoxStyle}" />
                                 </Grid>
 

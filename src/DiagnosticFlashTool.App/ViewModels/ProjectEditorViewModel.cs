@@ -1,5 +1,4 @@
 using System.IO;
-using System.Globalization;
 using DiagnosticFlashTool.Core.Configuration;
 using DiagnosticFlashTool.App.Utilities;
 
@@ -8,7 +7,6 @@ namespace DiagnosticFlashTool.App.ViewModels;
 public sealed class ProjectEditorViewModel : ObservableObject
 {
     private string _projectName = string.Empty;
-    private string _projectNoText = "1";
     private string _canProtocol = "CAN";
     private string _baudRate = "500K";
     private string _physicalRequestId = "0x18DA5535";
@@ -24,12 +22,6 @@ public sealed class ProjectEditorViewModel : ObservableObject
     {
         get => _projectName;
         set => SetProperty(ref _projectName, value);
-    }
-
-    public string ProjectNoText
-    {
-        get => _projectNoText;
-        set => SetProperty(ref _projectNoText, value);
     }
 
     public string CanProtocol
@@ -122,10 +114,9 @@ public sealed class ProjectEditorViewModel : ObservableObject
         IsApplicationFileRequired = requiresApplicationFile;
     }
 
-    public void BeginNew(string bootConfigFile, int projectNo)
+    public void BeginNew(string bootConfigFile)
     {
         ProjectName = string.Empty;
-        ProjectNoText = projectNo.ToString(CultureInfo.InvariantCulture);
         CanProtocol = "CAN";
         BaudRate = "500K";
         PhysicalRequestId = "0x18DA5535";
@@ -139,7 +130,6 @@ public sealed class ProjectEditorViewModel : ObservableObject
     public void Load(ProjectConfigEntry project)
     {
         ProjectName = project.ProjectName;
-        ProjectNoText = project.ProjectNo.ToString(CultureInfo.InvariantCulture);
         CanProtocol = project.CanProtocol;
         BaudRate = project.BaudRate;
         PhysicalRequestId = project.PhysicalRequestId;
@@ -155,12 +145,6 @@ public sealed class ProjectEditorViewModel : ObservableObject
         if (string.IsNullOrWhiteSpace(ProjectName))
         {
             validationMessage = "项目名称不能为空。";
-            return null;
-        }
-
-        if (!TryParseProjectNo(ProjectNoText, out var projectNo) || projectNo <= 0)
-        {
-            validationMessage = "项目码必须是大于 0 的十进制或十六进制整数。";
             return null;
         }
 
@@ -189,7 +173,6 @@ public sealed class ProjectEditorViewModel : ObservableObject
         return new ProjectConfigEntry
         {
             ProjectName = ProjectName.Trim(),
-            ProjectNo = projectNo,
             CanProtocol = string.Equals(CanProtocol, "CANFD", StringComparison.OrdinalIgnoreCase) ? "CANFD" : "CAN",
             BaudRate = BaudRate,
             PhysicalRequestId = PhysicalRequestId.Trim(),
@@ -199,21 +182,6 @@ public sealed class ProjectEditorViewModel : ObservableObject
             DriveFilePath = IsDriverFileRequired ? DriverFilePath.Trim() : string.Empty,
             FlashFilePath = IsApplicationFileRequired ? ApplicationFilePath.Trim() : string.Empty
         };
-    }
-
-    private static bool TryParseProjectNo(string value, out int projectNo)
-    {
-        var text = value.Trim();
-        if (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
-        {
-            return int.TryParse(
-                text[2..],
-                NumberStyles.AllowHexSpecifier,
-                CultureInfo.InvariantCulture,
-                out projectNo);
-        }
-
-        return int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out projectNo);
     }
 
     private static string UpdateFileName(string currentPath, string? displayValue)

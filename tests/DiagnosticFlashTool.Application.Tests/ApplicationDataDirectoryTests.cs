@@ -33,7 +33,7 @@ public sealed class ApplicationDataDirectoryTests : IDisposable
     }
 
     [Fact]
-    public void ProjectRepository_RoundTripsProjectNumberAndCanProtocol()
+    public void ProjectRepository_RoundTripsCanProtocol()
     {
         var paths = CreatePaths();
         var repository = new JsonProjectConfigRepository(paths);
@@ -42,17 +42,15 @@ public sealed class ApplicationDataDirectoryTests : IDisposable
             new ProjectConfigEntry
             {
                 ProjectName = "CAN FD ECU",
-                ProjectNo = 7,
                 CanProtocol = "CANFD",
                 BaudRate = "500K"
             }
         ]);
 
         var project = Assert.Single(repository.LoadAll());
-        Assert.Equal(7, project.ProjectNo);
         Assert.Equal("CANFD", project.CanProtocol);
         var json = File.ReadAllText(paths.ProjectConfigPath);
-        Assert.Contains("\"projectNo\": 7", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("projectNo", json, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("\"CanProtocol\": \"CANFD\"", json, StringComparison.Ordinal);
     }
 
