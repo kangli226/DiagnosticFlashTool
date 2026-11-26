@@ -30,7 +30,7 @@ function Capture($name) {
 }
 
 $root = [System.Windows.Automation.AutomationElement]::FromHandle($h)
-$pages = @("固件刷写","开发者选项","操作日志","全部项目配置","流程配置","算法配置","系统设置")
+$pages = @("固件刷写","开发者选项","操作日志","项目配置","流程配置","算法配置","系统设置")
 Capture "00-start"
 foreach ($name in $pages) {
     $cond = New-Object System.Windows.Automation.AndCondition(

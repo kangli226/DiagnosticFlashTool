@@ -4,6 +4,10 @@ public sealed record SystemLogEntry(DateTime Timestamp, DiagnosticStatusKind Kin
 {
     public string? ProjectName { get; init; }
 
+    public string DisplayMessage { get; init; } = Message;
+
+    public string SourceText => ProjectName is null ? "通用 UDS" : $"项目：{ProjectName}";
+
     public string LevelText => Kind switch
     {
         DiagnosticStatusKind.Success => "成功",
@@ -13,5 +17,5 @@ public sealed record SystemLogEntry(DateTime Timestamp, DiagnosticStatusKind Kin
         _ => "普通"
     };
 
-    public string Text => $"[{Timestamp:yyyy-MM-dd HH:mm:ss}] [{LevelText}] [{(ProjectName is null ? "通用 UDS" : $"项目：{ProjectName}")}] {Message}";
+    public string Text => $"[{Timestamp:yyyy-MM-dd HH:mm:ss}] [{LevelText}] [{SourceText}] {Message}";
 }

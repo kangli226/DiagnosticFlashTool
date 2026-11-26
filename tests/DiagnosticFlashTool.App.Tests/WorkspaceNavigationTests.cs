@@ -37,28 +37,31 @@ public sealed class WorkspaceNavigationTests : IDisposable
     }
 
     [Fact]
-    public void StandardUser_SeesOneFlashPageForEachProjectAndSharedLogWithSettings()
+    public void StandardUser_SeesFlashAndReadOnlyFlowForEachProject()
     {
         Assert.Equal("普通用户", _viewModel.SelectedUserRole);
         Assert.Equal(2, _viewModel.ProjectNavigationItems.Count);
         Assert.All(_viewModel.ProjectNavigationItems, group =>
         {
-            Assert.Equal(new[] { 0, 4, 3 }, group.Pages.Select(page => page.PageIndex));
-            Assert.All(
-                group.Pages.Where(page => page.PageIndex != 0),
-                page =>
-                {
-                    Assert.False(page.CanNavigate);
-                    Assert.False(_viewModel.NavigateToProjectPage(page.Project, page.PageIndex));
-                });
+            Assert.Equal(new[] { "固件刷写", "刷写流程" }, group.Pages.Select(page => page.Title));
+            Assert.All(group.Pages, page => Assert.True(page.CanNavigate));
         });
         var selectedGroup = Assert.Single(_viewModel.ProjectNavigationItems,
             group => ReferenceEquals(group.Project, _viewModel.SelectedProject));
-        Assert.Equal(new[] { 0 }, selectedGroup.Pages
+        Assert.Equal(new[] { 0, 7 }, selectedGroup.Pages
             .Where(page => page.IsVisible)
             .Select(page => page.PageIndex));
         Assert.All(_viewModel.ProjectNavigationItems.Where(group => !ReferenceEquals(group.Project, _viewModel.SelectedProject)),
             group => Assert.DoesNotContain(group.Pages, page => page.IsVisible));
+        var secondGroup = _viewModel.ProjectNavigationItems[1];
+        secondGroup.OpenCommand.Execute(null);
+        Assert.Same(secondGroup.Project, _viewModel.SelectedProject);
+        Assert.Equal(0, _viewModel.SelectedShellIndex);
+
+        secondGroup.Pages[1].NavigateCommand.Execute(null);
+        Assert.Equal(7, _viewModel.SelectedShellIndex);
+        Assert.Same(secondGroup.Pages[1],
+            Assert.Single(_viewModel.ProjectNavigationItems.SelectMany(group => group.Pages), page => page.IsSelected));
         Assert.Equal(6, _viewModel.UdsNavigationItems.Count);
         Assert.DoesNotContain(_viewModel.UdsNavigationItems, page => page.PageIndex == 0);
         Assert.Equal(new[] { 2, 6 }, _viewModel.UdsNavigationItems
@@ -81,13 +84,59 @@ public sealed class WorkspaceNavigationTests : IDisposable
         Assert.False(_viewModel.NavigateToUdsPage(index));
         Assert.True(_viewModel.IsProjectWorkspace);
         Assert.Equal(0, _viewModel.SelectedShellIndex);
-        if (index is 1 or 4 or 5)
+        if (index is 1 or 3 or 4 or 5)
         {
             _viewModel.SelectedShellIndex = index;
             Assert.Equal(0, _viewModel.SelectedShellIndex);
         }
         _viewModel.NewProjectCommand.Execute(null);
         Assert.False(_viewModel.IsProjectEditorVisible);
+    }
+
+    [Fact]
+    public void ProjectFlow_ShowsSavedStepsAndDisablesEditingInProjectWorkspace()
+    {
+        var bootRepository = new JsonBootConfigRepository(_paths);
+        var sessionStep = BuiltInFlowStepTemplateCatalog.FindById("session.extended")!.CreateStep(1);
+        var downloadStep = BuiltInFlowStepTemplateCatalog.FindById("download.application")!.CreateStep(2);
+        var customStep = new FlashStepConfig { Id = 3, Name = "读取软件版本", Service = "0x22" };
+        bootRepository.Save("first.json", new BootConfig { Flow = [customStep, downloadStep, sessionStep] });
+        _viewModel.RefreshProjectsCommand.Execute(null);
+        _viewModel.SelectedUserRole = "系统管理员";
+
+        var project = _viewModel.Projects[0];
+        Assert.False(_viewModel.NavigateToProjectPage(project, 3));
+        Assert.False(_viewModel.NavigateToProjectPage(project, 4));
+        Assert.True(_viewModel.NavigateToProjectPage(project, 7));
+        Assert.False(_viewModel.NavigateToUdsPage(7));
+        Assert.Equal(7, _viewModel.SelectedShellIndex);
+        Assert.Empty(_viewModel.ProjectFlowNotice);
+        Assert.Equal(
+            new ProjectFlowStep[]
+            {
+                new("0x22", "—", "读取软件版本"),
+                new("下载流程", "—", "应用下载"),
+                new("会话控制（0x10）", "0x03", "进入扩展诊断会话")
+            },
+            _viewModel.ProjectFlowSteps);
+
+        Assert.False(_viewModel.SaveFlowCommand.CanExecute(null));
+        Assert.False(_viewModel.AddFlowStepCommand.CanExecute(null));
+        Assert.False(_viewModel.DeleteFlowStepCommand.CanExecute(null));
+        Assert.False(_viewModel.MoveFlowStepDownCommand.CanExecute(null));
+        _viewModel.MoveFlowStepToIndex(_viewModel.FlowRows[0], 1);
+        Assert.Equal(sessionStep.Name, _viewModel.FlowRows[0].Name);
+
+        var secondProject = _viewModel.Projects[1];
+        Assert.True(_viewModel.NavigateToProjectPage(secondProject, 7));
+        Assert.Empty(_viewModel.ProjectFlowSteps);
+        Assert.Contains("没有流程节点", _viewModel.ProjectFlowNotice);
+        Assert.True(_viewModel.NavigateToProjectPage(project, 7));
+        File.Delete(Path.Combine(_paths.BootConfigDirectory, "first.json"));
+        _viewModel.RefreshProjectsCommand.Execute(null);
+        Assert.Equal(project.ProjectName, _viewModel.SelectedProject?.ProjectName);
+        Assert.Empty(_viewModel.ProjectFlowSteps);
+        Assert.Contains("找不到", _viewModel.ProjectFlowNotice);
     }
 
     [Fact]
@@ -108,7 +157,7 @@ public sealed class WorkspaceNavigationTests : IDisposable
         Assert.True(_viewModel.DeleteProjectEditorCommand.CanExecute(null));
         Assert.Empty(_viewModel.ProjectNavigationItems.SelectMany(group => group.Pages).Where(page => page.IsSelected));
         var selectedPage = Assert.Single(_viewModel.UdsNavigationItems.Where(page => page.IsSelected));
-        Assert.Equal("全部项目配置", selectedPage.Title);
+        Assert.Equal("项目配置", selectedPage.Title);
         Assert.Equal(3, selectedPage.PageIndex);
     }
 
@@ -223,6 +272,7 @@ public sealed class WorkspaceNavigationTests : IDisposable
         Assert.Equal("项目二已更新", _viewModel.SelectedProject!.ProjectName);
         Assert.True(_viewModel.NavigateToProjectPage(_viewModel.SelectedProject, 0));
         Assert.Contains(originalLog with { ProjectName = "项目二已更新" }, _viewModel.WorkspaceLogEntries);
+        Assert.DoesNotContain(_viewModel.WorkspaceLogEntries, entry => entry.ProjectName == "项目一");
     }
 
     [Fact]
@@ -342,7 +392,7 @@ public sealed class WorkspaceNavigationTests : IDisposable
         Assert.Equal(100, _viewModel.Progress);
         Assert.Contains(_viewModel.Frames, frame => frame.IdText == "0x00000710");
         Assert.Contains(_viewModel.Frames, frame => frame.IdText == "0x00000718");
-        Assert.Contains("刷写完成", _viewModel.DownloadInfoText);
+        Assert.Contains(_viewModel.DownloadInfoEntries, entry => entry.Message.Contains("刷写完成"));
         Assert.Contains(_viewModel.LogEntries, entry => entry.Message.Contains("刷写完成") && entry.ProjectName == project.ProjectName);
     }
 

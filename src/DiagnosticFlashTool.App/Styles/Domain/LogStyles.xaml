@@ -6,6 +6,8 @@
         <ResourceDictionary Source="../Typography.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
+    <Thickness x:Key="LogContentPadding">8,6</Thickness>
+
     <Style x:Key="LogListBoxStyle" TargetType="ListBox">
         <Setter Property="Background" Value="{StaticResource LogPanelBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}" />
@@ -16,7 +18,7 @@
         <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
         <Setter Property="FontSize" Value="{StaticResource FontSize.Assist}" />
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden" />
-        <Setter Property="Padding" Value="8,6" />
+        <Setter Property="Padding" Value="{StaticResource LogContentPadding}" />
         <Setter Property="ItemContainerStyle">
             <Setter.Value>
                 <Style TargetType="ListBoxItem">

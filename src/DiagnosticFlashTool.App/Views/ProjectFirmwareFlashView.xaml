@@ -1,0 +1,237 @@
+<UserControl x:Class="DiagnosticFlashTool.App.Views.ProjectFirmwareFlashView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls">
+    <Grid Style="{StaticResource PageRootGridStyle}">
+        <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
+        <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Style="{StaticResource PageHeaderRowStyle}" />
+            <RowDefinition Style="{StaticResource PageHeaderGapRowStyle}" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Style="{StaticResource PageSectionGapRowStyle}" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Style="{StaticResource PageSectionGapRowStyle}" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <controls:PageHeader Grid.Row="0"
+                             Style="{StaticResource PageHeader.Standard}"
+                             BadgeText="{Binding FlashPageProjectIdText}" />
+
+        <!-- 运行台：一行主操作 + 两列配置摘要共用一个分区边框，避免卡片套卡片。 -->
+        <Border Grid.Row="2" Style="{StaticResource Card.Compact}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- 工具行：设备状态、连接摘要与连接/开始/停止三个主操作保持同一行。 -->
+                <Grid Grid.Row="0" Style="{StaticResource Card.ContentRow}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0"
+                            Tag="{Binding DeviceStatusKind}"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource StatusBadgeBorderStyle}">
+                        <StackPanel Orientation="Horizontal">
+                            <controls:FluentIcon Kind="PowerPlugOutline"
+                                                 Width="16"
+                                                 Height="16"
+                                                 FontSize="{StaticResource FontSize.Body}"
+                                                 Tag="{Binding DeviceStatusKind}"
+                                                 Style="{StaticResource StatusCardIconStyle}" />
+                            <TextBlock Text="{Binding DeviceStatusText}"
+                                       Margin="6,0,0,0"
+                                       Style="{StaticResource StatusBadgeTextStyle}" />
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding ConnectionSummaryText}"
+                               ToolTip="{Binding ConnectionSummaryText}"
+                               Margin="10,0,0,0"
+                               Style="{StaticResource MonoAssistTextStyle}" />
+
+                    <Button Grid.Column="2"
+                            Command="{Binding ToggleConnectionCommand}"
+                            Tag="{Binding IsConnected}"
+                            Margin="10,0,8,0"
+                            Style="{StaticResource Button.Normal}"
+                            ToolTip="连接或断开当前 CAN 设备">
+                        <StackPanel Style="{StaticResource Button.InlineContent}">
+                            <controls:FluentIcon Kind="PowerPlugOutline"
+                                                 Style="{StaticResource Button.Glyph.Current}" />
+                            <TextBlock Text="{Binding ConnectionActionText}"
+                                       Style="{StaticResource Button.IconLabel}" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button Grid.Column="3"
+                            Command="{Binding StartFlashCommand}"
+                            Style="{StaticResource Button.Normal}"
+                            ToolTip="连接设备并选择 BOOT 配置后开始刷写"
+                            ToolTipService.ShowOnDisabled="True">
+                        <StackPanel Style="{StaticResource Button.InlineContent}">
+                            <controls:FluentIcon Kind="CloudDownloadOutline"
+                                                 Style="{StaticResource Button.Glyph.Current}" />
+                            <TextBlock Text="开始刷写" Style="{StaticResource Button.IconLabel}" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button Grid.Column="4"
+                            Command="{Binding CancelFlashCommand}"
+                            Margin="0"
+                            Style="{StaticResource Button.Danger}"
+                            ToolTip="中止正在进行的刷写，并让 ECU 退出编程会话"
+                            ToolTipService.ShowOnDisabled="True">
+                        <StackPanel Style="{StaticResource Button.InlineContent}">
+                            <controls:FluentIcon Kind="CloseCircleOutline"
+                                                 Style="{StaticResource Button.Glyph.Current}" />
+                            <TextBlock Text="停止" Style="{StaticResource Button.IconLabel}" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <Border Grid.Row="1"
+                        Height="1"
+                        Margin="0,8,0,8"
+                        Background="{StaticResource DividerBrush}" />
+
+                <!-- 配置摘要：两列紧凑键值，值超长时省略并用 ToolTip 补全，不推动工具行。 -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="72" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="24" />
+                        <ColumnDefinition Width="72" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Grid.Column="0"
+                               Text="设备类型"
+                               Style="{StaticResource ConfigLabelTextStyle}" />
+                    <TextBlock Grid.Row="0"
+                               Grid.Column="1"
+                               Text="{Binding ConnectedDeviceText}"
+                               ToolTip="{Binding ConnectedDeviceText}"
+                               Margin="10,0,0,0"
+                               Style="{StaticResource ConfigValueTextStyle}" />
+                    <TextBlock Grid.Row="0"
+                               Grid.Column="3"
+                               Text="波特率"
+                               Style="{StaticResource ConfigLabelTextStyle}" />
+                    <TextBlock Grid.Row="0"
+                               Grid.Column="4"
+                               Text="{Binding BaudRateStatusText}"
+                               ToolTip="{Binding BaudRateStatusText}"
+                               Margin="10,0,0,0"
+                               Style="{StaticResource ConfigValueTextStyle}" />
+
+                    <TextBlock Grid.Row="1"
+                               Grid.Column="0"
+                               Text="通信协议"
+                               Margin="0,4,0,0"
+                               Style="{StaticResource ConfigLabelTextStyle}" />
+                    <TextBlock Grid.Row="1"
+                               Grid.Column="1"
+                               Text="{Binding ProtocolStatusText}"
+                               ToolTip="{Binding ProtocolStatusText}"
+                               Margin="10,4,0,0"
+                               Style="{StaticResource ConfigValueTextStyle}" />
+                    <TextBlock Grid.Row="1"
+                               Grid.Column="3"
+                               Text="波特率模式"
+                               Margin="0,4,0,0"
+                               Style="{StaticResource ConfigLabelTextStyle}" />
+                    <TextBlock Grid.Row="1"
+                               Grid.Column="4"
+                               Text="{Binding SelectedBaudRateMode}"
+                               ToolTip="{Binding SelectedBaudRateMode}"
+                               Margin="10,4,0,0"
+                               Style="{StaticResource ConfigValueTextStyle}" />
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- 进度与结果：区域高度由结构决定，状态文字只做省略，不改变行高。 -->
+        <controls:HeaderedCard Grid.Row="4"
+                               Header="下载进度"
+                               Style="{StaticResource HeaderedCard.Panel}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <ProgressBar Grid.Column="0"
+                                 Minimum="0"
+                                 Maximum="100"
+                                 Value="{Binding Progress}"
+                                 VerticalAlignment="Center"
+                                 Style="{StaticResource SoftProgressBarStyle}" />
+                    <TextBlock Grid.Column="1"
+                               Width="52"
+                               Text="{Binding ProgressText}"
+                               Margin="10,0,0,0"
+                               HorizontalAlignment="Right"
+                               Style="{StaticResource ProgressValueTextStyle}" />
+                </Grid>
+
+                <Grid Grid.Row="1" Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0"
+                            Tag="{Binding DownloadStatusKind}"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource StatusBadgeBorderStyle}">
+                        <StackPanel Orientation="Horizontal">
+                            <controls:FluentIcon Kind="FlashOutline"
+                                                 Width="16"
+                                                 Height="16"
+                                                 FontSize="{StaticResource FontSize.Body}"
+                                                 Tag="{Binding DownloadStatusKind}"
+                                                 Style="{StaticResource StatusCardIconStyle}" />
+                            <TextBlock Text="{Binding DownloadStatusText}"
+                                       Margin="6,0,0,0"
+                                       Style="{StaticResource StatusBadgeTextStyle}" />
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding DownloadMonitorDetailText}"
+                               ToolTip="{Binding DownloadMonitorDetailText}"
+                               Margin="10,0,0,0"
+                               TextWrapping="NoWrap"
+                               TextTrimming="CharacterEllipsis"
+                               Style="{StaticResource HintTextStyle}" />
+                </Grid>
+            </Grid>
+        </controls:HeaderedCard>
+
+        <controls:ProjectFlashConfiguration Grid.Row="6" />
+        </Grid>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

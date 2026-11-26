@@ -11,7 +11,7 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <WrapPanel Grid.Row="0" VerticalAlignment="Center">
+                <WrapPanel Grid.Row="0" VerticalAlignment="Center" Style="{StaticResource Card.ContentRow}">
                     <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
                         <TextBlock Text="级别" Width="34" Style="{StaticResource FieldLabelStyle}" />
                         <ComboBox Width="88" Margin="0"
@@ -99,7 +99,7 @@
                                Style="{StaticResource SettingAssistTextStyle}" VerticalAlignment="Center" />
                 </Grid>
 
-                <!-- 保留滚动条，便于在完整日志中拖动定位；底部显示区沿用隐藏滚动条。 -->
+                <!-- 保留滚动条，便于在完整日志中拖动定位。 -->
                 <controls:LogEntryList Grid.Row="2"
                                        ItemsSource="{Binding FilteredLogEntries}"
                                        AutomationProperties.Name="操作日志列表"

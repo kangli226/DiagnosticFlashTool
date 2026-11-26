@@ -17,11 +17,23 @@ public sealed class HeaderedCard : HeaderedContentControl
         typeof(HeaderedCard),
         new PropertyMetadata(new GridLength(44)));
 
+    public static readonly DependencyProperty HeaderTopInsetProperty = DependencyProperty.Register(
+        nameof(HeaderTopInset),
+        typeof(GridLength),
+        typeof(HeaderedCard),
+        new PropertyMetadata(new GridLength(0)));
+
     public static readonly DependencyProperty HeaderPaddingProperty = DependencyProperty.Register(
         nameof(HeaderPadding),
         typeof(Thickness),
         typeof(HeaderedCard),
         new PropertyMetadata(new Thickness(16, 0, 16, 0)));
+
+    public static readonly DependencyProperty ShowHeaderDividerProperty = DependencyProperty.Register(
+        nameof(ShowHeaderDivider),
+        typeof(bool),
+        typeof(HeaderedCard),
+        new PropertyMetadata(false));
 
     public static readonly DependencyProperty BodyPaddingProperty = DependencyProperty.Register(
         nameof(BodyPadding),
@@ -41,10 +53,22 @@ public sealed class HeaderedCard : HeaderedContentControl
         set => SetValue(HeaderHeightProperty, value);
     }
 
+    public GridLength HeaderTopInset
+    {
+        get => (GridLength)GetValue(HeaderTopInsetProperty);
+        set => SetValue(HeaderTopInsetProperty, value);
+    }
+
     public Thickness HeaderPadding
     {
         get => (Thickness)GetValue(HeaderPaddingProperty);
         set => SetValue(HeaderPaddingProperty, value);
+    }
+
+    public bool ShowHeaderDivider
+    {
+        get => (bool)GetValue(ShowHeaderDividerProperty);
+        set => SetValue(ShowHeaderDividerProperty, value);
     }
 
     /// <summary>

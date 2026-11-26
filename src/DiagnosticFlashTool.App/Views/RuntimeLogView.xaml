@@ -2,9 +2,10 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:DiagnosticFlashTool.App.Views.Controls">
-    <controls:LogEntryList Margin="{StaticResource CardContentPadding}"
-                           ItemsSource="{Binding WorkspaceLogEntries}"
-                           AutomationProperties.Name="当前操作日志"
-                           EmptyText="暂无操作日志"
-                           EmptyHintText="连接设备、保存配置或开始刷写后，这里会显示操作过程。" />
+    <controls:HeaderedCard Header="日志" Style="{StaticResource HeaderedCard.Panel}">
+        <controls:LogEntryList ItemsSource="{Binding WorkspaceLogEntries}"
+                               AutomationProperties.Name="当前操作日志"
+                               EmptyText="暂无操作日志"
+                               EmptyHintText="连接设备、保存配置或开始刷写后，这里会显示操作过程。" />
+    </controls:HeaderedCard>
 </UserControl>

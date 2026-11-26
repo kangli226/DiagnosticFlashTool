@@ -50,14 +50,16 @@ public sealed class ProjectNavigationGroupViewModel : ObservableObject
     private bool _isExpanded;
 
     public ProjectNavigationGroupViewModel(
-        ProjectConfigEntry project, IReadOnlyList<ShellNavigationItemViewModel> pages)
+        ProjectConfigEntry project, ShellNavigationItemViewModel firmwareFlashPage, ShellNavigationItemViewModel flashFlowPage)
     {
         Project = project;
-        Pages = pages;
+        Pages = [firmwareFlashPage, flashFlowPage];
+        OpenCommand = firmwareFlashPage.NavigateCommand;
     }
 
     public ProjectConfigEntry Project { get; }
     public IReadOnlyList<ShellNavigationItemViewModel> Pages { get; }
+    public RelayCommand OpenCommand { get; }
 
     public bool IsExpanded
     {

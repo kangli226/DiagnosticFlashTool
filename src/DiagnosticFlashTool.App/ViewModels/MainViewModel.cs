@@ -1,9 +1,11 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Windows.Threading;
 using DiagnosticFlashTool.App.Utilities;
 using DiagnosticFlashTool.App.Views;
 using DiagnosticFlashTool.Core.Algorithms;
@@ -41,6 +43,8 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
     private const int MaxLogEntries = 1000;
     private const int MaxDownloadInfoEntries = 30;
     private const int MaxFrameHistoryEntries = 5000;
+    private const uint MaxStandardCanId = 0x7FF;
+    private const uint MaxExtendedCanId = 0x1FFFFFFF;
     private const string AutoBaudRateModeText = "自动搜索";
     private const string FixedBaudRateModeText = "指定波特率";
     private const string ProjectBaudRateModeText = "跟随项目";
@@ -79,6 +83,7 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
     private string _applicationFilePath = string.Empty;
     private string _manualFrameId = "7E0";
     private string _manualFrameData = "02 10 03";
+    private bool? _isManualFrameExtended;
     private string _selectedCanChannel = "0";
     private string _logFilePath = DefaultLogFilePath;
     private string _selectedLogLevelFilter = "全部";
@@ -89,7 +94,7 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
     private bool _logAutoScrollEnabled = true;
     private bool _isFrameCapturePaused;
     private bool _isFrameFilterEnabled;
-    private bool _isProjectEditorVisible;
+    private bool _isNewProjectDialogVisible;
     private bool _isNewFlowProjectDialogVisible;
     private bool _isAddFlowStepDialogVisible;
     private bool _isReplacingFlowStepTemplate;
@@ -100,6 +105,8 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
     private bool _disposed;
     private int _selectedShellIndex;
     private int _progress;
+    private readonly Stopwatch _flashStopwatch = new();
+    private DateTimeOffset? _flashStartedAt;
     private int _logRetentionDays = DefaultLogRetentionDays;
     private int _logMaxFileSizeMb = DefaultLogMaxFileSizeMb;
     private string _statusText = "Ready";
@@ -107,8 +114,9 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
     private DiagnosticStatusKind _downloadStatusKind = DiagnosticStatusKind.Neutral;
     private string _flowValidationText = "未加载流程配置。";
     private bool _hasFlowValidationResult;
+    private IReadOnlyList<ProjectFlowStep> _projectFlowSteps = [];
+    private string _projectFlowNotice = "请在侧栏选择刷写项目。";
     private int? _currentExecutingStepId;
-    private string _projectEditorTitle = "新建项目";
     private string _newFlowProjectName = string.Empty;
     private string? _selectedFlowProjectTemplate;
     private string _newFlowProjectValidationText = string.Empty;
@@ -160,10 +168,12 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
             () => _draftFlowProject is null && SelectedProject is not null);
         SaveProjectsCommand = AdministratorCommand(SaveProjects, () => _draftFlowProject is null);
         RefreshProjectsCommand = new RelayCommand(RefreshProjectList, () => !IsBusy);
-        NewProjectCommand = AdministratorCommand(OpenNewProjectEditor, () => _draftFlowProject is null);
+        NewProjectCommand = AdministratorCommand(
+            OpenNewProjectEditor, () => _draftFlowProject is null && !IsNewProjectDialogVisible);
         EditProjectCommand = new RelayCommand(
             EditSelectedProject,
-            () => CanChangeWorkspace && _draftFlowProject is null && SelectedProject is not null);
+            () => CanChangeWorkspace && _draftFlowProject is null
+                && SelectedProject is not null && !IsNewProjectDialogVisible);
         SaveProjectEditorCommand = new RelayCommand(
             SaveProjectEditor,
             () => CanChangeWorkspace && _draftFlowProject is null && IsProjectEditorVisible
@@ -178,7 +188,7 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
             ReloadFlowFromSelected,
             () => !string.IsNullOrWhiteSpace(SelectedBootConfig)
                 && !IsProjectFlowDraft);
-        SaveFlowCommand = AdministratorCommand(SaveFlowConfig, () => !string.IsNullOrWhiteSpace(SelectedBootConfig) && FlowRows.Count > 0);
+        SaveFlowCommand = FlowEditorCommand(SaveFlowConfig, () => !string.IsNullOrWhiteSpace(SelectedBootConfig) && FlowRows.Count > 0);
         ValidateFlowCommand = AdministratorCommand(() =>
         {
             if (!NavigateToUdsPage(4))
@@ -190,8 +200,8 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
                 ? $"流程校验通过，共 {FlowRows.Count} 个节点。"
                 : "流程校验失败，请在流程配置页查看详细结果。");
         });
-        NewFlowCommand = AdministratorCommand(OpenNewFlowProjectDialog);
-        ConfirmNewFlowProjectCommand = AdministratorCommand(
+        NewFlowCommand = FlowEditorCommand(OpenNewFlowProjectDialog);
+        ConfirmNewFlowProjectCommand = FlowEditorCommand(
             ConfirmNewFlowProject,
             () => IsNewFlowProjectDialogVisible
                 && !string.IsNullOrWhiteSpace(NewFlowProjectName)
@@ -200,11 +210,11 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
         CancelNewFlowProjectCommand = new RelayCommand(
             CloseNewFlowProjectDialog,
             () => IsNewFlowProjectDialogVisible);
-        AddFlowStepCommand = AdministratorCommand(OpenAddFlowStepDialog);
-        ReplaceFlowStepTemplateCommand = AdministratorCommand(
+        AddFlowStepCommand = FlowEditorCommand(OpenAddFlowStepDialog);
+        ReplaceFlowStepTemplateCommand = FlowEditorCommand(
             OpenReplaceFlowStepDialog,
             () => SelectedFlowStep is not null);
-        ConfirmAddFlowStepCommand = AdministratorCommand(
+        ConfirmAddFlowStepCommand = FlowEditorCommand(
             ConfirmSelectedFlowStepTemplate,
             () => IsAddFlowStepDialogVisible
                 && SelectedFlowStepTemplate is not null
@@ -212,9 +222,9 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
         CancelAddFlowStepCommand = new RelayCommand(
             CloseAddFlowStepDialog,
             () => IsAddFlowStepDialogVisible);
-        DeleteFlowStepCommand = AdministratorCommand(DeleteSelectedFlowStep, () => SelectedFlowStep is not null);
-        MoveFlowStepUpCommand = AdministratorCommand(() => MoveSelectedFlowStep(-1), () => SelectedFlowStep is not null);
-        MoveFlowStepDownCommand = AdministratorCommand(() => MoveSelectedFlowStep(1), () => SelectedFlowStep is not null);
+        DeleteFlowStepCommand = FlowEditorCommand(DeleteSelectedFlowStep, () => SelectedFlowStep is not null);
+        MoveFlowStepUpCommand = FlowEditorCommand(() => MoveSelectedFlowStep(-1), () => SelectedFlowStep is not null);
+        MoveFlowStepDownCommand = FlowEditorCommand(() => MoveSelectedFlowStep(1), () => SelectedFlowStep is not null);
         SendManualFrameCommand = new AsyncRelayCommand(SendManualFrameAsync, () => IsSystemAdministrator && IsConnected && !IsBusy);
         ImportBuiltinConfigurationCommand = AdministratorCommand(ImportBuiltinConfiguration);
         ClearRuntimeConfigurationCommand = AdministratorCommand(ClearRuntimeConfiguration);
@@ -227,8 +237,7 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
         OpenLogDirectoryCommand = new RelayCommand(() => OpenPathLocation(LogFilePath), () => IsSystemAdministrator);
         ChooseLogFileCommand = new RelayCommand(ChooseLogFile);
         RestoreDefaultLogStorageCommand = new RelayCommand(RestoreDefaultLogStorage);
-        OpenRuntimeLogPanelCommand = new RelayCommand(() => IsOutputPanelVisible = true);
-        CloseRuntimeLogPanelCommand = new RelayCommand(() => IsOutputPanelVisible = false);
+        NavigateToSystemLogCommand = new RelayCommand(() => NavigateToUdsPage(2), () => CanChangeWorkspace);
         NavigateToLogSettingsCommand = new RelayCommand(() => SelectedShellIndex = 6);
         InitializeNavigation();
         Refresh();
@@ -247,6 +256,7 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
     public ObservableCollection<string> LogTimeRangeFilters { get; } = ["全部", "最近1小时", "今天", "最近24小时", "最近7天"];
     public ObservableCollection<SystemLogEntry> LogEntries { get; } = [];
     public ObservableCollection<SystemLogEntry> FilteredLogEntries { get; } = [];
+    public ObservableCollection<SystemLogEntry> DownloadInfoEntries { get; } = [];
     public ObservableCollection<CanFrameRow> Frames { get; } = [];
     public ObservableCollection<FlowStepEditorRow> FlowRows { get; } = [];
     public IReadOnlyList<FlowStepTemplate> FlowStepTemplates { get; } = FlowStepTemplate.BuiltIn;
@@ -306,21 +316,10 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
     public RelayCommand OpenLogDirectoryCommand { get; }
     public RelayCommand ChooseLogFileCommand { get; }
     public RelayCommand RestoreDefaultLogStorageCommand { get; }
-    public RelayCommand OpenRuntimeLogPanelCommand { get; }
-    public RelayCommand CloseRuntimeLogPanelCommand { get; }
+    public RelayCommand NavigateToSystemLogCommand { get; }
     public RelayCommand NavigateToLogSettingsCommand { get; }
-    public bool IsProjectEditorVisible
-    {
-        get => _isProjectEditorVisible;
-        private set
-        {
-            if (SetProperty(ref _isProjectEditorVisible, value))
-            {
-                RaiseProjectEditorCommandStates();
-            }
-        }
-    }
-
+    public bool IsProjectEditorVisible => IsEditingProject || IsNewProjectDialogVisible;
+    public bool IsNewProjectDialogVisible => _isNewProjectDialogVisible;
     public bool IsEditingProject => _editingProject is not null;
     public bool CanDeleteEditedProject => IsEditingProject && IsSystemAdministrator;
 
@@ -421,12 +420,6 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
 
     public string FlowStepTemplateDialogConfirmText => IsReplacingFlowStepTemplate ? "更换" : "添加";
 
-    public string ProjectEditorTitle
-    {
-        get => _projectEditorTitle;
-        private set => SetProperty(ref _projectEditorTitle, value);
-    }
-
     public ProjectConfigEntry? SelectedProject
     {
         get => _selectedProject;
@@ -451,8 +444,19 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
                 return;
             }
 
+            var previousProjectName = _selectedProject?.ProjectName;
             if (SetProperty(ref _selectedProject, value))
             {
+                if (IsEditingProject)
+                {
+                    CloseProjectEditor();
+                }
+
+                if (!string.Equals(previousProjectName, value?.ProjectName, StringComparison.OrdinalIgnoreCase))
+                {
+                    ResetFlashProgress();
+                }
+
                 ApplySelectedProject();
                 RefreshWorkspaceState();
                 OnPropertyChanged(nameof(StatusBarProjectText));
@@ -503,8 +507,6 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
                 OnPropertyChanged(nameof(FlowConfigFileStatusKind));
                 OnPropertyChanged(nameof(FlowConfigFileDisplay));
                 OnPropertyChanged(nameof(StatusBarProjectText));
-                LoadFlowFromSelected();
-                RaiseCommandStates();
             }
         }
     }
@@ -663,13 +665,49 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
     public string ManualFrameId
     {
         get => _manualFrameId;
-        set => SetProperty(ref _manualFrameId, value);
+        set
+        {
+            if (SetProperty(ref _manualFrameId, value) && _isManualFrameExtended is null)
+            {
+                OnPropertyChanged(nameof(IsManualFrameExtended));
+            }
+        }
+    }
+
+    public bool IsManualFrameExtended
+    {
+        get => _isManualFrameExtended ?? (ulong.TryParse(
+            GetManualFrameIdDigits(ManualFrameId), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var id)
+            && id > MaxStandardCanId);
+        set => SetProperty(ref _isManualFrameExtended, (bool?)value);
     }
 
     public string ManualFrameData
     {
         get => _manualFrameData;
-        set => SetProperty(ref _manualFrameData, value);
+        set
+        {
+            if (SetProperty(ref _manualFrameData, value))
+            {
+                OnPropertyChanged(nameof(ManualFrameByteCountText));
+            }
+        }
+    }
+
+    public string ManualFrameByteCountText
+    {
+        get
+        {
+            try
+            {
+                var count = HexUtil.ParseBytes(ManualFrameData).Length;
+                return count == 1 ? "1 Byte" : $"{count} Bytes";
+            }
+            catch (Exception ex) when (ex is FormatException or OverflowException)
+            {
+                return "无效数据";
+            }
+        }
     }
 
     public string SelectedCanChannel
@@ -845,9 +883,8 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
     public string FrameCaptureActionText => IsFrameCapturePaused ? "继续" : "暂停";
     public string FrameFilterActionText => IsFrameFilterEnabled ? "过滤开启" : "过滤关闭";
 
-    public string DownloadInfoText => WorkspaceLogEntries.Count == 0
-        ? "暂无下载信息，开始刷写后将在此显示运行结果。"
-        : string.Join(Environment.NewLine, WorkspaceLogEntries.TakeLast(MaxDownloadInfoEntries).Select(entry => entry.Text));
+    public bool ShowDownloadInfoSources => DownloadInfoEntries.Any(entry =>
+        !string.Equals(entry.ProjectName, SelectedProject?.ProjectName, StringComparison.OrdinalIgnoreCase));
 
     public int LogRetentionDays
     {
@@ -875,28 +912,22 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
-    private bool _isOutputPanelVisible = true;
-
-    /// <summary>底部日志面板是否可见，由视图菜单和日志查看、收起命令控制。</summary>
-    public bool IsOutputPanelVisible
-    {
-        get => _isOutputPanelVisible;
-        set => SetProperty(ref _isOutputPanelVisible, value);
-    }
-
     public int SelectedShellIndex
     {
         get => _selectedShellIndex;
         set
         {
-            // 项目工作区现在也提供「刷写流程」(4) 与「项目配置」(3)，不再强制跳转到通用 UDS。
-            if (IsProjectWorkspace && value is 1 or 2 or 5)
+            if (IsProjectWorkspace && value is >= 1 and <= 5)
             {
-                NavigateToUdsPage(value);
+                if (!NavigateToUdsPage(value))
+                {
+                    OnPropertyChanged();
+                }
                 return;
             }
 
-            if (!CanAccessPage(value, IsProjectWorkspace))
+            if ((value != 6 && !CanChangeWorkspace && value != _selectedShellIndex)
+                || !CanAccessPage(value, projectWorkspace: IsProjectWorkspace && value != 6))
             {
                 OnPropertyChanged(nameof(SelectedShellIndex));
                 return;
@@ -904,6 +935,7 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
 
             if (SetProperty(ref _selectedShellIndex, value))
             {
+                CloseProjectEditor();
                 CloseNewFlowProjectDialog();
                 CloseAddFlowStepDialog();
             }
@@ -1011,6 +1043,18 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
 
     public ObservableCollection<FlowValidationLine> FlowValidationLines { get; } = [];
 
+    public IReadOnlyList<ProjectFlowStep> ProjectFlowSteps
+    {
+        get => _projectFlowSteps;
+        private set => SetProperty(ref _projectFlowSteps, value);
+    }
+
+    public string ProjectFlowNotice
+    {
+        get => _projectFlowNotice;
+        private set => SetProperty(ref _projectFlowNotice, value);
+    }
+
     public bool HasFlowValidationResult => _hasFlowValidationResult;
 
     public int FlowValidationErrorCount => FlowValidationLines.Count(line => line.IsError);
@@ -1095,6 +1139,23 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
     };
 
     public string ProgressText => $"{Progress}%";
+    public string FlashStartTimeText => _flashStartedAt?.ToString("HH:mm:ss", CultureInfo.InvariantCulture) ?? "—";
+
+    public string FlashDurationText
+    {
+        get
+        {
+            if (_flashStartedAt is null)
+            {
+                return "—";
+            }
+
+            var elapsed = _flashStopwatch.Elapsed;
+            return string.Create(CultureInfo.InvariantCulture,
+                $"{(long)elapsed.TotalHours:00}:{elapsed.Minutes:00}:{elapsed.Seconds:00}");
+        }
+    }
+
     public string ScriptRootText => _paths.ScriptDirectory;
     public string AlgorithmCatalogText => AlgorithmRows.Count == 0 ? "未发现算法配置" : $"已发现 {AlgorithmRows.Count} 个算法配置";
 
@@ -1231,7 +1292,8 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
         OnPropertyChanged(nameof(LogFileStatusKind));
         OnPropertyChanged(nameof(LogFilePathDisplay));
         OnPropertyChanged(nameof(LogFilePathFullPath));
-        AppendLog($"Configuration loaded: projects={Projects.Count}, boot={BootConfigFiles.Count}");
+        AppendLog($"Configuration loaded: projects={Projects.Count}, boot={BootConfigFiles.Count}",
+            SelectedProject?.ProjectName, $"已加载 {Projects.Count} 个项目、{BootConfigFiles.Count} 个 BOOT 配置");
     }
 
     private void RefreshProjectList()
@@ -2052,6 +2114,21 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
+    private void ResetFlashProgress()
+    {
+        Progress = 0;
+        DownloadStatusKind = DiagnosticStatusKind.Neutral;
+        if (_flashStartedAt is null)
+        {
+            return;
+        }
+
+        _flashStartedAt = null;
+        _flashStopwatch.Reset();
+        OnPropertyChanged(nameof(FlashStartTimeText));
+        OnPropertyChanged(nameof(FlashDurationText));
+    }
+
     private async Task StartFlashAsync(CancellationToken cancellationToken)
     {
         var flashConfiguration = ActiveFlashConfiguration;
@@ -2061,10 +2138,18 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
             return;
         }
 
+        var durationTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        durationTimer.Tick += (_, _) => OnPropertyChanged(nameof(FlashDurationText));
+
         try
         {
             IsBusy = true;
             Progress = 0;
+            _flashStartedAt = DateTimeOffset.Now;
+            _flashStopwatch.Restart();
+            OnPropertyChanged(nameof(FlashStartTimeText));
+            OnPropertyChanged(nameof(FlashDurationText));
+            durationTimer.Start();
             DownloadStatusKind = DiagnosticStatusKind.Running;
             SetStatus("Flashing", DiagnosticStatusKind.Running);
 
@@ -2164,13 +2249,17 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
         }
         finally
         {
+            durationTimer.Stop();
+            _flashStopwatch.Stop();
+            OnPropertyChanged(nameof(FlashDurationText));
             IsBusy = false;
         }
     }
 
     private async Task SendManualFrameAsync(CancellationToken cancellationToken)
     {
-        if (_canDevice is null)
+        var device = _canDevice;
+        if (device is null)
         {
             return;
         }
@@ -2178,7 +2267,8 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
         try
         {
             var data = HexUtil.ParseBytes(ManualFrameData);
-            var maximumLength = _canDevice.ActiveProtocol == CanProtocol.CanFd ? 64 : 8;
+            var isCanFd = device.ActiveProtocol == CanProtocol.CanFd;
+            var maximumLength = isCanFd ? 64 : 8;
             if (data.Length > maximumLength)
             {
                 throw new InvalidOperationException($"当前协议单帧数据不能超过 {maximumLength} 字节。");
@@ -2186,13 +2276,14 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
 
             var channel = uint.TryParse(SelectedCanChannel, out var parsedChannel) ? parsedChannel : 0;
             var frameId = ParseManualFrameId(ManualFrameId);
-            if (frameId > 0x1FFFFFFF)
+            var isExtended = _isManualFrameExtended ?? frameId > MaxStandardCanId;
+            if (frameId > (isExtended ? MaxExtendedCanId : MaxStandardCanId))
             {
-                throw new InvalidOperationException("ID超出有效范围");
+                throw new InvalidOperationException(isExtended
+                    ? "扩展帧 ID 不能超过 0x1FFFFFFF。"
+                    : "标准帧 ID 不能超过 0x7FF，请修改 ID 或选择扩展帧。");
             }
 
-            var isExtended = frameId > 0x7FF;
-            var isCanFd = _canDevice.ActiveProtocol == CanProtocol.CanFd;
             var frame = new CanFrame(
                 (uint)frameId,
                 data,
@@ -2201,11 +2292,13 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
                 false,
                 IsCanFd: isCanFd,
                 BitRateSwitch: isCanFd && UseBitRateSwitch);
-            await _canDevice.SendAsync(frame, cancellationToken);
+            await device.SendAsync(frame, cancellationToken);
+            SetStatus("报文已发送", DiagnosticStatusKind.Success);
             AppendLog($"Manual TX: {frame}");
         }
         catch (Exception ex)
         {
+            SetStatus($"发送报文失败：{ex.Message}", DiagnosticStatusKind.Error);
             AppendLog($"Manual TX failed: {ex.Message}");
         }
     }
@@ -2279,8 +2372,7 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
         }
         ProjectEditor.BeginNew(BootConfigFiles.FirstOrDefault() ?? string.Empty);
         UpdateProjectEditorFirmwareRequirements();
-        SetProjectEditorMode(null, "新建项目");
-        IsProjectEditorVisible = true;
+        SetProjectEditorMode(null, creatingProject: true);
     }
 
     private void EditSelectedProject()
@@ -2292,8 +2384,7 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
 
         ProjectEditor.Load(SelectedProject);
         UpdateProjectEditorFirmwareRequirements();
-        SetProjectEditorMode(SelectedProject, "项目详情");
-        IsProjectEditorVisible = true;
+        SetProjectEditorMode(SelectedProject);
     }
 
     private void SaveProjectEditor()
@@ -2358,7 +2449,6 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
                     }
                 }
             }
-
             Projects[editedIndex] = project;
         }
         else
@@ -2370,10 +2460,6 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
         SetStatus("项目已保存", DiagnosticStatusKind.Success);
         AppendLog($"项目已保存: {project.ProjectName}");
         CloseProjectEditor();
-        if (IsProjectWorkspace)
-        {
-            EditSelectedProject();
-        }
     }
 
     private void DeleteProjectEditor()
@@ -2426,17 +2512,19 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
         CloseProjectEditor();
     }
 
-    private void CloseProjectEditor()
-    {
-        SetProjectEditorMode(null, "新建项目");
-        IsProjectEditorVisible = false;
-    }
+    private void CloseProjectEditor() => SetProjectEditorMode(null);
 
-    private void SetProjectEditorMode(ProjectConfigEntry? editingProject, string title)
+    private void SetProjectEditorMode(ProjectConfigEntry? editingProject, bool creatingProject = false)
     {
+        if (ReferenceEquals(_editingProject, editingProject) && _isNewProjectDialogVisible == creatingProject)
+        {
+            return;
+        }
+
         _editingProject = editingProject;
-        ProjectEditorTitle = title;
+        SetProperty(ref _isNewProjectDialogVisible, creatingProject, nameof(IsNewProjectDialogVisible));
         OnPropertyChanged(nameof(IsEditingProject));
+        OnPropertyChanged(nameof(IsProjectEditorVisible));
         OnPropertyChanged(nameof(CanDeleteEditedProject));
         RaiseProjectEditorCommandStates();
     }
@@ -2556,6 +2644,7 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
 
         if (ActiveFlashConfiguration is null)
         {
+            UpdateProjectFlowPreview(null, "请在侧栏选择刷写项目。");
             SetFlowValidationNotice("未选择项目。");
             RefreshFlowAlgorithmOptions();
             MarkFlowAsBaseline();
@@ -2564,6 +2653,7 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
 
         if (string.IsNullOrWhiteSpace(SelectedBootConfig))
         {
+            UpdateProjectFlowPreview(null, "此项目未关联 BOOT 配置，请联系管理员配置。");
             SetFlowValidationNotice("请选择 BOOT 配置文件。");
             RefreshFlowAlgorithmOptions();
             MarkFlowAsBaseline();
@@ -2577,11 +2667,17 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
                 : _bootConfigRepository.Load(SelectedBootConfig);
 
             PopulateFlowRows(_loadedFlowConfig);
+            UpdateProjectFlowPreview(_loadedFlowConfig);
             var source = IsProjectFlowDraft ? "draft" : SelectedBootConfig;
-            AppendLog($"Flow loaded: {source}, steps={FlowRows.Count}");
+            var displaySource = IsProjectFlowDraft ? "草稿" : source;
+            AppendLog($"Flow loaded: {source}, steps={FlowRows.Count}",
+                SelectedProject?.ProjectName, $"已加载流程 {displaySource}（{FlowRows.Count} 步）");
         }
         catch (Exception ex)
         {
+            UpdateProjectFlowPreview(null, ex is FileNotFoundException
+                ? "找不到此项目的 BOOT 配置文件，请联系管理员检查文件路径。"
+                : "无法读取此项目的 BOOT 流程，请联系管理员检查配置文件。");
             SetFlowValidationNotice(ex.Message);
             RefreshFlowAlgorithmOptions();
             MarkFlowAsBaseline();
@@ -2630,6 +2726,7 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
             }
 
             _loadedFlowConfig = config;
+            UpdateProjectFlowPreview(config);
             RefreshProjectFileStatuses();
             UpdateProjectEditorFirmwareRequirements();
             MarkFlowAsBaseline();
@@ -2643,6 +2740,12 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
             AppendLog($"Flow save failed: {ex.Message}");
             return false;
         }
+    }
+
+    private void UpdateProjectFlowPreview(BootConfig? config, string emptyNotice = "当前 BOOT 配置没有流程节点。")
+    {
+        ProjectFlowSteps = config?.Flow.Select(ProjectFlowStep.FromConfig).ToArray() ?? [];
+        ProjectFlowNotice = ProjectFlowSteps.Count == 0 ? emptyNotice : string.Empty;
     }
 
     private void PopulateFlowRows(BootConfig config)
@@ -3235,6 +3338,11 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
 
     public void MoveFlowStepToIndex(FlowStepEditorRow step, int targetIndex)
     {
+        if (!CanEditFlow)
+        {
+            return;
+        }
+
         var sourceIndex = FlowRows.IndexOf(step);
         if (sourceIndex < 0 || FlowRows.Count == 0)
         {
@@ -3259,23 +3367,16 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
 
     private void ApplySelectedProject()
     {
-        if (SelectedProject is null)
+        var project = SelectedProject;
+        var bootFile = project?.BootConfigFile;
+        SelectedBootConfig = string.IsNullOrWhiteSpace(bootFile) ? null : bootFile.Trim();
+        if (project is not null && GetBaudRateSelectionMode() == BaudRateSelectionMode.Project)
         {
-            SelectedBootConfig = null;
-            DriverFilePath = string.Empty;
-            ApplicationFilePath = string.Empty;
-            return;
+            SelectedBaudRate = project.BaudRate;
         }
-
-        SelectedBootConfig = string.IsNullOrWhiteSpace(SelectedProject.BootConfigFile)
-            ? null
-            : SelectedProject.BootConfigFile.Trim();
-        if (GetBaudRateSelectionMode() == BaudRateSelectionMode.Project)
-        {
-            SelectedBaudRate = SelectedProject.BaudRate;
-        }
-        DriverFilePath = SelectedProject.DriveFilePath;
-        ApplicationFilePath = SelectedProject.FlashFilePath;
+        DriverFilePath = project?.DriveFilePath ?? string.Empty;
+        ApplicationFilePath = project?.FlashFilePath ?? string.Empty;
+        LoadFlowFromSelected();
         OnPropertyChanged(nameof(RequestedProtocolText));
         OnPropertyChanged(nameof(ProtocolStatusText));
     }
@@ -3458,37 +3559,32 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
-    private void OnFrameReceived(object? sender, CanFrame frame)
-    {
-        AddFrame("RX", frame);
-    }
+    private void OnFrameReceived(object? sender, CanFrame frame) => AddFrame("RX", frame);
 
     private void OnFrameSent(object? sender, CanFrame frame) => AddFrame("TX", frame);
 
     private static ulong ParseManualFrameId(string value)
     {
-        var text = value.Trim();
-        if (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
-        {
-            text = text[2..];
-        }
-
-        if (text.Length == 0)
+        var text = GetManualFrameIdDigits(value);
+        if (text.IsEmpty)
         {
             throw new FormatException("CAN ID 不能为空。");
         }
 
         try
         {
-            return ulong.Parse(
-                text,
-                System.Globalization.NumberStyles.HexNumber,
-                System.Globalization.CultureInfo.InvariantCulture);
+            return ulong.Parse(text, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
         }
         catch (OverflowException)
         {
             throw new InvalidOperationException("ID超出有效范围");
         }
+    }
+
+    private static ReadOnlySpan<char> GetManualFrameIdDigits(string value)
+    {
+        var text = value.AsSpan().Trim();
+        return text.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? text[2..] : text;
     }
 
     private static bool TryParseConfiguredCanId(string? value, out uint id)
@@ -3591,11 +3687,12 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
         AppendLog(message, SelectedProject?.ProjectName);
     }
 
-    private void AppendLog(string message, string? projectName)
+    private void AppendLog(string message, string? projectName, string? displayMessage = null)
     {
         var entry = new SystemLogEntry(DateTime.Now, ClassifyStatusText(message), message)
         {
-            ProjectName = projectName
+            ProjectName = projectName,
+            DisplayMessage = displayMessage ?? message
         };
         RunOnUi(() =>
         {
@@ -3620,6 +3717,7 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
         {
             WorkspaceLogEntries.Add(entry);
         }
+        UpdateDownloadInfoEntries();
         LatestLogEntry = WorkspaceLogEntries.LastOrDefault();
         FilteredLogEntries.Clear();
         foreach (var entry in WorkspaceLogEntries.Where(LogEntryMatchesFilter))
@@ -3628,6 +3726,38 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
         }
 
         RaiseLogSummaryProperties();
+    }
+
+    private void UpdateDownloadInfoEntries()
+    {
+        var start = Math.Max(0, WorkspaceLogEntries.Count - MaxDownloadInfoEntries);
+        var count = WorkspaceLogEntries.Count - start;
+
+        // Keep rows already in the retained window so a new log does not clear their selection.
+        while (DownloadInfoEntries.Count > 0
+               && (count == 0 || !ReferenceEquals(DownloadInfoEntries[0], WorkspaceLogEntries[start])))
+        {
+            DownloadInfoEntries.RemoveAt(0);
+        }
+
+        var retained = 0;
+        while (retained < count && retained < DownloadInfoEntries.Count
+               && ReferenceEquals(DownloadInfoEntries[retained], WorkspaceLogEntries[start + retained]))
+        {
+            retained++;
+        }
+
+        while (DownloadInfoEntries.Count > retained)
+        {
+            DownloadInfoEntries.RemoveAt(DownloadInfoEntries.Count - 1);
+        }
+
+        for (var index = retained; index < count; index++)
+        {
+            DownloadInfoEntries.Add(WorkspaceLogEntries[start + index]);
+        }
+
+        OnPropertyChanged(nameof(ShowDownloadInfoSources));
     }
 
     private bool LogEntryMatchesFilter(SystemLogEntry entry)
@@ -3989,6 +4119,7 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
         OpenActiveProjectConfigCommand.RaiseCanExecuteChanged();
         OpenLogFileCommand.RaiseCanExecuteChanged();
         OpenLogDirectoryCommand.RaiseCanExecuteChanged();
+        NavigateToSystemLogCommand.RaiseCanExecuteChanged();
         ClearFramesCommand.RaiseCanExecuteChanged();
         ToggleFrameCaptureCommand.RaiseCanExecuteChanged();
         ToggleFrameFilterCommand.RaiseCanExecuteChanged();
@@ -4002,7 +4133,6 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
         DeleteProjectCommand.RaiseCanExecuteChanged();
         SaveProjectsCommand.RaiseCanExecuteChanged();
         AddProjectCommand.RaiseCanExecuteChanged();
-        NewProjectCommand.RaiseCanExecuteChanged();
         RaiseProjectEditorCommandStates();
         LoadFlowCommand.RaiseCanExecuteChanged();
         SaveFlowCommand.RaiseCanExecuteChanged();
@@ -4029,6 +4159,7 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
 
     private void RaiseProjectEditorCommandStates()
     {
+        NewProjectCommand.RaiseCanExecuteChanged();
         EditProjectCommand.RaiseCanExecuteChanged();
         SaveProjectEditorCommand.RaiseCanExecuteChanged();
         CancelProjectEditorCommand.RaiseCanExecuteChanged();
@@ -4040,7 +4171,6 @@ public sealed partial class MainViewModel : ObservableObject, IAsyncDisposable
         OnPropertyChanged(nameof(HasLogEntries));
         OnPropertyChanged(nameof(LatestLogText));
         OnPropertyChanged(nameof(LogEntryCountText));
-        OnPropertyChanged(nameof(DownloadInfoText));
         RaiseLogListStateProperties();
     }
 

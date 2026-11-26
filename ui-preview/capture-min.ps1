@@ -28,7 +28,7 @@ function Capture($name) {
     $bmp.Save("$out\min-$name.png", [System.Drawing.Imaging.ImageFormat]::Png); $bmp.Dispose()
 }
 $root = [System.Windows.Automation.AutomationElement]::FromHandle($h)
-$pages = @("流程配置","系统设置","全部项目配置")
+$pages = @("流程配置","系统设置","项目配置")
 foreach ($name in $pages) {
     $cond = New-Object System.Windows.Automation.AndCondition(
         (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, $name)),

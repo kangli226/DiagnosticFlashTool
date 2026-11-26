@@ -139,10 +139,43 @@
         <Setter Property="Template" Value="{StaticResource SoftSwitchTemplate}" />
     </Style>
 
+    <!--
+        进度条轨道与指示条使用 CornerRadius.Control，与实时报文表格等
+        带圆角的内容控件保持一致；Fluent 默认 ProgressBar 模板为直角矩形，
+        因此这里只保留 WPF 进度条必需的 PART_Track / PART_Indicator 两个部件。
+    -->
+    <ControlTemplate x:Key="SoftProgressBarTemplate" TargetType="{x:Type ProgressBar}">
+        <Grid>
+            <Border Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}"
+                    CornerRadius="{StaticResource CornerRadius.Control}" />
+
+            <!-- PART_Track 只用于让 ProgressBar 计算指示条宽度，本身不绘制。 -->
+            <Border x:Name="PART_Track" Margin="{TemplateBinding BorderThickness}" />
+
+            <Border x:Name="PART_Indicator"
+                    Margin="{TemplateBinding BorderThickness}"
+                    HorizontalAlignment="Left"
+                    Background="{TemplateBinding Foreground}"
+                    CornerRadius="{StaticResource CornerRadius.Control}" />
+        </Grid>
+        <ControlTemplate.Triggers>
+            <!-- 未使用的 indeterminate 状态也要有可见反馈，避免进度条变成空白。 -->
+            <Trigger Property="IsIndeterminate" Value="True">
+                <Setter TargetName="PART_Indicator" Property="HorizontalAlignment" Value="Stretch" />
+                <Setter TargetName="PART_Indicator" Property="Opacity" Value="0.35" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
     <Style x:Key="SoftProgressBarStyle" TargetType="ProgressBar">
         <Setter Property="Height" Value="22" />
         <Setter Property="Background" Value="{StaticResource ProgressTrackBrush}" />
         <Setter Property="Foreground" Value="{StaticResource ProgressFillBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Template" Value="{StaticResource SoftProgressBarTemplate}" />
     </Style>
 
     <Style TargetType="ProgressBar" BasedOn="{StaticResource SoftProgressBarStyle}" />
@@ -190,6 +223,47 @@
 
     <Style x:Key="MonoTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource SoftTextBoxStyle}">
         <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
+    </Style>
+
+    <Style x:Key="InputGroupBorderStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource InputBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource CornerRadius.Control}" />
+        <Style.Triggers>
+            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource FocusRingBrush}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <DataTemplate x:Key="InputGroupAnnotationTemplate">
+        <Border Background="{DynamicResource ComboBoxDropDownBackground}"
+                CornerRadius="{StaticResource CornerRadius.Compact}"
+                VerticalAlignment="Center">
+            <!-- 底部内边距补偿等宽字体的基线偏移。 -->
+            <Border Background="{DynamicResource ComboBoxItemBackgroundSelected}"
+                    Padding="6,2,6,4"
+                    CornerRadius="{StaticResource CornerRadius.Compact}">
+                <TextBlock Text="{Binding}"
+                           TextAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
+                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                           Style="{StaticResource StatusBarCodeTextStyle}"
+                           ToolTip="{Binding}" />
+            </Border>
+        </Border>
+    </DataTemplate>
+
+    <Style x:Key="InputGroupMonoTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource MonoTextBoxStyle}">
+        <Style.Resources>
+            <!-- 组合输入框由外层边框显示焦点。 -->
+            <Thickness x:Key="TextControlBorderThemeThicknessFocused">0</Thickness>
+        </Style.Resources>
+        <Setter Property="Height" Value="Auto" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
     </Style>
 
     <Style TargetType="{x:Type ComboBox}" BasedOn="{StaticResource StandardComboBoxStyle}" />

@@ -24,7 +24,7 @@
 
         <!-- 配置来源与文件级操作：紧凑单行，不随表体滚动。 -->
         <Border Grid.Row="0" Style="{StaticResource Card.Toolbar}">
-            <Grid Height="26">
+            <Grid Style="{StaticResource Card.ContentRow}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />

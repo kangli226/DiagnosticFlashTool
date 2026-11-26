@@ -7,6 +7,8 @@ namespace DiagnosticFlashTool.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
+    internal const int ProjectFirmwareFlashPageIndex = 0;
+    internal const int ProjectFlashFlowPageIndex = 7;
     private const string StandardRoleText = "普通用户";
     private const string AdministratorRoleText = "系统管理员";
     private string _selectedUserRole = StandardRoleText;
@@ -28,18 +30,19 @@ public sealed partial class MainViewModel
     private ProjectConfigEntry? ActiveFlashConfiguration => SelectedProject;
     private bool IsProjectFlowDraft => _draftFlowProject is not null
         && ReferenceEquals(SelectedProject, _draftFlowProject);
+    private bool CanEditFlow => IsSystemAdministrator && IsUdsWorkspace && CanChangeWorkspace;
 
     public string WorkspaceDescription => IsProjectWorkspace
         ? SelectedProject is null ? "请选择或新增一个项目" : $"项目：{SelectedProject.ProjectName}"
-        : SelectedProject is null ? "通用 UDS（未选择项目）" : $"通用 UDS / 项目：{SelectedProject.ProjectName}";
+        : SelectedProject is null ? "工具与设置（未选择项目）" : $"工具与设置 / 项目：{SelectedProject.ProjectName}";
 
     public string FlashCommunicationSummaryText => ActiveFlashConfiguration is not { } configuration
         ? "请先选择项目"
         : $"物理请求 {configuration.PhysicalRequestId} / 功能请求 {configuration.FunctionalRequestId} / 响应 {configuration.ResponseAddressId} / {configuration.CanProtocol} / {configuration.BaudRate}";
 
     public string RoleDescription => IsSystemAdministrator
-        ? "可查看全部项目、通用 UDS 工具、全部项目配置、开发者选项、流程配置、算法配置和系统设置。"
-        : "可使用各项目的固件刷写、通用操作日志，以及系统设置。";
+        ? "可使用各项目的固件刷写并查看刷写流程，也可在「工具与设置」中管理项目和流程配置。"
+        : "可使用各项目的固件刷写、查看刷写流程，并访问操作日志和系统设置。";
 
     public string SelectedUserRole
     {
@@ -79,11 +82,9 @@ public sealed partial class MainViewModel
     public string DriverFileDisplay => FilePathDisplayFormatter.GetFileName(DriverFilePath);
     public string ApplicationFileDisplay => FilePathDisplayFormatter.GetFileName(ApplicationFilePath);
 
-    public bool CanAccessPage(int pageIndex, bool projectWorkspace) => pageIndex is >= 0 and <= 6
-        && (projectWorkspace || pageIndex != 0)
-        && (IsSystemAdministrator
-            || pageIndex == 6
-            || (projectWorkspace ? pageIndex == 0 : pageIndex == 2));
+    public bool CanAccessPage(int pageIndex, bool projectWorkspace) => projectWorkspace
+        ? pageIndex is ProjectFirmwareFlashPageIndex or ProjectFlashFlowPageIndex
+        : pageIndex is >= 1 and <= 6 && (IsSystemAdministrator || pageIndex is 2 or 6);
 
     public bool NavigateToProjectPage(ProjectConfigEntry? project, int pageIndex)
     {
@@ -96,13 +97,6 @@ public sealed partial class MainViewModel
         }
 
         SelectedShellIndex = pageIndex;
-
-        // 从项目节点进入「项目配置」时直接打开该项目的编辑区，而不是停在全部项目列表。
-        if (pageIndex == 3)
-        {
-            EditSelectedProject();
-        }
-
         return true;
     }
 
@@ -125,23 +119,31 @@ public sealed partial class MainViewModel
         {
             return true;
         }
-        if (!CanChangeWorkspace || confirmChanges && !ConfirmUnsavedFlowChanges("切换刷写工作区"))
+        if (!CanChangeWorkspace
+            || confirmChanges && !ConfirmUnsavedFlowChanges("切换刷写工作区")
+            || projectWorkspace && project is not null && !Projects.Contains(project))
         {
             return false;
         }
 
         CloseProjectEditor();
-        Progress = 0;
-        DownloadStatusKind = DiagnosticStatusKind.Neutral;
+        ResetFlashProgress();
         _isProjectWorkspace = projectWorkspace;
         _suppressFlowSelectionPrompt = true;
         try
         {
-            if (projectWorkspace)
+            if (projectWorkspace && !ReferenceEquals(project, SelectedProject))
             {
                 SelectedProject = project;
             }
-            ApplyActiveFlashConfiguration();
+            else
+            {
+                ApplySelectedProject();
+                if (IsFrameFilterEnabled)
+                {
+                    Frames.Clear();
+                }
+            }
         }
         finally
         {
@@ -150,17 +152,6 @@ public sealed partial class MainViewModel
         RefreshWorkspaceState();
         RaiseCommandStates();
         return true;
-    }
-
-    private void ApplyActiveFlashConfiguration()
-    {
-        ApplySelectedProject();
-        // 相同 BOOT 文件也可能用于不同项目，仍需恢复其流程和过滤状态。
-        LoadFlowFromSelected();
-        if (IsFrameFilterEnabled)
-        {
-            Frames.Clear();
-        }
     }
 
     private void InitializeNavigation()
@@ -172,7 +163,7 @@ public sealed partial class MainViewModel
         [
             ("开发者选项", FluentIconKind.Console, 1),
             ("操作日志", FluentIconKind.TextBoxOutline, 2),
-            ("全部项目配置", FluentIconKind.FolderCogOutline, 3),
+            ("项目配置", FluentIconKind.FolderCogOutline, 3),
             ("流程配置", FluentIconKind.FileTreeOutline, 4),
             ("算法配置", FluentIconKind.FunctionVariant, 5),
             ("系统设置", FluentIconKind.CogOutline, 6)
@@ -198,13 +189,10 @@ public sealed partial class MainViewModel
             var group = ProjectNavigationItems.FirstOrDefault(item => ReferenceEquals(item.Project, project));
             if (group is null)
             {
-                var pages = new[]
-                {
-                    CreateProjectNavigationPage(project, "固件刷写", FluentIconKind.FlashOutline, 0),
-                    CreateProjectNavigationPage(project, "刷写流程", FluentIconKind.FileTreeOutline, 4),
-                    CreateProjectNavigationPage(project, "项目配置", FluentIconKind.FolderCogOutline, 3)
-                };
-                group = new(project, pages);
+                group = new(
+                    project,
+                    CreateProjectNavigationPage(project, "固件刷写", FluentIconKind.FlashOutline, ProjectFirmwareFlashPageIndex),
+                    CreateProjectNavigationPage(project, "刷写流程", FluentIconKind.FileTreeOutline, ProjectFlashFlowPageIndex));
                 ProjectNavigationItems.Insert(index, group);
             }
             else if (ProjectNavigationItems.IndexOf(group) != index)
@@ -223,14 +211,7 @@ public sealed partial class MainViewModel
             () => NavigateToProjectPage(project, pageIndex),
             () => CanChangeWorkspace && CanAccessPage(pageIndex, projectWorkspace: true));
 
-    private void OpenActiveProjectConfig()
-    {
-        if (SelectedProject is null || !NavigateToUdsPage(3))
-        {
-            return;
-        }
-        EditSelectedProject();
-    }
+    private void OpenActiveProjectConfig() => NavigateToUdsPage(3);
 
     private void SyncNavigationSelection()
     {
@@ -238,7 +219,7 @@ public sealed partial class MainViewModel
         {
             var selected = IsProjectWorkspace && ReferenceEquals(group.Project, SelectedProject);
 
-            // 项目不再折叠：只展开当前选中的项目，避免所有项目的页面同时铺开。
+            // 只展开当前工作区选中的项目。
             group.IsExpanded = selected;
 
             foreach (var page in group.Pages)
@@ -286,4 +267,7 @@ public sealed partial class MainViewModel
 
     private RelayCommand AdministratorCommand(Action execute, Func<bool>? canExecute = null) =>
         new(execute, () => IsSystemAdministrator && CanChangeWorkspace && (canExecute?.Invoke() ?? true));
+
+    private RelayCommand FlowEditorCommand(Action execute, Func<bool>? canExecute = null) =>
+        new(execute, () => CanEditFlow && (canExecute?.Invoke() ?? true));
 }

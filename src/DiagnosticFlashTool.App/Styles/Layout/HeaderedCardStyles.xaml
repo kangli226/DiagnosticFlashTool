@@ -7,15 +7,17 @@
         <ResourceDictionary Source="PageStyles.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <!-- 桌面工具改版：标题栏 44→32，正文内边距 16→12，取消投影与悬停抬升。 -->
-    <GridLength x:Key="HeaderedCardHeaderHeight">32</GridLength>
-    <Thickness x:Key="HeaderedCardHeaderTopInset">0,0,0,0</Thickness>
-    <Thickness x:Key="HeaderedCardBodyPadding">12,0,12,12</Thickness>
-    <Thickness x:Key="HeaderedCardCenteredBodyPadding">12,0</Thickness>
+    <Thickness x:Key="HeaderedCardBodyPadding">17,0,12,10</Thickness>
+    <Thickness x:Key="HeaderedCardDividedBodyPadding">17,12,12,12</Thickness>
+    <!-- 数据卡片（表格、列表）的正文内边距：表格是整块矩形，四边留白必须等宽，
+         否则左 17 / 右 12 / 下 10 会让表格看起来偏向一侧。上边沿用 0，
+         由标题行与正文之间的留白承担。 -->
+    <Thickness x:Key="HeaderedCardDataBodyPadding">17,0,17,17</Thickness>
 
     <Style x:Key="HeaderedCard.Base" TargetType="{x:Type controls:HeaderedCard}">
-        <Setter Property="HeaderHeight" Value="{StaticResource HeaderedCardHeaderHeight}" />
-        <Setter Property="HeaderPadding" Value="{StaticResource CardHeaderContentPadding}" />
+        <Setter Property="HeaderHeight" Value="{Binding Source={StaticResource CardContentRowHeight}, Mode=OneTime}" />
+        <Setter Property="HeaderTopInset" Value="{Binding Top, Source={StaticResource CardContentPadding}, Mode=OneTime}" />
+        <Setter Property="HeaderPadding" Value="{StaticResource CardHorizontalContentPadding}" />
         <Setter Property="BodyPadding" Value="{StaticResource HeaderedCardBodyPadding}" />
         <Setter Property="Background" Value="{StaticResource PanelBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}" />
@@ -40,37 +42,47 @@
                             SnapsToDevicePixels="True">
                         <Grid>
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="{TemplateBinding HeaderTopInset}" />
                                 <RowDefinition Height="{TemplateBinding HeaderHeight}" />
+                                <RowDefinition Height="{TemplateBinding HeaderTopInset}" />
+                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
 
-                            <Border Grid.Row="0" Padding="{TemplateBinding HeaderPadding}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <!-- 标题按距卡片顶部固定内缩定位，与标题栏高度解耦，避免各卡片标题顶边错位。 -->
-                                    <ContentPresenter Grid.Column="0"
-                                                      ContentSource="Header"
-                                                      Margin="{StaticResource HeaderedCardHeaderTopInset}"
-                                                      VerticalAlignment="Top" />
-                                    <ContentPresenter Grid.Column="1"
-                                                      Content="{TemplateBinding Actions}"
-                                                      VerticalAlignment="Center" />
-                                </Grid>
-                            </Border>
+                            <Grid Grid.Row="1" Margin="{TemplateBinding HeaderPadding}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter Grid.Column="0"
+                                                  ContentSource="Header"
+                                                  VerticalAlignment="Center" />
+                                <ContentPresenter Grid.Column="1"
+                                                  Content="{TemplateBinding Actions}"
+                                                  VerticalAlignment="Center" />
+                            </Grid>
 
-                            <ContentPresenter Grid.Row="1"
+                            <Border x:Name="HeaderDivider" Grid.Row="3" Height="1"
+                                    Background="{StaticResource DividerBrush}" Visibility="Collapsed" />
+
+                            <ContentPresenter Grid.Row="4"
                                               Margin="{TemplateBinding BodyPadding}"
                                               HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                               VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                         </Grid>
                     </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="ShowHeaderDivider" Value="True">
+                            <Setter TargetName="HeaderDivider" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
         <Style.Triggers>
+            <Trigger Property="ShowHeaderDivider" Value="True">
+                <Setter Property="BodyPadding" Value="{StaticResource HeaderedCardDividedBodyPadding}" />
+            </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Effect" Value="{StaticResource CardElevatedShadowEffect}" />
             </Trigger>
@@ -112,7 +124,6 @@
     <Style x:Key="HeaderedCard.Panel.Centered"
            TargetType="{x:Type controls:HeaderedCard}"
            BasedOn="{StaticResource HeaderedCard.Panel}">
-        <Setter Property="BodyPadding" Value="{StaticResource HeaderedCardCenteredBodyPadding}" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
 
@@ -122,9 +133,12 @@
         <Setter Property="Margin" Value="{StaticResource PageCardBottomGap}" />
     </Style>
 
+    <!-- 数据区正文四边统一 17 DIP：左右底与内容区左侧留白同值，表格边框不再贴边或偏斜。 -->
     <Style x:Key="HeaderedCard.Data"
            TargetType="{x:Type controls:HeaderedCard}"
-           BasedOn="{StaticResource HeaderedCard.Base}" />
+           BasedOn="{StaticResource HeaderedCard.Base}">
+        <Setter Property="BodyPadding" Value="{StaticResource HeaderedCardDataBodyPadding}" />
+    </Style>
 
     <Style x:Key="HeaderedCard.Data.Actions"
            TargetType="{x:Type controls:HeaderedCard}"

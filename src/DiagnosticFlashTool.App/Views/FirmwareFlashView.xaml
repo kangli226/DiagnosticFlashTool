@@ -29,7 +29,7 @@
                 </Grid.RowDefinitions>
 
                 <!-- 工具行：设备状态、连接摘要与连接/开始/停止三个主操作保持同一行。 -->
-                <Grid Grid.Row="0">
+                <Grid Grid.Row="0" Style="{StaticResource Card.ContentRow}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />

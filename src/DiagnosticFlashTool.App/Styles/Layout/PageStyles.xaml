@@ -5,11 +5,11 @@
         <ResourceDictionary Source="CardStyles.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <!-- 桌面工具改版：页面外边距与区块间距整体收紧，换取更多可见行数。
-         顶边与左右同为 12：首个卡片/页头到内容区上沿的留白与左侧保持一致。 -->
-    <Thickness x:Key="PageMargin">12,12,12,10</Thickness>
-    <Thickness x:Key="PageCardBottomGap">0,0,0,10</Thickness>
-    <Thickness x:Key="PageCardTopGap">0,10,0,0</Thickness>
+    <!-- 页面留白两级：外边距 16 大于区块间距 14，让一组卡片整体"浮"在内容区里。
+         改节奏只动本节令牌，页面与视图不写数值。 -->
+    <Thickness x:Key="PageMargin">16,16,16,16</Thickness>
+    <Thickness x:Key="PageCardBottomGap">0,0,0,14</Thickness>
+    <Thickness x:Key="PageCardTopGap">0,14,0,0</Thickness>
     <Thickness x:Key="PageContentBottomGap">0,0,0,8</Thickness>
     <Thickness x:Key="PageContentTopGap">0,8,0,0</Thickness>
     <Thickness x:Key="FormAssistTextAfterLabelMargin">100,0,0,0</Thickness>
@@ -19,7 +19,7 @@
     </Style>
 
     <Style x:Key="PageSectionGapRowStyle" TargetType="RowDefinition">
-        <Setter Property="Height" Value="10" />
+        <Setter Property="Height" Value="14" />
     </Style>
 
     <Style x:Key="PageHeaderGapRowStyle"
@@ -33,7 +33,7 @@
     </Style>
 
     <Style x:Key="PageColumnGapStyle" TargetType="ColumnDefinition">
-        <Setter Property="Width" Value="10" />
+        <Setter Property="Width" Value="14" />
     </Style>
 
     <!-- 中文标签最长 7 字（如"CAN FD 能力"），100 可容纳而不裁切。 -->
